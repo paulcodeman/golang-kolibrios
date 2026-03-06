@@ -26,18 +26,22 @@ APP_OBJ = $(PROGRAM).gccgo.o
 
 ABI_OBJS = $(ABI_DIR)/syscalls_i386.o $(ABI_DIR)/runtime_gccgo.o
 OBJS = $(ABI_OBJS) $(KOS_OBJ) $(UI_OBJ) $(APP_OBJ)
+INTERMEDIATE_ARTIFACTS = $(ABI_OBJS) $(KOS_OBJ) $(KOS_GOX) $(UI_OBJ) $(UI_GOX) $(APP_OBJ)
 
 .PHONY: all clean link
 
-all: $(OBJS) $(KOS_GOX) $(UI_GOX) link
+all: $(PROGRAM).kex
 
 clean:
-	rm -f $(ABI_DIR)/*.o $(ROOT)/*.gccgo.o $(ROOT)/*.gox $(APP_OBJ) $(PROGRAM).kex
+	rm -f $(INTERMEDIATE_ARTIFACTS) $(PROGRAM).kex
 
-link:
+link: $(PROGRAM).kex
+
+$(PROGRAM).kex: $(OBJS) $(KOS_GOX) $(UI_GOX)
 	ld $(LDFLAGS) -o $(PROGRAM).kex $(OBJS)
 	strip $(PROGRAM).kex
 	$(OBJCOPY) $(PROGRAM).kex -O binary
+	rm -f $(INTERMEDIATE_ARTIFACTS)
 
 $(KOS_OBJ): $(KOS_SOURCES)
 	$(GO) $(GO_COMPILER_FLAGS) -o $@ $(KOS_SOURCES)
@@ -46,7 +50,7 @@ $(KOS_GOX): $(KOS_OBJ)
 	$(OBJCOPY) -j .go_export $< $@
 
 $(UI_OBJ): $(UI_SOURCES) $(KOS_GOX)
-	$(GO) $(GO_COMPILER_FLAGS) -o $@ $(UI_SOURCES)
+	cd $(UI_DIR) && $(GO) $(GO_COMPILER_FLAGS) -o ../$(notdir $@) $(notdir $(UI_SOURCES))
 
 $(UI_GOX): $(UI_OBJ)
 	$(OBJCOPY) -j .go_export $< $@

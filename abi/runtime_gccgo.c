@@ -31,6 +31,22 @@ static void* kos_memcpy(void* dest, const void* src, size_t size) {
     return dest;
 }
 
+static int kos_memcmp(const void* left, const void* right, size_t size) {
+    const unsigned char* left_bytes = (const unsigned char*)left;
+    const unsigned char* right_bytes = (const unsigned char*)right;
+    size_t index;
+
+    for (index = 0; index < size; index++) {
+        if (left_bytes[index] != right_bytes[index]) {
+            return (int)left_bytes[index] - (int)right_bytes[index];
+        }
+    }
+
+    return 0;
+}
+
+static int runtime_write_barrier_enabled = 0;
+
 bool runtime_memequal32(const unsigned char* left, const unsigned char* right, size_t size) {
     size_t index;
     const uint32_t* left_words;
@@ -135,6 +151,19 @@ bool runtime_strequal(const char* left, const char* right) {
     return kos_strcmp(left, right) == 0;
 }
 
+int memcmp(const void* left, const void* right, size_t size) {
+    if (left == NULL || right == NULL) {
+        return left == right ? 0 : (left == NULL ? -1 : 1);
+    }
+
+    return kos_memcmp(left, right, size);
+}
+
+void runtime_panicmem(void) {
+    for (;;) {
+    }
+}
+
 void* __unsafe_get_addr(void* base, size_t offset) {
     if (base == NULL) {
         return NULL;
@@ -159,10 +188,13 @@ __asm__(".global runtime.SetByteString");
 __asm__(".set runtime.SetByteString, runtime_set_byte_string");
 
 __asm__(".global runtime.writeBarrier");
-__asm__(".set runtime.writeBarrier, runtime_write_barrier");
+__asm__(".set runtime.writeBarrier, runtime_write_barrier_enabled");
 
 __asm__(".global runtime.gcWriteBarrier");
 __asm__(".set runtime.gcWriteBarrier, runtime_gc_write_barrier");
 
 __asm__(".global runtime.strequal..f");
 __asm__(".set runtime.strequal..f, runtime_strequal");
+
+__asm__(".global runtime.panicmem");
+__asm__(".set runtime.panicmem, runtime_panicmem");

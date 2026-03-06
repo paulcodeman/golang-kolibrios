@@ -35,14 +35,14 @@ type App struct {
 	moveRight ui.Button
 }
 
-func NewApp() *App {
+func NewApp() App {
 	leftButton := ui.NewButton(buttonMoveLeft, "<-", 32, 128)
 	leftButton.Width = 60
 
 	rightButton := ui.NewButton(buttonMoveRight, "->", 310, 128)
 	rightButton.Width = 60
 
-	return &App{
+	return App{
 		barX: initialBarX,
 		moveLeft: leftButton,
 		moveRight: rightButton,
