@@ -1,6 +1,6 @@
-.PHONY: all check-runtime example hello strings slices interfaces emptyiface sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all check-runtime example hello strings slices interfaces emptyiface assertions sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
 
-all: example hello strings slices interfaces emptyiface sysinfo message ipc
+all: example hello strings slices interfaces emptyiface assertions sysinfo message ipc
 
 check-runtime:
 	bash ./scripts/check-runtime-probes.sh
@@ -23,6 +23,9 @@ interfaces:
 emptyiface:
 	$(MAKE) -C cmd/emptyiface all
 
+assertions:
+	$(MAKE) -C cmd/assertions all
+
 sysinfo:
 	$(MAKE) -C cmd/sysinfo all
 
@@ -32,7 +35,7 @@ message:
 ipc:
 	$(MAKE) -C cmd/ipc all
 
-clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-sysinfo clean-message clean-ipc
+clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc
 
 clean-example:
 	$(MAKE) -C cmd/example clean
@@ -51,6 +54,9 @@ clean-interfaces:
 
 clean-emptyiface:
 	$(MAKE) -C cmd/emptyiface clean
+
+clean-assertions:
+	$(MAKE) -C cmd/assertions clean
 
 clean-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean
@@ -78,6 +84,9 @@ rebuild-interfaces:
 
 rebuild-emptyiface:
 	$(MAKE) -C cmd/emptyiface clean all
+
+rebuild-assertions:
+	$(MAKE) -C cmd/assertions clean all
 
 rebuild-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean all

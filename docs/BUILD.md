@@ -63,6 +63,7 @@ Successful build output:
 - `cmd/slices/slices.kex`
 - `cmd/interfaces/interfaces.kex`
 - `cmd/emptyiface/emptyiface.kex`
+- `cmd/assertions/assertions.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -99,6 +100,10 @@ successful build.
 - `cmd/emptyiface` - implemented
   - empty interface assignment
   - empty interface equality for matching comparable concrete types
+- `cmd/assertions` - implemented
+  - empty interface to concrete assertion
+  - empty interface comma-ok assertion
+  - empty interface type switch
 - `cmd/sysinfo` - implemented
   - kernel version query
   - screen working-area query

@@ -15,14 +15,15 @@ The current runtime glue in `abi/runtime_gccgo.c` provides these key helpers:
 - byte and string helpers: `runtime.concatstrings`, `runtime.strequal`,
   `runtime.slicebytetostring`, `runtime.stringtoslicebyte`
 - interface helpers: `runtime.efaceeq`, `runtime.ifaceeq`,
-  `runtime.interequal`
+  `runtime.interequal`, `runtime.ifaceE2T2`, `runtime.nilinterequal`
 - memory helpers: `runtime.memmove`, `runtime.memequal`,
   `runtime.memequal8`, `runtime.memequal32`, `runtime.typedmemmove`,
   internal `memcpy`/`memcmp`/zeroing helpers
 - bootstrap GC stubs: `runtime.registerGCRoots`, `runtime.gcWriteBarrier`,
   `runtime.writeBarrier`
 - panic helpers for bounds failures:
-  `runtime.goPanicIndex*`, `runtime.goPanicSlice*`, `runtime.panicmem`
+  `runtime.goPanicIndex*`, `runtime.goPanicSlice*`, `runtime.panicmem`,
+  `runtime.panicdottype`
 
 These helpers are intentionally minimal. GC is not implemented; the current
 barrier and root-registration symbols only satisfy the linker for the supported
@@ -48,10 +49,15 @@ The current helper surface is based on local `gccgo -m32` probe builds.
   `bool runtime.efaceeq(Type *leftType, void *leftData, Type *rightType, void *rightData)`
 - `runtime.interequal` is currently treated as
   `bool runtime.interequal(Interface *left, Interface *right)`
+- `runtime.ifaceE2T2` is currently treated as
+  `bool runtime.ifaceE2T2(Type *wantType, Type *haveType, void *haveData, void *out)`
+- `runtime.nilinterequal` is currently treated as
+  `bool runtime.nilinterequal(Eface *left, Eface *right)`
 - `memmove` must exist as a plain symbol because `gccgo` may emit direct calls
   to `memmove`, not only to `runtime.memmove`
 - `runtime.*..f` equality references are function-descriptor data symbols, not
   direct code labels
+- `runtime.panicdottype` is treated as a no-return type assertion failure path
 - `runtime.goPanicSlice*` helpers are treated as no-return failure paths
 - runtime failure output currently uses function `63.1` from `sysfuncs.txt`
   for debug-board writes and function `-1` for termination
@@ -81,6 +87,9 @@ Validated by current samples:
 - empty interfaces
   - assignment
   - equality for matching comparable concrete types
+  - assertion to a matching concrete type
+  - comma-ok assertion to a concrete type
+  - simple type switches over validated concrete cases
 - basic Go control flow
   - `if`
   - `for`
@@ -96,6 +105,8 @@ Sample coverage:
   equality
 - `cmd/emptyiface` validates empty interface assignment and equality for
   matching comparable concrete values
+- `cmd/assertions` validates empty-interface concrete assertions, comma-ok
+  assertions, and a simple type switch
 - `cmd/ipc` validates that small real apps can stay within the current runtime
   envelope while using the syscall/UI layers
 
@@ -109,6 +120,9 @@ Focused runtime probe coverage:
   dispatch/equality symbol path
 - `tests/runtime/emptyiface.go` validates the emitted empty interface equality
   symbol path
+- `tests/runtime/assertions.go` validates the emitted empty-interface assertion
+  and comma-ok symbol path
+- `tests/runtime/type_switch.go` validates the emitted type-switch symbol path
 - `scripts/check-runtime-probes.sh` compiles these probes and checks that
   `abi/runtime_gccgo.c` exports the required symbol set
 
@@ -118,7 +132,9 @@ These features are not yet a supported part of the bootstrap contract:
 
 - general slice growth beyond the validated bootstrap byte-slice paths
 - maps
-- type assertions and type switches
+- interface-to-interface assertions
+- general type assertions and type switches beyond the validated empty-interface
+  to concrete path
 - general interface conversions beyond the validated empty/non-empty equality
   paths
 - `defer`
@@ -144,6 +160,6 @@ documented or guaranteed.
 The next runtime milestones after this slice/string subset are:
 
 - document the emitted `gccgo` runtime symbol inventory more formally
-- add empty-interface conversions beyond equality
+- add interface assertions beyond the validated empty-interface concrete path
 - make runtime failure reporting richer than the current short debug-board text
 - grow the runtime probes beyond symbol inventory into behavior checks

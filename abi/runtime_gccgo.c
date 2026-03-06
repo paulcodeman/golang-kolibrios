@@ -37,6 +37,11 @@ typedef struct {
     const void* data;
 } go_interface;
 
+typedef struct {
+    const go_type_descriptor* type;
+    const void* data;
+} go_empty_interface;
+
 typedef bool (*go_equal_function)(const void* left, const void* right);
 
 #define GO_TYPE_KIND_DIRECT_IFACE 0x20u
@@ -46,6 +51,7 @@ typedef struct {
 } go_type_size_only_descriptor;
 
 void runtime_panicmem(void);
+void runtime_typedmemmove(const go_type_descriptor* descriptor, void* dest, const void* src);
 
 static const char runtime_hex_digits[] = "0123456789ABCDEF";
 
@@ -594,6 +600,48 @@ static go_equal_function runtime_resolve_equal_function(const go_type_descriptor
     return *descriptor->equal;
 }
 
+static void runtime_zero_typed_value(const go_type_descriptor* descriptor, void* dest) {
+    size_t size;
+
+    if (descriptor == NULL || dest == NULL) {
+        return;
+    }
+
+    size = (size_t)descriptor->size;
+    if (size == 0) {
+        return;
+    }
+
+    kos_memset(dest, 0, size);
+}
+
+static void runtime_copy_typed_value(const go_type_descriptor* descriptor, void* dest, const void* src) {
+    uintptr_t direct_value;
+    size_t size;
+
+    if (descriptor == NULL || dest == NULL) {
+        return;
+    }
+
+    size = (size_t)descriptor->size;
+    if (size == 0) {
+        return;
+    }
+
+    if ((descriptor->kind & GO_TYPE_KIND_DIRECT_IFACE) != 0) {
+        direct_value = (uintptr_t)src;
+        kos_memcpy(dest, &direct_value, size);
+        return;
+    }
+
+    if (src == NULL) {
+        runtime_zero_typed_value(descriptor, dest);
+        return;
+    }
+
+    runtime_typedmemmove(descriptor, dest, src);
+}
+
 static bool runtime_value_equal(const go_type_descriptor* descriptor, const void* left_data, const void* right_data) {
     go_equal_function equal;
 
@@ -619,6 +667,33 @@ bool runtime_efaceeq(const go_type_descriptor* left_type, const void* left_data,
     }
 
     return runtime_value_equal(left_type, left_data, right_data);
+}
+
+bool runtime_nilinterequal(const void* left_value, const void* right_value) {
+    const go_empty_interface* left;
+    const go_empty_interface* right;
+
+    left = (const go_empty_interface*)left_value;
+    right = (const go_empty_interface*)right_value;
+    if (left == NULL || right == NULL) {
+        return left == right;
+    }
+
+    return runtime_efaceeq(left->type, left->data, right->type, right->data);
+}
+
+bool runtime_ifaceE2T2(const go_type_descriptor* target_type, const go_type_descriptor* source_type, const void* source_data, void* target_value) {
+    if (target_type == NULL) {
+        return false;
+    }
+
+    if (target_type != source_type) {
+        runtime_zero_typed_value(target_type, target_value);
+        return false;
+    }
+
+    runtime_copy_typed_value(target_type, target_value, source_data);
+    return true;
 }
 
 bool runtime_ifaceeq(const go_interface_method_table* left_methods, const void* left_data, const go_interface_method_table* right_methods, const void* right_data) {
@@ -684,6 +759,12 @@ void* runtime_newobject(const go_type_descriptor* descriptor) {
 
 void runtime_panicmem(void) {
     runtime_fail_simple("memory or bounds failure");
+}
+
+__attribute__((noreturn)) void runtime_panicdottype(const go_type_descriptor* target_type, const go_type_descriptor* source_type, const go_type_descriptor* interface_type) {
+    (void)interface_type;
+
+    runtime_fail_pair("type assertion failed", "want", runtime_pointer_value((void*)target_type), "have", runtime_pointer_value((void*)source_type));
 }
 
 void runtime_goPanicIndex(int32_t index, int32_t bound) {
@@ -816,12 +897,22 @@ __asm__(".set runtime.ifaceeq, runtime_ifaceeq");
 __asm__(".global runtime.efaceeq");
 __asm__(".set runtime.efaceeq, runtime_efaceeq");
 
+__asm__(".global runtime.ifaceE2T2");
+__asm__(".set runtime.ifaceE2T2, runtime_ifaceE2T2");
+
 __asm__(".global runtime.interequal");
 __asm__(".set runtime.interequal, runtime_interequal");
 
 __asm__(".global runtime.interequal..f");
 static go_equal_function runtime_interequal_descriptor = runtime_interequal;
 __asm__(".set runtime.interequal..f, runtime_interequal_descriptor");
+
+__asm__(".global runtime.nilinterequal");
+__asm__(".set runtime.nilinterequal, runtime_nilinterequal");
+
+__asm__(".global runtime.nilinterequal..f");
+static go_equal_function runtime_nilinterequal_descriptor = runtime_nilinterequal;
+__asm__(".set runtime.nilinterequal..f, runtime_nilinterequal_descriptor");
 
 __asm__(".global runtime.newobject");
 __asm__(".set runtime.newobject, runtime_newobject");
@@ -843,6 +934,9 @@ __asm__(".set runtime.stringtoslicebyte, runtime_stringtoslicebyte");
 
 __asm__(".global runtime.memmove");
 __asm__(".set runtime.memmove, memmove");
+
+__asm__(".global runtime.panicdottype");
+__asm__(".set runtime.panicdottype, runtime_panicdottype");
 
 __asm__(".global runtime.goPanicIndex");
 __asm__(".set runtime.goPanicIndex, runtime_goPanicIndex");

@@ -87,6 +87,7 @@ main() {
     "runtime.concatstrings" \
     "runtime.growslice" \
     "runtime.makeslice" \
+    "runtime.ifaceE2T2" \
     "runtime.slicebytetostring" \
     "runtime.stringtoslicebyte" \
     "runtime.ifaceeq" \
@@ -95,7 +96,10 @@ main() {
     "runtime.interequal..f" \
     "runtime.memequal32..f" \
     "runtime.memequal8..f" \
+    "runtime.nilinterequal" \
+    "runtime.nilinterequal..f" \
     "runtime.newobject" \
+    "runtime.panicdottype" \
     "runtime.panicmem" \
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
@@ -135,6 +139,21 @@ main() {
   probe_symbols=$(probe_unresolved_symbols "emptyiface")
   require_list_symbols "emptyiface probe" "$probe_symbols" \
     "runtime.efaceeq" \
+    "runtime.memequal32..f" \
+    "runtime.strequal..f"
+
+  compile_probe "assertions"
+  probe_symbols=$(probe_unresolved_symbols "assertions")
+  require_list_symbols "assertions probe" "$probe_symbols" \
+    "runtime.ifaceE2T2" \
+    "runtime.memequal32..f" \
+    "runtime.nilinterequal..f" \
+    "runtime.panicdottype" \
+    "runtime.strequal..f"
+
+  compile_probe "type_switch"
+  probe_symbols=$(probe_unresolved_symbols "type_switch")
+  require_list_symbols "type_switch probe" "$probe_symbols" \
     "runtime.memequal32..f" \
     "runtime.strequal..f"
 
