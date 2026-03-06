@@ -11,6 +11,11 @@ func littleEndianUint32(buffer []byte, offset int) uint32 {
 		uint32(buffer[offset+3])<<24
 }
 
+func littleEndianUint64(buffer []byte, offset int) uint64 {
+	return uint64(littleEndianUint32(buffer, offset)) |
+		uint64(littleEndianUint32(buffer, offset+4))<<32
+}
+
 func unpackUnsignedPoint(packed uint32) Point {
 	return Point{
 		X: int(packed >> 16),
@@ -40,6 +45,16 @@ func trimASCIIField(field []byte) string {
 			break
 		}
 		end--
+	}
+
+	return string(field[:end])
+}
+
+func zeroTerminatedString(field []byte) string {
+	end := 0
+
+	for end < len(field) && field[end] != 0 {
+		end++
 	}
 
 	return string(field[:end])

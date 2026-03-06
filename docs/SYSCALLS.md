@@ -36,7 +36,9 @@ packed arguments, and return conventions.
 | `68.12` | `malloc` | runtime-only | Lazy heap init via `68.11` |
 | `68.13` | `free` | runtime-only | Lazy heap init via `68.11` |
 | `68.20` | `realloc` | runtime-only | Lazy heap init via `68.11` |
+| `70` | `kos.FileSystem` | - | Raw long-name file system interface |
 | `71.2` | `kos.SetCaption` | `kos.SetWindowTitle` | Uses explicit UTF-8 encoding |
+| `80` | `kos.FileSystemEncoded` | `kos.ReadFile`, `kos.ReadDirectory`, `kos.CreateOrRewriteFile`, `kos.WriteFile`, `kos.SetFileSize`, `kos.GetPathInfo`, `kos.SetPathInfo`, `kos.StartApplication`, `kos.DeletePath`, `kos.CreateDirectory`, `kos.RenamePath` | UTF-8-friendly file system layer |
 | `-1` | `kos.Exit` | - | Terminate thread/process |
 
 ## Priority Gaps For Phase 1
@@ -44,9 +46,10 @@ packed arguments, and return conventions.
 These are the nearest missing wrappers with high utility and relatively low ABI
 risk:
 
-- `70` file system interface
 - `71.1` caption update using the alternative encoding contract
-- `80` file system interface with explicit encoding
+- `72` window messaging
+- `18.13` kernel version
+- `48.4/48.5` skin and working-area queries
 
 ## Notes
 

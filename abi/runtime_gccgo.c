@@ -4,6 +4,7 @@
 
 extern void* malloc(size_t size);
 extern void* realloc(void* ptr, size_t size);
+extern void free(void* ptr);
 
 typedef struct {
     const char* str;
@@ -105,6 +106,40 @@ const char* runtime_prepare_window_title(const char* src, intptr_t len) {
     runtime_window_title_buffer[len] = '\0';
 
     return runtime_window_title_buffer;
+}
+
+char* runtime_alloc_cstring(const char* src, intptr_t len) {
+    char* out;
+
+    if (src == NULL) {
+        return NULL;
+    }
+
+    if (len < 0) {
+        len = 0;
+    }
+
+    out = (char*)malloc((size_t)len + 1);
+    if (out == NULL) {
+        return NULL;
+    }
+
+    if (len > 0) {
+        kos_memcpy(out, src, (size_t)len);
+    }
+    out[len] = '\0';
+
+    return out;
+}
+
+void runtime_free_cstring(void* ptr) {
+    if (ptr != NULL) {
+        free(ptr);
+    }
+}
+
+uint32_t runtime_pointer_value(void* ptr) {
+    return (uint32_t)(uintptr_t)ptr;
 }
 
 bool runtime_memequal8(const unsigned char* left, const unsigned char* right, size_t size) {

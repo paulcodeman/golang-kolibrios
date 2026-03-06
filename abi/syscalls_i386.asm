@@ -20,6 +20,8 @@ global go_0kos.SetEventMask
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
 global go_0kos.SetCaption
+global go_0kos.FileSystem
+global go_0kos.FileSystemEncoded
 global go_0kos.GetMouseScreenPosition
 global go_0kos.GetMouseWindowPosition
 global go_0kos.GetMouseButtonState
@@ -242,6 +244,38 @@ go_0kos.SetCaption:
     xor edx, edx
     mov dl, 3
     int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.FileSystem:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 70
+    mov ebx, [ebp+8]
+    int 0x40
+    mov edx, [ebp+12]
+    test edx, edx
+    jz .done_file_system
+    mov [edx], ebx
+.done_file_system:
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.FileSystemEncoded:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 80
+    mov ebx, [ebp+8]
+    int 0x40
+    mov edx, [ebp+12]
+    test edx, edx
+    jz .done_file_system_encoded
+    mov [edx], ebx
+.done_file_system_encoded:
     pop ebx
     pop ebp
     ret

@@ -33,6 +33,12 @@ func GetFreeRAM() uint32
 // Function 18, subfunction 17 - get total RAM in kilobytes.
 func GetTotalRAM() uint32
 
+// Function 70 - file system interface with long names support.
+func FileSystem(request *FileSystemRequest, secondary *uint32) int
+
+// Function 80 - file system interface with parameter of encoding.
+func FileSystemEncoded(request *EncodedFileSystemRequest, secondary *uint32) int
+
 // Function 17 - get the identifier of the pressed button.
 func GetButtonID() int
 
