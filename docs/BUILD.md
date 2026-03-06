@@ -103,6 +103,8 @@ successful build.
 - `cmd/assertions` - implemented
   - empty interface to concrete assertion
   - empty interface comma-ok assertion
+  - empty interface to interface assertion
+  - non-empty interface to interface assertion
   - empty interface type switch
 - `cmd/sysinfo` - implemented
   - kernel version query

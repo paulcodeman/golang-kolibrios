@@ -16,6 +16,22 @@ const (
 	assertionsWindowTitle  = "KolibriOS Assertions"
 )
 
+type sourceText interface {
+	Text() string
+}
+
+type targetText interface {
+	Text() string
+}
+
+type textValue struct {
+	text string
+}
+
+func (value textValue) Text() string {
+	return value.text
+}
+
 type demoApp struct {
 	enabled bool
 	message string
@@ -40,7 +56,7 @@ func (app *demoApp) draw() {
 
 	kos.BeginRedraw()
 	kos.OpenWindow(assertionsWindowX, assertionsWindowY, assertionsWindowWidth, assertionsWindowHeight, assertionsWindowTitle)
-	kos.DrawText(28, 48, ui.White, "interface{} assertions and type switch")
+	kos.DrawText(28, 48, ui.White, "interface assertions and type switch")
 	kos.DrawText(28, 74, ui.Silver, app.message)
 	app.toggle.Draw()
 	exit.Draw()
@@ -75,7 +91,10 @@ func (app *demoApp) loop() {
 }
 
 func (app *demoApp) rebuildMessage() {
+	var ifaceSource sourceText
 	var value interface{}
+	var ifacePart string
+	var switchPart string
 
 	if app.enabled {
 		value = "assert string"
@@ -83,14 +102,19 @@ func (app *demoApp) rebuildMessage() {
 		value = 2026
 	}
 
+	ifaceSource = textValue{text: "iface bridge"}
+	ifacePart = describeInterfaceAssertion(ifaceSource)
+
 	text, ok := value.(string)
 	if ok {
 		forced := value.(string)
-		app.message = forced + " / ok / " + describeValue(value, text)
+		switchPart = describeValue(value, text)
+		app.message = forced + " / ok / " + switchPart + " / " + ifacePart
 		return
 	}
 
-	app.message = "not string / miss / " + describeValue(value, text)
+	switchPart = describeValue(value, text)
+	app.message = "not string / miss / " + switchPart + " / " + ifacePart
 }
 
 func describeValue(value interface{}, text string) string {
@@ -102,6 +126,16 @@ func describeValue(value interface{}, text string) string {
 	default:
 		return "switch default"
 	}
+}
+
+func describeInterfaceAssertion(source sourceText) string {
+	target, ok := source.(targetText)
+	if !ok {
+		return "iface miss"
+	}
+
+	forced := source.(targetText)
+	return "iface ok / " + forced.Text() + " / " + target.Text()
 }
 
 func Run() {

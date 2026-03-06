@@ -15,7 +15,8 @@ The current runtime glue in `abi/runtime_gccgo.c` provides these key helpers:
 - byte and string helpers: `runtime.concatstrings`, `runtime.strequal`,
   `runtime.slicebytetostring`, `runtime.stringtoslicebyte`
 - interface helpers: `runtime.efaceeq`, `runtime.ifaceeq`,
-  `runtime.interequal`, `runtime.ifaceE2T2`, `runtime.nilinterequal`
+  `runtime.interequal`, `runtime.assertitab`, `runtime.ifaceE2I2`,
+  `runtime.ifaceE2T2`, `runtime.ifaceI2I2`, `runtime.nilinterequal`
 - memory helpers: `runtime.memmove`, `runtime.memequal`,
   `runtime.memequal8`, `runtime.memequal32`, `runtime.typedmemmove`,
   internal `memcpy`/`memcmp`/zeroing helpers
@@ -51,6 +52,12 @@ The current helper surface is based on local `gccgo -m32` probe builds.
   `bool runtime.interequal(Interface *left, Interface *right)`
 - `runtime.ifaceE2T2` is currently treated as
   `bool runtime.ifaceE2T2(Type *wantType, Type *haveType, void *haveData, void *out)`
+- `runtime.assertitab` is currently treated as
+  `IMT *runtime.assertitab(Type *targetInterface, Type *sourceType)`
+- `runtime.ifaceE2I2` uses aggregate-return ABI and is implemented as
+  `InterfaceAssert runtime.ifaceE2I2(Type *targetInterface, Type *sourceType, void *sourceData)`
+- `runtime.ifaceI2I2` uses aggregate-return ABI and is implemented as
+  `InterfaceAssert runtime.ifaceI2I2(Type *targetInterface, IMT *sourceMethods, void *sourceData)`
 - `runtime.nilinterequal` is currently treated as
   `bool runtime.nilinterequal(Eface *left, Eface *right)`
 - `memmove` must exist as a plain symbol because `gccgo` may emit direct calls
@@ -84,11 +91,15 @@ Validated by current samples:
   - concrete-to-interface assignment
   - method dispatch
   - equality for matching comparable concrete types
+  - assertion to a matching interface type
+  - comma-ok assertion to a matching interface type
 - empty interfaces
   - assignment
   - equality for matching comparable concrete types
   - assertion to a matching concrete type
   - comma-ok assertion to a concrete type
+  - assertion to a matching interface type
+  - comma-ok assertion to a matching interface type
   - simple type switches over validated concrete cases
 - basic Go control flow
   - `if`
@@ -105,7 +116,7 @@ Sample coverage:
   equality
 - `cmd/emptyiface` validates empty interface assignment and equality for
   matching comparable concrete values
-- `cmd/assertions` validates empty-interface concrete assertions, comma-ok
+- `cmd/assertions` validates empty/non-empty interface assertions, comma-ok
   assertions, and a simple type switch
 - `cmd/ipc` validates that small real apps can stay within the current runtime
   envelope while using the syscall/UI layers
@@ -122,6 +133,10 @@ Focused runtime probe coverage:
   symbol path
 - `tests/runtime/assertions.go` validates the emitted empty-interface assertion
   and comma-ok symbol path
+- `tests/runtime/assert_iface.go` validates the emitted empty-interface to
+  interface assertion symbol path
+- `tests/runtime/iface_to_iface.go` validates the emitted non-empty interface
+  assertion symbol path
 - `tests/runtime/type_switch.go` validates the emitted type-switch symbol path
 - `scripts/check-runtime-probes.sh` compiles these probes and checks that
   `abi/runtime_gccgo.c` exports the required symbol set
@@ -132,10 +147,9 @@ These features are not yet a supported part of the bootstrap contract:
 
 - general slice growth beyond the validated bootstrap byte-slice paths
 - maps
-- interface-to-interface assertions
-- general type assertions and type switches beyond the validated empty-interface
-  to concrete path
-- general interface conversions beyond the validated empty/non-empty equality
+- general type assertions and type switches beyond the validated concrete and
+  interface assertion paths
+- general interface conversions beyond the validated assertion and equality
   paths
 - `defer`
 - `panic` and `recover` as a normal language path
@@ -152,6 +166,9 @@ documented or guaranteed.
 - `growslice` currently allocates a fresh backing array and leaves the old one
   untouched, so repeated append-heavy code leaks memory under the current
   no-GC bootstrap runtime
+- interface assertions currently allocate fresh IMT tables on demand, so
+  assertion-heavy code also leaks memory under the current no-GC bootstrap
+  runtime
 - unsupported runtime paths should be treated as prototype limitations, not as
   stable behavior
 
@@ -160,6 +177,6 @@ documented or guaranteed.
 The next runtime milestones after this slice/string subset are:
 
 - document the emitted `gccgo` runtime symbol inventory more formally
-- add interface assertions beyond the validated empty-interface concrete path
+- add broader interface conversions beyond the validated assertion paths
 - make runtime failure reporting richer than the current short debug-board text
 - grow the runtime probes beyond symbol inventory into behavior checks

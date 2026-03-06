@@ -87,7 +87,10 @@ main() {
     "runtime.concatstrings" \
     "runtime.growslice" \
     "runtime.makeslice" \
+    "runtime.assertitab" \
+    "runtime.ifaceE2I2" \
     "runtime.ifaceE2T2" \
+    "runtime.ifaceI2I2" \
     "runtime.slicebytetostring" \
     "runtime.stringtoslicebyte" \
     "runtime.ifaceeq" \
@@ -149,6 +152,26 @@ main() {
     "runtime.memequal32..f" \
     "runtime.nilinterequal..f" \
     "runtime.panicdottype" \
+    "runtime.strequal..f"
+
+  compile_probe "assert_iface"
+  probe_symbols=$(probe_unresolved_symbols "assert_iface")
+  require_list_symbols "assert_iface probe" "$probe_symbols" \
+    "memcmp" \
+    "runtime.assertitab" \
+    "runtime.ifaceE2I2" \
+    "runtime.interequal..f" \
+    "runtime.memequal32..f" \
+    "runtime.panicmem" \
+    "runtime.strequal..f"
+
+  compile_probe "iface_to_iface"
+  probe_symbols=$(probe_unresolved_symbols "iface_to_iface")
+  require_list_symbols "iface_to_iface probe" "$probe_symbols" \
+    "runtime.assertitab" \
+    "runtime.ifaceI2I2" \
+    "runtime.interequal..f" \
+    "runtime.memequal32..f" \
     "runtime.strequal..f"
 
   compile_probe "type_switch"

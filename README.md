@@ -128,7 +128,7 @@ Main sources:
 - `cmd/slices` - byte-slice growth, copy, and string conversion probe
 - `cmd/interfaces` - non-empty interface dispatch and equality probe
 - `cmd/emptyiface` - empty interface equality probe for comparable values
-- `cmd/assertions` - empty interface assertions and type switch probe
+- `cmd/assertions` - empty/non-empty interface assertions and type switch probe
 - `cmd/sysinfo` - kernel/style/title probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe

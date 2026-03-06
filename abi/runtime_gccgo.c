@@ -26,6 +26,10 @@ typedef struct {
     uint8_t field_align;
     uint8_t kind;
     bool (**equal)(const void* left, const void* right);
+    const void* gcdata;
+    const go_string* name;
+    const void* uncommon;
+    const void* ptr_to_this;
 } go_type_descriptor;
 
 typedef struct {
@@ -42,9 +46,45 @@ typedef struct {
     const void* data;
 } go_empty_interface;
 
+typedef struct {
+    const go_string* name;
+    const go_string* package_path;
+    const void* methods;
+    uint32_t method_count;
+    uint32_t exported_method_count;
+} go_uncommon_type;
+
+typedef struct {
+    const go_type_descriptor common;
+    const void* methods;
+    uint32_t method_count;
+    uint32_t exported_method_count;
+} go_interface_type_descriptor;
+
+typedef struct {
+    const go_string* name;
+    const go_string* package_path;
+    const go_type_descriptor* type;
+} go_interface_method_descriptor;
+
+typedef struct {
+    const go_string* name;
+    const go_string* package_path;
+    const go_type_descriptor* interface_type;
+    const go_type_descriptor* concrete_type;
+    void* function;
+} go_named_type_method_descriptor;
+
+typedef struct {
+    go_interface value;
+    bool ok;
+} go_interface_assert_result;
+
 typedef bool (*go_equal_function)(const void* left, const void* right);
 
 #define GO_TYPE_KIND_DIRECT_IFACE 0x20u
+#define GO_TYPE_KIND_MASK 0x1Fu
+#define GO_TYPE_KIND_INTERFACE 0x14u
 
 typedef struct {
     uintptr_t size;
@@ -54,6 +94,8 @@ void runtime_panicmem(void);
 void runtime_typedmemmove(const go_type_descriptor* descriptor, void* dest, const void* src);
 
 static const char runtime_hex_digits[] = "0123456789ABCDEF";
+
+static int kos_memcmp(const void* left, const void* right, size_t size);
 
 static size_t kos_strlen(const char* str) {
     const char* cursor = str;
@@ -69,6 +111,29 @@ static int kos_strcmp(const char* left, const char* right) {
         right++;
     }
     return (int)(*(const unsigned char*)left) - (int)(*(const unsigned char*)right);
+}
+
+static bool runtime_string_equals(const go_string* left, const go_string* right) {
+    size_t size;
+
+    if (left == right) {
+        return true;
+    }
+    if (left == NULL || right == NULL) {
+        return false;
+    }
+    if (left->len != right->len) {
+        return false;
+    }
+    if (left->len == 0) {
+        return true;
+    }
+    if (left->str == NULL || right->str == NULL) {
+        return false;
+    }
+
+    size = (size_t)left->len;
+    return kos_memcmp(left->str, right->str, size) == 0;
 }
 
 static void* kos_memcpy(void* dest, const void* src, size_t size) {
@@ -600,6 +665,75 @@ static go_equal_function runtime_resolve_equal_function(const go_type_descriptor
     return *descriptor->equal;
 }
 
+static const go_named_type_method_descriptor* runtime_find_named_method(const go_uncommon_type* uncommon, const go_interface_method_descriptor* target_method) {
+    const go_named_type_method_descriptor* methods;
+    const go_named_type_method_descriptor* current;
+    uint32_t index;
+
+    if (uncommon == NULL || target_method == NULL || uncommon->methods == NULL || uncommon->method_count == 0) {
+        return NULL;
+    }
+
+    methods = (const go_named_type_method_descriptor*)uncommon->methods;
+    for (index = 0; index < uncommon->method_count; index++) {
+        current = methods + index;
+        if (!runtime_string_equals(current->name, target_method->name)) {
+            continue;
+        }
+        if (!runtime_string_equals(current->package_path, target_method->package_path)) {
+            continue;
+        }
+        if (current->interface_type != target_method->type) {
+            continue;
+        }
+
+        return current;
+    }
+
+    return NULL;
+}
+
+static go_interface_method_table* runtime_build_interface_method_table(const go_interface_type_descriptor* target_interface, const go_type_descriptor* source_type) {
+    const go_interface_method_descriptor* target_methods;
+    const go_named_type_method_descriptor* source_method;
+    const go_uncommon_type* uncommon;
+    uintptr_t size;
+    uintptr_t index;
+    void** table_entries;
+
+    if (target_interface == NULL || source_type == NULL) {
+        return NULL;
+    }
+    if ((target_interface->common.kind & GO_TYPE_KIND_MASK) != GO_TYPE_KIND_INTERFACE) {
+        return NULL;
+    }
+
+    size = sizeof(void*) + (uintptr_t)target_interface->method_count * sizeof(void*);
+    table_entries = (void**)malloc((size_t)size);
+    if (table_entries == NULL) {
+        return NULL;
+    }
+
+    table_entries[0] = (void*)source_type;
+    if (target_interface->method_count == 0 || target_interface->methods == NULL) {
+        return (go_interface_method_table*)table_entries;
+    }
+
+    uncommon = (const go_uncommon_type*)source_type->uncommon;
+    target_methods = (const go_interface_method_descriptor*)target_interface->methods;
+    for (index = 0; index < (uintptr_t)target_interface->method_count; index++) {
+        source_method = runtime_find_named_method(uncommon, target_methods + index);
+        if (source_method == NULL || source_method->function == NULL) {
+            free(table_entries);
+            return NULL;
+        }
+
+        table_entries[index + 1] = source_method->function;
+    }
+
+    return (go_interface_method_table*)table_entries;
+}
+
 static void runtime_zero_typed_value(const go_type_descriptor* descriptor, void* dest) {
     size_t size;
 
@@ -694,6 +828,59 @@ bool runtime_ifaceE2T2(const go_type_descriptor* target_type, const go_type_desc
 
     runtime_copy_typed_value(target_type, target_value, source_data);
     return true;
+}
+
+go_interface_method_table* runtime_assertitab(const go_type_descriptor* target_type, const go_type_descriptor* source_type) {
+    go_interface_method_table* methods;
+
+    if (target_type == NULL) {
+        runtime_fail_simple("interface assertion has no target type");
+    }
+    if ((target_type->kind & GO_TYPE_KIND_MASK) != GO_TYPE_KIND_INTERFACE) {
+        runtime_fail_simple("assertitab target is not an interface");
+    }
+    if (source_type == NULL) {
+        runtime_fail_simple("interface assertion on nil value");
+    }
+
+    methods = runtime_build_interface_method_table((const go_interface_type_descriptor*)target_type, source_type);
+    if (methods == NULL) {
+        runtime_fail_pair("interface assertion failed", "want", runtime_pointer_value((void*)target_type), "have", runtime_pointer_value((void*)source_type));
+    }
+
+    return methods;
+}
+
+go_interface_assert_result runtime_ifaceE2I2(const go_type_descriptor* target_type, const go_type_descriptor* source_type, const void* source_data) {
+    go_interface_assert_result result;
+
+    result.value.methods = NULL;
+    result.value.data = NULL;
+    result.ok = false;
+
+    if (source_type == NULL) {
+        return result;
+    }
+
+    result.value.methods = runtime_build_interface_method_table((const go_interface_type_descriptor*)target_type, source_type);
+    if (result.value.methods == NULL) {
+        return result;
+    }
+
+    result.value.data = source_data;
+    result.ok = true;
+    return result;
+}
+
+go_interface_assert_result runtime_ifaceI2I2(const go_type_descriptor* target_type, const go_interface_method_table* source_methods, const void* source_data) {
+    const go_type_descriptor* source_type;
+
+    source_type = NULL;
+    if (source_methods != NULL) {
+        source_type = source_methods->type;
+    }
+
+    return runtime_ifaceE2I2(target_type, source_type, source_data);
 }
 
 bool runtime_ifaceeq(const go_interface_method_table* left_methods, const void* left_data, const go_interface_method_table* right_methods, const void* right_data) {
@@ -899,6 +1086,15 @@ __asm__(".set runtime.efaceeq, runtime_efaceeq");
 
 __asm__(".global runtime.ifaceE2T2");
 __asm__(".set runtime.ifaceE2T2, runtime_ifaceE2T2");
+
+__asm__(".global runtime.assertitab");
+__asm__(".set runtime.assertitab, runtime_assertitab");
+
+__asm__(".global runtime.ifaceE2I2");
+__asm__(".set runtime.ifaceE2I2, runtime_ifaceE2I2");
+
+__asm__(".global runtime.ifaceI2I2");
+__asm__(".set runtime.ifaceI2I2, runtime_ifaceI2I2");
 
 __asm__(".global runtime.interequal");
 __asm__(".set runtime.interequal, runtime_interequal");
