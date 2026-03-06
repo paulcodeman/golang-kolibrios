@@ -77,9 +77,10 @@ bool runtime_memequal32(const unsigned char* left, const unsigned char* right, s
     return true;
 }
 
-const char* runtime_prepare_window_title(const char* src, intptr_t len) {
+static const char* runtime_prepare_window_title_impl(uint32_t prefix, int use_prefix, const char* src, intptr_t len) {
     char* resized;
     size_t needed;
+    size_t offset;
 
     if (src == NULL) {
         return NULL;
@@ -89,7 +90,8 @@ const char* runtime_prepare_window_title(const char* src, intptr_t len) {
         len = 0;
     }
 
-    needed = (size_t)len + 1;
+    offset = use_prefix ? 1u : 0u;
+    needed = offset + (size_t)len + 1;
     if (runtime_window_title_buffer == NULL || needed > runtime_window_title_capacity) {
         resized = (char*)realloc(runtime_window_title_buffer, needed);
         if (resized == NULL) {
@@ -100,12 +102,24 @@ const char* runtime_prepare_window_title(const char* src, intptr_t len) {
         runtime_window_title_capacity = needed;
     }
 
-    if (len > 0) {
-        kos_memcpy(runtime_window_title_buffer, src, (size_t)len);
+    if (use_prefix) {
+        runtime_window_title_buffer[0] = (char)prefix;
     }
-    runtime_window_title_buffer[len] = '\0';
+
+    if (len > 0) {
+        kos_memcpy(runtime_window_title_buffer + offset, src, (size_t)len);
+    }
+    runtime_window_title_buffer[offset + (size_t)len] = '\0';
 
     return runtime_window_title_buffer;
+}
+
+const char* runtime_prepare_window_title(const char* src, intptr_t len) {
+    return runtime_prepare_window_title_impl(0, 0, src, len);
+}
+
+const char* runtime_prepare_window_title_with_prefix(uint32_t prefix, const char* src, intptr_t len) {
+    return runtime_prepare_window_title_impl(prefix, 1, src, len);
 }
 
 char* runtime_alloc_cstring(const char* src, intptr_t len) {

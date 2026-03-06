@@ -22,6 +22,7 @@ packed arguments, and return conventions.
 | `13` | `kos.DrawBar` | `kos.FillRect` | Rectangle fill |
 | `14` | `kos.GetScreenSize` | `kos.ScreenSize` | Returns packed lower-right coords |
 | `17` | `kos.GetButtonID` | `kos.CurrentButtonID` | Button ID extraction |
+| `18.13` | `kos.GetKernelVersion` | `kos.KernelVersion` | Reads the kernel version/ABI metadata block |
 | `18.16` | `kos.GetFreeRAM` | `kos.FreeRAMKB` | Returns free RAM in kilobytes |
 | `18.17` | `kos.GetTotalRAM` | `kos.TotalRAMKB` | Returns total RAM in kilobytes |
 | `23` | `kos.WaitEventTimeout` | `kos.WaitEventFor` | Timed wait |
@@ -32,12 +33,16 @@ packed arguments, and return conventions.
 | `37.7` | `kos.GetMouseScrollData` | `kos.MouseScrollDelta` | Signed horizontal/vertical scroll deltas |
 | `38` | `kos.DrawLine` | `kos.StrokeLine` | Line draw |
 | `40` | `kos.SetEventMask` | `kos.SwapEventMask` | Event filtering |
+| `48.4` | `kos.GetSkinHeight` | `kos.SkinHeight` | Height of the skinned-window header |
+| `48.5` | `kos.GetScreenWorkingArea` | `kos.ScreenWorkingArea` | Returns inclusive working-area bounds |
 | `63` | `kos.DebugOutHex`, `kos.DebugOutChar`, `kos.DebugOutStr` | `kos.DebugHex`, `kos.DebugChar`, `kos.DebugString` | Debug board helpers |
 | `68.12` | `malloc` | runtime-only | Lazy heap init via `68.11` |
 | `68.13` | `free` | runtime-only | Lazy heap init via `68.11` |
 | `68.20` | `realloc` | runtime-only | Lazy heap init via `68.11` |
 | `70` | `kos.FileSystem` | - | Raw long-name file system interface |
+| `71.1` | `kos.SetCaptionWithPrefix` | `kos.SetWindowTitleWithEncodingPrefix` | Uses the caption-prefix encoding contract |
 | `71.2` | `kos.SetCaption` | `kos.SetWindowTitle` | Uses explicit UTF-8 encoding |
+| `72` | `kos.SendMessage` | `kos.SendActiveWindowMessage`, `kos.SendActiveWindowKey`, `kos.SendActiveWindowButton` | Active-window key/button injection |
 | `80` | `kos.FileSystemEncoded` | `kos.ReadFile`, `kos.ReadDirectory`, `kos.CreateOrRewriteFile`, `kos.WriteFile`, `kos.SetFileSize`, `kos.GetPathInfo`, `kos.SetPathInfo`, `kos.StartApplication`, `kos.DeletePath`, `kos.CreateDirectory`, `kos.RenamePath` | UTF-8-friendly file system layer |
 | `-1` | `kos.Exit` | - | Terminate thread/process |
 
@@ -46,10 +51,10 @@ packed arguments, and return conventions.
 These are the nearest missing wrappers with high utility and relatively low ABI
 risk:
 
-- `71.1` caption update using the alternative encoding contract
-- `72` window messaging
-- `18.13` kernel version
-- `48.4/48.5` skin and working-area queries
+- `48.7` skin margins for skinned-window hit-testing/layout
+- `48.8/48.13` switch skin by path with both string contracts
+- `54` load cursor resources
+- `60` end key and keyboard layout details
 
 ## Notes
 

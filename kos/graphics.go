@@ -21,6 +21,15 @@ func SetWindowTitle(title string) {
 	SetCaption(title)
 }
 
+func SetWindowTitleWithEncodingPrefix(encoding StringEncoding, title string) {
+	if encoding == EncodingDefault {
+		SetCaption(title)
+		return
+	}
+
+	SetCaptionWithPrefix(encoding, title)
+}
+
 func DrawText(x int, y int, color Color, text string) {
 	WriteText(x, y, uint32(color), text)
 }

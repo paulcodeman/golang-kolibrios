@@ -4,6 +4,7 @@ type Color uint32
 type ButtonID int
 type EventType int
 type EventMask uint32
+type MessageStatus uint32
 type WindowState byte
 type ThreadStatus uint16
 type KeyboardMode byte
@@ -11,6 +12,24 @@ type KeyboardMode byte
 type Point struct {
 	X int
 	Y int
+}
+
+type Rect struct {
+	Left   int
+	Top    int
+	Right  int
+	Bottom int
+}
+
+type KernelVersionInfo struct {
+	Major    byte
+	Minor    byte
+	Patch    byte
+	Build    byte
+	DebugTag byte
+	ABIMinor byte
+	ABIMajor uint16
+	CommitID uint32
 }
 
 const (
@@ -38,6 +57,11 @@ const (
 	EventMaskMouseInsideWindowOnly EventMask = 1 << 30
 	EventMaskMouseActiveWindowOnly EventMask = 1 << 31
 	DefaultEventMask EventMask = EventMaskRedraw | EventMaskKey | EventMaskButton
+)
+
+const (
+	MessageOK         MessageStatus = 0
+	MessageBufferFull MessageStatus = 1
 )
 
 const (
@@ -73,3 +97,23 @@ const (
 	EVENT_DEBUG = int(EventDebug)
 	EVENT_IRQBEGIN = int(EventIRQBegin)
 )
+
+func (rect Rect) Width() int {
+	if rect.Right < rect.Left {
+		return 0
+	}
+
+	return rect.Right - rect.Left + 1
+}
+
+func (rect Rect) Height() int {
+	if rect.Bottom < rect.Top {
+		return 0
+	}
+
+	return rect.Bottom - rect.Top + 1
+}
+
+func (version KernelVersionInfo) IsDebug() bool {
+	return version.DebugTag != 0
+}

@@ -27,6 +27,15 @@ func WaitEventTimeout(uint32) int
 // Function 40 - set the mask for expected events.
 func SetEventMask(uint32) uint32
 
+// Function 48, subfunction 4 - get skinned-window header height.
+func GetSkinHeight() int
+
+// Function 48, subfunction 5 - get packed screen working-area coordinates.
+func GetScreenWorkingArea(bottom *uint32) uint32
+
+// Function 18, subfunction 13 - get kernel version metadata.
+func GetKernelVersion(buffer *byte)
+
 // Function 18, subfunction 16 - get size of free RAM in kilobytes.
 func GetFreeRAM() uint32
 
@@ -56,6 +65,12 @@ func Window(x int, y int, width int, height int, title string)
 
 // Function 71, subfunction 2 - set window caption with explicit encoding.
 func SetCaption(title string)
+
+// Function 71, subfunction 1 - set window caption using an inline encoding prefix.
+func SetCaptionWithPrefix(encoding StringEncoding, title string)
+
+// Function 72, subfunction 1 - send a key or button event to the active window.
+func SendMessage(event int, param uint32) int
 
 // Function 37, subfunction 0 - get screen coordinates of the mouse.
 func GetMouseScreenPosition() uint32

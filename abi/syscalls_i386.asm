@@ -1,6 +1,7 @@
 SECTION .text
 
 extern runtime_prepare_window_title
+extern runtime_prepare_window_title_with_prefix
 
 global go_0kos.Sleep
 global go_0kos.GetKey
@@ -15,11 +16,16 @@ global go_0kos.Window
 global go_0kos.WriteText
 global go_0kos.GetTime
 global go_0kos.GetScreenSize
+global go_0kos.GetScreenWorkingArea
+global go_0kos.GetSkinHeight
 global go_0kos.WaitEventTimeout
 global go_0kos.SetEventMask
+global go_0kos.GetKernelVersion
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
 global go_0kos.SetCaption
+global go_0kos.SetCaptionWithPrefix
+global go_0kos.SendMessage
 global go_0kos.FileSystem
 global go_0kos.FileSystemEncoded
 global go_0kos.GetMouseScreenPosition
@@ -192,6 +198,30 @@ go_0kos.GetScreenSize:
     int 0x40
     ret
 
+go_0kos.GetScreenWorkingArea:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 48
+    mov ebx, 5
+    int 0x40
+    mov edx, [ebp+8]
+    test edx, edx
+    jz .done_screen_working_area
+    mov [edx], ebx
+.done_screen_working_area:
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetSkinHeight:
+    push ebx
+    mov eax, 48
+    mov ebx, 4
+    int 0x40
+    pop ebx
+    ret
+
 go_0kos.WaitEventTimeout:
     push ebp
     mov ebp, esp
@@ -209,6 +239,18 @@ go_0kos.SetEventMask:
     push ebx
     mov eax, 40
     mov ebx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetKernelVersion:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 18
+    mov ebx, 13
+    mov ecx, [ebp+8]
     int 0x40
     pop ebx
     pop ebp
@@ -243,6 +285,36 @@ go_0kos.SetCaption:
     mov ebx, 2
     xor edx, edx
     mov dl, 3
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetCaptionWithPrefix:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+16]
+    push dword [ebp+12]
+    push dword [ebp+8]
+    call runtime_prepare_window_title_with_prefix
+    add esp, 12
+    mov ecx, eax
+    mov eax, 71
+    mov ebx, 1
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SendMessage:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 72
+    mov ebx, 1
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
     int 0x40
     pop ebx
     pop ebp
