@@ -10,7 +10,7 @@ func Exit()
 func Redraw(mode int)
 func Window(x int, y int, width int, height int, title string)
 func WriteText(x int, y int, color uint32, text string)
-func DrawLine(x1 int, y1 int, x2 int, y2 int, color uint32) uint32
+func DrawLine(x1 int, y1 int, x2 int, y2 int, color uint32)
 func DrawBar(x int, y int, width int, height int, color uint32)
 func DebugOutHex(uint32)
 func DebugOutChar(byte)

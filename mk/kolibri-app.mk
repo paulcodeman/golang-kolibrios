@@ -20,7 +20,7 @@ LDSCRIPT_TEMPLATE = $(MK_DIR)/static.lds.in
 LDSCRIPT = $(BUILD_DIR)/$(PROGRAM).lds
 
 GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I.
-GCC_COMPILER_FLAGS = -m32 -c -ffunction-sections -fdata-sections
+GCC_COMPILER_FLAGS = -m32 -c -ffunction-sections -fdata-sections -fno-pic -fno-pie -fno-stack-protector
 LDFLAGS = -n -T $(LDSCRIPT) -m elf_i386 --no-ld-generated-unwind-info -z noexecstack -z relro -z now --gc-sections --entry=$(ENTRYPOINT)
 
 KOS_SOURCES = $(wildcard $(KOS_DIR)/*.go)

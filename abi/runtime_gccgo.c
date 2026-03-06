@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 extern void* malloc(size_t size);
+extern void* realloc(void* ptr, size_t size);
 
 typedef struct {
     const char* str;
@@ -51,6 +52,8 @@ static int kos_memcmp(const void* left, const void* right, size_t size) {
 }
 
 static int runtime_write_barrier_enabled = 0;
+static char* runtime_window_title_buffer = NULL;
+static size_t runtime_window_title_capacity = 0;
 
 bool runtime_memequal32(const unsigned char* left, const unsigned char* right, size_t size) {
     size_t index;
@@ -71,6 +74,37 @@ bool runtime_memequal32(const unsigned char* left, const unsigned char* right, s
     }
 
     return true;
+}
+
+const char* runtime_prepare_window_title(const char* src, intptr_t len) {
+    char* resized;
+    size_t needed;
+
+    if (src == NULL) {
+        return NULL;
+    }
+
+    if (len < 0) {
+        len = 0;
+    }
+
+    needed = (size_t)len + 1;
+    if (runtime_window_title_buffer == NULL || needed > runtime_window_title_capacity) {
+        resized = (char*)realloc(runtime_window_title_buffer, needed);
+        if (resized == NULL) {
+            return runtime_window_title_buffer;
+        }
+
+        runtime_window_title_buffer = resized;
+        runtime_window_title_capacity = needed;
+    }
+
+    if (len > 0) {
+        kos_memcpy(runtime_window_title_buffer, src, (size_t)len);
+    }
+    runtime_window_title_buffer[len] = '\0';
+
+    return runtime_window_title_buffer;
 }
 
 bool runtime_memequal8(const unsigned char* left, const unsigned char* right, size_t size) {
