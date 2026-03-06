@@ -24,7 +24,10 @@ The project is still in prototype stage. Right now the practical path is
 ## Repository Layout
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
+- `docs/` - bootstrap and build documentation
 - `kos/` - raw Go bindings and small higher-level wrappers
+- `mk/` - shared bootstrap make logic and linker templates
+- `scripts/` - helper scripts for supported host environments
 - `ui/` - minimal UI helpers built on top of `kos`
 - `cmd/example/` - demo KolibriOS application and linker/build files
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -49,8 +52,16 @@ The low-level ABI in `abi/syscalls_i386.asm` and the exported declarations in
 
 ## Build Requirements
 
-The current build is intended for Linux or WSL. It was verified in Ubuntu
-24.04 with these tools available:
+The current build is intended for Linux or WSL. The supported bootstrap host is
+Ubuntu 24.04 or WSL Ubuntu 24.04.
+
+Install the toolchain with the shared script:
+
+```sh
+bash ./scripts/install-ubuntu-toolchain.sh
+```
+
+This installs:
 
 - `gcc`
 - `gccgo`
@@ -60,19 +71,12 @@ The current build is intended for Linux or WSL. It was verified in Ubuntu
 - `nasm`
 - `binutils`
 
-Example install command on Ubuntu:
-
-```sh
-sudo apt-get update
-sudo apt-get install -y gcc gccgo gcc-multilib gccgo-multilib make nasm binutils
-```
-
 ## Build The Example
 
 From the repository root:
 
 ```sh
-make -C cmd/example clean all
+make example
 ```
 
 Output:
@@ -81,6 +85,8 @@ Output:
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains.
+
+For full bootstrap instructions, see `docs/BUILD.md`.
 
 ## Example Application
 
@@ -95,6 +101,12 @@ Main sources:
 
 - `cmd/example/app.go`
 - `cmd/example/main.go`
+
+## Sample Matrix
+
+- `cmd/example` - implemented
+- `cmd/hello` - planned
+- `cmd/strings` - planned
 
 ## Development Notes
 
