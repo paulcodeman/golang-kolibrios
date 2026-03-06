@@ -21,6 +21,9 @@ jobs:
       - name: Install toolchain
         run: bash ./scripts/install-ubuntu-toolchain.sh
 
+      - name: Check runtime probe inventory
+        run: make check-runtime
+
       - name: Build sample matrix
         run: make rebuild-all
 
@@ -31,6 +34,7 @@ jobs:
           test -f cmd/strings/strings.kex
           test -f cmd/slices/slices.kex
           test -f cmd/interfaces/interfaces.kex
+          test -f cmd/emptyiface/emptyiface.kex
           test -f cmd/sysinfo/sysinfo.kex
           test -f cmd/message/message.kex
           test -f cmd/ipc/ipc.kex
@@ -45,6 +49,7 @@ jobs:
             cmd/strings/strings.kex
             cmd/slices/slices.kex
             cmd/interfaces/interfaces.kex
+            cmd/emptyiface/emptyiface.kex
             cmd/sysinfo/sysinfo.kex
             cmd/message/message.kex
             cmd/ipc/ipc.kex

@@ -14,7 +14,8 @@ The current runtime glue in `abi/runtime_gccgo.c` provides these key helpers:
 - allocation: `runtime.newobject`, `runtime.makeslice`, `runtime.growslice`
 - byte and string helpers: `runtime.concatstrings`, `runtime.strequal`,
   `runtime.slicebytetostring`, `runtime.stringtoslicebyte`
-- interface helpers: `runtime.ifaceeq`, `runtime.interequal`
+- interface helpers: `runtime.efaceeq`, `runtime.ifaceeq`,
+  `runtime.interequal`
 - memory helpers: `runtime.memmove`, `runtime.memequal`,
   `runtime.memequal8`, `runtime.memequal32`, `runtime.typedmemmove`,
   internal `memcpy`/`memcmp`/zeroing helpers
@@ -43,6 +44,8 @@ The current helper surface is based on local `gccgo -m32` probe builds.
   `GoSlice runtime.stringtoslicebyte(void *tmpbuf, const char *ptr, int len)`
 - `runtime.ifaceeq` is currently treated as
   `bool runtime.ifaceeq(IMT *leftTab, void *leftData, IMT *rightTab, void *rightData)`
+- `runtime.efaceeq` is currently treated as
+  `bool runtime.efaceeq(Type *leftType, void *leftData, Type *rightType, void *rightData)`
 - `runtime.interequal` is currently treated as
   `bool runtime.interequal(Interface *left, Interface *right)`
 - `memmove` must exist as a plain symbol because `gccgo` may emit direct calls
@@ -75,6 +78,9 @@ Validated by current samples:
   - concrete-to-interface assignment
   - method dispatch
   - equality for matching comparable concrete types
+- empty interfaces
+  - assignment
+  - equality for matching comparable concrete types
 - basic Go control flow
   - `if`
   - `for`
@@ -88,8 +94,23 @@ Sample coverage:
   `string([]byte)`
 - `cmd/interfaces` validates non-empty interface assignment, dispatch, and
   equality
+- `cmd/emptyiface` validates empty interface assignment and equality for
+  matching comparable concrete values
 - `cmd/ipc` validates that small real apps can stay within the current runtime
   envelope while using the syscall/UI layers
+
+Focused runtime probe coverage:
+
+- `tests/runtime/strings.go` validates the emitted string concat/equality
+  symbol path
+- `tests/runtime/slices.go` validates the emitted byte-slice/string conversion
+  and growth symbol path
+- `tests/runtime/interfaces.go` validates the emitted non-empty interface
+  dispatch/equality symbol path
+- `tests/runtime/emptyiface.go` validates the emitted empty interface equality
+  symbol path
+- `scripts/check-runtime-probes.sh` compiles these probes and checks that
+  `abi/runtime_gccgo.c` exports the required symbol set
 
 ## Not Yet Supported
 
@@ -97,9 +118,9 @@ These features are not yet a supported part of the bootstrap contract:
 
 - general slice growth beyond the validated bootstrap byte-slice paths
 - maps
-- empty interfaces
 - type assertions and type switches
-- general interface conversions beyond the validated non-empty path
+- general interface conversions beyond the validated empty/non-empty equality
+  paths
 - `defer`
 - `panic` and `recover` as a normal language path
 - goroutines
@@ -123,6 +144,6 @@ documented or guaranteed.
 The next runtime milestones after this slice/string subset are:
 
 - document the emitted `gccgo` runtime symbol inventory more formally
-- add interface support
+- add empty-interface conversions beyond equality
 - make runtime failure reporting richer than the current short debug-board text
-- add focused runtime tests instead of relying only on sample builds
+- grow the runtime probes beyond symbol inventory into behavior checks

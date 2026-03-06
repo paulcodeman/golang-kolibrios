@@ -28,6 +28,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
+- `tests/` - focused bootstrap runtime probes
 - `ui/` - minimal UI helpers built on top of `kos`
 - `cmd/` - sample KolibriOS applications and linker/build files
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -79,6 +80,12 @@ From the repository root:
 make all
 ```
 
+Focused runtime symbol checks:
+
+```sh
+make check-runtime
+```
+
 Output:
 
 - `cmd/example/example.kex`
@@ -86,6 +93,7 @@ Output:
 - `cmd/strings/strings.kex`
 - `cmd/slices/slices.kex`
 - `cmd/interfaces/interfaces.kex`
+- `cmd/emptyiface/emptyiface.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -118,6 +126,7 @@ Main sources:
 - `cmd/strings` - implemented
 - `cmd/slices` - byte-slice growth, copy, and string conversion probe
 - `cmd/interfaces` - non-empty interface dispatch and equality probe
+- `cmd/emptyiface` - empty interface equality probe for comparable values
 - `cmd/sysinfo` - kernel/style/title probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe

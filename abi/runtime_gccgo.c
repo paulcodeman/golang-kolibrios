@@ -594,10 +594,36 @@ static go_equal_function runtime_resolve_equal_function(const go_type_descriptor
     return *descriptor->equal;
 }
 
+static bool runtime_value_equal(const go_type_descriptor* descriptor, const void* left_data, const void* right_data) {
+    go_equal_function equal;
+
+    if (descriptor == NULL) {
+        return true;
+    }
+
+    if ((descriptor->kind & GO_TYPE_KIND_DIRECT_IFACE) != 0) {
+        return left_data == right_data;
+    }
+
+    equal = runtime_resolve_equal_function(descriptor);
+    if (equal == NULL) {
+        runtime_fail_simple("equality on non-comparable type");
+    }
+
+    return equal(left_data, right_data);
+}
+
+bool runtime_efaceeq(const go_type_descriptor* left_type, const void* left_data, const go_type_descriptor* right_type, const void* right_data) {
+    if (left_type != right_type) {
+        return false;
+    }
+
+    return runtime_value_equal(left_type, left_data, right_data);
+}
+
 bool runtime_ifaceeq(const go_interface_method_table* left_methods, const void* left_data, const go_interface_method_table* right_methods, const void* right_data) {
     const go_type_descriptor* left_type;
     const go_type_descriptor* right_type;
-    go_equal_function equal;
 
     if (left_methods == NULL) {
         return right_methods == NULL;
@@ -611,20 +637,8 @@ bool runtime_ifaceeq(const go_interface_method_table* left_methods, const void* 
     if (left_type != right_type) {
         return false;
     }
-    if (left_type == NULL) {
-        return true;
-    }
 
-    if ((left_type->kind & GO_TYPE_KIND_DIRECT_IFACE) != 0) {
-        return left_data == right_data;
-    }
-
-    equal = runtime_resolve_equal_function(left_type);
-    if (equal == NULL) {
-        runtime_fail_simple("interface equality on non-comparable type");
-    }
-
-    return equal(left_data, right_data);
+    return runtime_value_equal(left_type, left_data, right_data);
 }
 
 bool runtime_interequal(const void* left_value, const void* right_value) {
@@ -798,6 +812,9 @@ __asm__(".set runtime.strequal, runtime_strequal_impl");
 
 __asm__(".global runtime.ifaceeq");
 __asm__(".set runtime.ifaceeq, runtime_ifaceeq");
+
+__asm__(".global runtime.efaceeq");
+__asm__(".set runtime.efaceeq, runtime_efaceeq");
 
 __asm__(".global runtime.interequal");
 __asm__(".set runtime.interequal, runtime_interequal");

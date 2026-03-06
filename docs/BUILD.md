@@ -35,6 +35,12 @@ From the repository root:
 make all
 ```
 
+Check the focused bootstrap runtime probes:
+
+```sh
+make check-runtime
+```
+
 Clean the sample builds:
 
 ```sh
@@ -56,6 +62,7 @@ Successful build output:
 - `cmd/strings/strings.kex`
 - `cmd/slices/slices.kex`
 - `cmd/interfaces/interfaces.kex`
+- `cmd/emptyiface/emptyiface.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -89,6 +96,9 @@ successful build.
   - concrete-to-interface assignment
   - non-empty interface method dispatch
   - interface equality for matching comparable concrete types
+- `cmd/emptyiface` - implemented
+  - empty interface assignment
+  - empty interface equality for matching comparable concrete types
 - `cmd/sysinfo` - implemented
   - kernel version query
   - screen working-area query
@@ -109,3 +119,5 @@ successful build.
 - Shared bootstrap build logic now lives in `mk/kolibri-app.mk`.
 - The linker script is generated from `mk/static.lds.in`.
 - The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
+- Focused compiler/runtime symbol checks live in `tests/runtime` and run via
+  `scripts/check-runtime-probes.sh`.
