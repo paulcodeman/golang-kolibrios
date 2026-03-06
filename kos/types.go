@@ -5,6 +5,7 @@ type ButtonID int
 type EventType int
 type EventMask uint32
 type MessageStatus uint32
+type IPCStatus uint32
 type WindowState byte
 type ThreadStatus uint16
 type KeyboardMode byte
@@ -62,6 +63,14 @@ const (
 const (
 	MessageOK         MessageStatus = 0
 	MessageBufferFull MessageStatus = 1
+)
+
+const (
+	IPCOK              IPCStatus = 0
+	IPCReceiverMissing IPCStatus = 1
+	IPCBufferLocked    IPCStatus = 2
+	IPCBufferFull      IPCStatus = 3
+	IPCReceiverGone    IPCStatus = 4
 )
 
 const (

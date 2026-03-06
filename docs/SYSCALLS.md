@@ -35,6 +35,8 @@ packed arguments, and return conventions.
 | `40` | `kos.SetEventMask` | `kos.SwapEventMask` | Event filtering |
 | `48.4` | `kos.GetSkinHeight` | `kos.SkinHeight` | Height of the skinned-window header |
 | `48.5` | `kos.GetScreenWorkingArea` | `kos.ScreenWorkingArea` | Returns inclusive working-area bounds |
+| `60.1` | `kos.SetIPCArea` | `kos.RegisterIPCBuffer` | Registers the process receive buffer for event `7` delivery |
+| `60.2` | `kos.SendIPCMessage` | `kos.SendIPCRaw`, `kos.SendIPC`, `kos.InspectIPCBuffer` | Non-allocating IPC helpers keep the sample within the current bootstrap runtime surface |
 | `63` | `kos.DebugOutHex`, `kos.DebugOutChar`, `kos.DebugOutStr` | `kos.DebugHex`, `kos.DebugChar`, `kos.DebugString` | Debug board helpers |
 | `68.12` | `malloc` | runtime-only | Lazy heap init via `68.11` |
 | `68.13` | `free` | runtime-only | Lazy heap init via `68.11` |
@@ -53,8 +55,8 @@ risk:
 
 - `48.7` skin margins for skinned-window hit-testing/layout
 - `48.8/48.13` switch skin by path with both string contracts
-- `54` load cursor resources
-- `60` end key and keyboard layout details
+- `37.4/37.5/37.6/37.8` cursor load/set/delete coverage
+- `21.2/26.2` keyboard layout set/get helpers
 
 ## Notes
 

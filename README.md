@@ -9,7 +9,7 @@ This repository currently provides:
 - low-level KolibriOS syscall entrypoints in assembly
 - Go declarations and small typed wrappers for those syscalls
 - a minimal `gccgo`-based runtime glue layer
-- a working example application that builds into a `.kex` binary
+- working sample applications that build into `.kex` binaries
 
 The project is still in prototype stage. Right now the practical path is
 `gccgo` + custom ABI/runtime glue, not native `go build`.
@@ -29,7 +29,7 @@ The project is still in prototype stage. Right now the practical path is
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
 - `ui/` - minimal UI helpers built on top of `kos`
-- `cmd/example/` - demo KolibriOS application and linker/build files
+- `cmd/` - sample KolibriOS applications and linker/build files
 - `sysfuncs.txt` - KolibriOS system function specification
 - `AGENTS.md` - repository instructions for future agent work
 - `ROADMAP.md` - staged plan for turning this into a fuller Go target
@@ -71,7 +71,7 @@ This installs:
 - `nasm`
 - `binutils`
 
-## Build The Example
+## Build Samples
 
 From the repository root:
 
@@ -84,14 +84,18 @@ Output:
 - `cmd/example/example.kex`
 - `cmd/hello/hello.kex`
 - `cmd/strings/strings.kex`
+- `cmd/slices/slices.kex`
+- `cmd/interfaces/interfaces.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
+- `cmd/ipc/ipc.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
+For the current bootstrap runtime contract, see `docs/RUNTIME.md`.
 
 ## Example Application
 
@@ -112,8 +116,11 @@ Main sources:
 - `cmd/example` - implemented
 - `cmd/hello` - implemented
 - `cmd/strings` - implemented
+- `cmd/slices` - byte-slice growth, copy, and string conversion probe
+- `cmd/interfaces` - non-empty interface dispatch and equality probe
 - `cmd/sysinfo` - kernel/style/title probes
 - `cmd/message` - function `72` message injection probe
+- `cmd/ipc` - function `60` self-IPC event and buffer probe
 
 ## Development Notes
 

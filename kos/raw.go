@@ -27,6 +27,12 @@ func WaitEventTimeout(uint32) int
 // Function 40 - set the mask for expected events.
 func SetEventMask(uint32) uint32
 
+// Function 60, subfunction 1 - register the IPC receive area.
+func SetIPCArea(buffer *byte, size uint32) uint32
+
+// Function 60, subfunction 2 - send an IPC message to a PID/TID.
+func SendIPCMessage(pid uint32, data *byte, size uint32) uint32
+
 // Function 48, subfunction 4 - get skinned-window header height.
 func GetSkinHeight() int
 

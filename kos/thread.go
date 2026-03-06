@@ -64,3 +64,14 @@ func ReadThreadInfo(slot int) (info ThreadInfo, maxSlot int, ok bool) {
 func ReadCurrentThreadInfo() (info ThreadInfo, maxSlot int, ok bool) {
 	return ReadThreadInfo(CurrentThreadSlot)
 }
+
+func CurrentThreadID() (id uint32, ok bool) {
+	var buffer [1024]byte
+
+	maxSlot := GetThreadInfo(&buffer[0], CurrentThreadSlot)
+	if maxSlot < 0 {
+		return 0, false
+	}
+
+	return littleEndianUint32(buffer[:], 30), true
+}

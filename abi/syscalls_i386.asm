@@ -20,6 +20,8 @@ global go_0kos.GetScreenWorkingArea
 global go_0kos.GetSkinHeight
 global go_0kos.WaitEventTimeout
 global go_0kos.SetEventMask
+global go_0kos.SetIPCArea
+global go_0kos.SendIPCMessage
 global go_0kos.GetKernelVersion
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
@@ -240,6 +242,35 @@ go_0kos.SetEventMask:
     mov eax, 40
     mov ebx, [ebp+8]
     int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetIPCArea:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 60
+    mov ebx, 1
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SendIPCMessage:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    mov eax, 60
+    mov ebx, 2
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    mov esi, [ebp+16]
+    int 0x40
+    pop esi
     pop ebx
     pop ebp
     ret

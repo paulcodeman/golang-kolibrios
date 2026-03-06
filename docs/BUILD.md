@@ -35,7 +35,7 @@ From the repository root:
 make all
 ```
 
-Clean the example build:
+Clean the sample builds:
 
 ```sh
 make clean
@@ -54,8 +54,11 @@ Successful build output:
 - `cmd/example/example.kex`
 - `cmd/hello/hello.kex`
 - `cmd/strings/strings.kex`
+- `cmd/slices/slices.kex`
+- `cmd/interfaces/interfaces.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
+- `cmd/ipc/ipc.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
 successful build.
@@ -74,6 +77,18 @@ successful build.
   - string concatenation
   - string equality
   - button-triggered redraw
+- `cmd/slices` - implemented
+  - `make([]byte, n)`
+  - `append(dst, src...)`
+  - `append(dst, b1, b2, ...)`
+  - `copy(dst, src)`
+  - `[]byte(string)`
+  - `string([]byte)`
+  - slice indexing and `len`
+- `cmd/interfaces` - implemented
+  - concrete-to-interface assignment
+  - non-empty interface method dispatch
+  - interface equality for matching comparable concrete types
 - `cmd/sysinfo` - implemented
   - kernel version query
   - screen working-area query
@@ -83,9 +98,14 @@ successful build.
   - active-window button injection via function `72`
   - active-window key injection via function `72`
   - key event decoding via function `2`
+- `cmd/ipc` - implemented
+  - IPC buffer registration via function `60.1`
+  - self-targeted IPC send via function `60.2`
+  - IPC event `7` handling and buffer drain
 
 ## Notes
 
 - The syscall reference for all new bindings is `sysfuncs.txt`.
 - Shared bootstrap build logic now lives in `mk/kolibri-app.mk`.
 - The linker script is generated from `mk/static.lds.in`.
+- The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
