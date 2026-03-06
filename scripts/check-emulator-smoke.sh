@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
-base_image=$("$repo_root/scripts/download-kolibri-image.sh")
+base_image=$(bash "$repo_root/scripts/download-kolibri-image.sh")
 work_dir=$(mktemp -d -p /tmp kolibri-qemu-smoke-XXXXXX)
 image_path="$work_dir/kolibri-smoke.img"
 autorun_path="$work_dir/AUTORUN.DAT"
