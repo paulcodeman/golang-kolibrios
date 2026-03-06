@@ -29,6 +29,8 @@ jobs:
           test -f cmd/example/example.kex
           test -f cmd/hello/hello.kex
           test -f cmd/strings/strings.kex
+          test -f cmd/sysinfo/sysinfo.kex
+          test -f cmd/message/message.kex
 
       - name: Upload sample artifacts
         uses: actions/upload-artifact@v4
@@ -38,3 +40,5 @@ jobs:
             cmd/example/example.kex
             cmd/hello/hello.kex
             cmd/strings/strings.kex
+            cmd/sysinfo/sysinfo.kex
+            cmd/message/message.kex

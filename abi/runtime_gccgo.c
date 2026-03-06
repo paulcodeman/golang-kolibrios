@@ -11,6 +11,10 @@ typedef struct {
     intptr_t len;
 } go_string;
 
+typedef struct {
+    uintptr_t size;
+} go_type_descriptor;
+
 static size_t kos_strlen(const char* str) {
     const char* cursor = str;
     while (*cursor != '\0') {
@@ -50,6 +54,16 @@ static int kos_memcmp(const void* left, const void* right, size_t size) {
     }
 
     return 0;
+}
+
+static void* kos_memset(void* dest, int value, size_t size) {
+    unsigned char* out = (unsigned char*)dest;
+
+    while (size-- > 0) {
+        *out++ = (unsigned char)value;
+    }
+
+    return dest;
 }
 
 static int runtime_write_barrier_enabled = 0;
@@ -267,9 +281,41 @@ int memcmp(const void* left, const void* right, size_t size) {
     return kos_memcmp(left, right, size);
 }
 
+void* runtime_newobject(const go_type_descriptor* descriptor) {
+    size_t size;
+    size_t allocated_size;
+    void* memory;
+
+    size = 0;
+    if (descriptor != NULL) {
+        size = (size_t)descriptor->size;
+    }
+
+    allocated_size = size == 0 ? 1 : size;
+    memory = malloc(allocated_size);
+    if (memory == NULL) {
+        return NULL;
+    }
+
+    kos_memset(memory, 0, allocated_size);
+    return memory;
+}
+
 void runtime_panicmem(void) {
     for (;;) {
     }
+}
+
+void runtime_goPanicIndex(int32_t index, int32_t bound) {
+    (void)index;
+    (void)bound;
+    runtime_panicmem();
+}
+
+void runtime_goPanicIndexU(uint32_t index, uint32_t bound) {
+    (void)index;
+    (void)bound;
+    runtime_panicmem();
 }
 
 void* __unsafe_get_addr(void* base, size_t offset) {
@@ -303,6 +349,15 @@ __asm__(".set runtime.gcWriteBarrier, runtime_gc_write_barrier");
 
 __asm__(".global runtime.strequal..f");
 __asm__(".set runtime.strequal..f, runtime_strequal");
+
+__asm__(".global runtime.newobject");
+__asm__(".set runtime.newobject, runtime_newobject");
+
+__asm__(".global runtime.goPanicIndex");
+__asm__(".set runtime.goPanicIndex, runtime_goPanicIndex");
+
+__asm__(".global runtime.goPanicIndexU");
+__asm__(".set runtime.goPanicIndexU, runtime_goPanicIndexU");
 
 __asm__(".global runtime.panicmem");
 __asm__(".set runtime.panicmem, runtime_panicmem");

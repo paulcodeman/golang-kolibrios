@@ -54,6 +54,8 @@ Successful build output:
 - `cmd/example/example.kex`
 - `cmd/hello/hello.kex`
 - `cmd/strings/strings.kex`
+- `cmd/sysinfo/sysinfo.kex`
+- `cmd/message/message.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
 successful build.
@@ -72,6 +74,15 @@ successful build.
   - string concatenation
   - string equality
   - button-triggered redraw
+- `cmd/sysinfo` - implemented
+  - kernel version query
+  - screen working-area query
+  - skin height query
+  - caption update via function `71.1`
+- `cmd/message` - implemented
+  - active-window button injection via function `72`
+  - active-window key injection via function `72`
+  - key event decoding via function `2`
 
 ## Notes
 

@@ -84,6 +84,8 @@ Output:
 - `cmd/example/example.kex`
 - `cmd/hello/hello.kex`
 - `cmd/strings/strings.kex`
+- `cmd/sysinfo/sysinfo.kex`
+- `cmd/message/message.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains.
@@ -110,6 +112,8 @@ Main sources:
 - `cmd/example` - implemented
 - `cmd/hello` - implemented
 - `cmd/strings` - implemented
+- `cmd/sysinfo` - kernel/style/title probes
+- `cmd/message` - function `72` message injection probe
 
 ## Development Notes
 
