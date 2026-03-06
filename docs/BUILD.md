@@ -80,6 +80,7 @@ Successful build output:
 - `cmd/emptyiface/emptyiface.kex`
 - `cmd/assertions/assertions.kex`
 - `cmd/runtimecheck/runtimecheck.kex`
+- `cmd/timeprobe/timeprobe.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -126,6 +127,11 @@ successful build.
   - integrated runtime smoke panel
   - strings, slices, interfaces, empty interface equality
   - assertions and type switch in one `.kex`
+- `cmd/timeprobe` - implemented
+  - system time decode from syscall `3`
+  - uptime counters from `26.9` and `26.10`
+  - timed wait via function `23`
+  - delay probe via function `5`
 - `cmd/sysinfo` - implemented
   - kernel version query
   - screen working-area query

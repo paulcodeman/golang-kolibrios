@@ -1,6 +1,6 @@
-.PHONY: all check-runtime check-runtime-probes check-runtime-behavior check-app-template example hello strings slices interfaces emptyiface assertions runtimecheck sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all check-runtime check-runtime-probes check-runtime-behavior check-app-template example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-timeprobe rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
 
-all: example hello strings slices interfaces emptyiface assertions runtimecheck sysinfo message ipc
+all: example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe sysinfo message ipc
 
 check-runtime: check-runtime-probes check-runtime-behavior
 
@@ -37,6 +37,9 @@ assertions:
 runtimecheck:
 	$(MAKE) -C cmd/runtimecheck all
 
+timeprobe:
+	$(MAKE) -C cmd/timeprobe all
+
 sysinfo:
 	$(MAKE) -C cmd/sysinfo all
 
@@ -46,7 +49,7 @@ message:
 ipc:
 	$(MAKE) -C cmd/ipc all
 
-clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-sysinfo clean-message clean-ipc
+clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-sysinfo clean-message clean-ipc
 
 clean-example:
 	$(MAKE) -C cmd/example clean
@@ -71,6 +74,9 @@ clean-assertions:
 
 clean-runtimecheck:
 	$(MAKE) -C cmd/runtimecheck clean
+
+clean-timeprobe:
+	$(MAKE) -C cmd/timeprobe clean
 
 clean-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean
@@ -104,6 +110,9 @@ rebuild-assertions:
 
 rebuild-runtimecheck:
 	$(MAKE) -C cmd/runtimecheck clean all
+
+rebuild-timeprobe:
+	$(MAKE) -C cmd/timeprobe clean all
 
 rebuild-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean all

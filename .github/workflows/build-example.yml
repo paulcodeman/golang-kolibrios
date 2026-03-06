@@ -40,6 +40,7 @@ jobs:
           test -f cmd/emptyiface/emptyiface.kex
           test -f cmd/assertions/assertions.kex
           test -f cmd/runtimecheck/runtimecheck.kex
+          test -f cmd/timeprobe/timeprobe.kex
           test -f cmd/sysinfo/sysinfo.kex
           test -f cmd/message/message.kex
           test -f cmd/ipc/ipc.kex
@@ -57,6 +58,7 @@ jobs:
             cmd/emptyiface/emptyiface.kex
             cmd/assertions/assertions.kex
             cmd/runtimecheck/runtimecheck.kex
+            cmd/timeprobe/timeprobe.kex
             cmd/sysinfo/sysinfo.kex
             cmd/message/message.kex
             cmd/ipc/ipc.kex

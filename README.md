@@ -108,6 +108,7 @@ Output:
 - `cmd/emptyiface/emptyiface.kex`
 - `cmd/assertions/assertions.kex`
 - `cmd/runtimecheck/runtimecheck.kex`
+- `cmd/timeprobe/timeprobe.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -149,6 +150,7 @@ Main sources:
 - `cmd/emptyiface` - empty interface equality probe for comparable values
 - `cmd/assertions` - empty/non-empty interface assertions and type switch probe
 - `cmd/runtimecheck` - integrated in-app runtime smoke panel for the current subset
+- `cmd/timeprobe` - system time, uptime counter, wait timeout, and sleep probe
 - `cmd/sysinfo` - kernel/style/title probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe

@@ -9,6 +9,12 @@ func Sleep(uint32)
 // Function 3 - get system time.
 func GetTime() uint32
 
+// Function 26, subfunction 9 - get uptime counter in 1/100 second.
+func GetTimeCounter() uint32
+
+// Function 26, subfunction 10 - get high precision uptime counter in nanoseconds.
+func GetTimeCounterPro() uint64
+
 // Function 10 - wait for event.
 func Event() int
 

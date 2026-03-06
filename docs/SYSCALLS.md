@@ -11,9 +11,9 @@ packed arguments, and return conventions.
 | --- | --- | --- | --- |
 | `0` | `kos.Window` | `kos.OpenWindow` | Window creation and redraw |
 | `2` | `kos.GetKey` | `kos.ReadKey` | Raw keyboard event decode |
-| `3` | `kos.GetTime` | - | Returns packed BCD time |
+| `3` | `kos.GetTime` | `kos.SystemTime` | Returns packed BCD time |
 | `4` | `kos.WriteText` | `kos.DrawText` | UTF-8 flag is set in the asm stub |
-| `5` | `kos.Sleep` | - | Delay in 1/100 second |
+| `5` | `kos.Sleep` | `kos.SleepCentiseconds`, `kos.SleepMilliseconds`, `kos.SleepSeconds` | Delay in 1/100 second |
 | `8` | `kos.CreateButton` | `kos.DrawButton` | Button definition |
 | `9` | `kos.GetThreadInfo` | `kos.ReadThreadInfo`, `kos.ReadCurrentThreadInfo` | Reads and decodes the 1-KiB thread info buffer |
 | `10` | `kos.Event` | `kos.WaitEvent` | Wait for event |
@@ -26,6 +26,8 @@ packed arguments, and return conventions.
 | `18.16` | `kos.GetFreeRAM` | `kos.FreeRAMKB` | Returns free RAM in kilobytes |
 | `18.17` | `kos.GetTotalRAM` | `kos.TotalRAMKB` | Returns total RAM in kilobytes |
 | `23` | `kos.WaitEventTimeout` | `kos.WaitEventFor` | Timed wait |
+| `26.9` | `kos.GetTimeCounter` | `kos.UptimeCentiseconds` | Returns uptime in 1/100 second |
+| `26.10` | `kos.GetTimeCounterPro` | `kos.UptimeNanoseconds` | Returns uptime in nanoseconds |
 | `37.0` | `kos.GetMouseScreenPosition` | `kos.MouseScreenPosition` | Mouse coordinates on the screen |
 | `37.1` | `kos.GetMouseWindowPosition` | `kos.MouseWindowPosition` | Mouse coordinates relative to the window |
 | `37.2` | `kos.GetMouseButtonState` | `kos.MouseHeldButtons` | Held mouse button states |
