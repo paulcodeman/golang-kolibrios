@@ -27,11 +27,17 @@ func SetKeyboardLayoutRaw(which int, table *byte) int
 // Function 21, subfunction 2 - set the global keyboard layout language id.
 func SetKeyboardLanguageRaw(language int) int
 
+// Function 21, subfunction 5 - set the global system language id.
+func SetSystemLanguageRaw(language int) int
+
 // Function 26, subfunction 2 - get one of the keyboard layout tables.
 func GetKeyboardLayoutRaw(which int, buffer *byte) int
 
 // Function 26, subfunction 2 - get the global keyboard layout language id.
 func GetKeyboardLanguageRaw() int
+
+// Function 26, subfunction 5 - get the global system language id.
+func GetSystemLanguageRaw() int
 
 // Function 11 - check for event, no wait.
 func CheckEvent() int

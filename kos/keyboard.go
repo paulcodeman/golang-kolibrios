@@ -87,6 +87,18 @@ func SetKeyboardLayoutLanguage(language KeyboardLanguage) bool {
 	return SetKeyboardLanguageRaw(int(language)) == 0
 }
 
+func SystemLanguage() KeyboardLanguage {
+	return KeyboardLanguage(GetSystemLanguageRaw())
+}
+
+func SetSystemLanguage(language KeyboardLanguage) bool {
+	if !isValidKeyboardLanguage(language) {
+		return false
+	}
+
+	return SetSystemLanguageRaw(int(language)) == 0
+}
+
 func isValidKeyboardLayoutKind(kind KeyboardLayoutKind) bool {
 	switch kind {
 	case KeyboardLayoutNormal, KeyboardLayoutShift, KeyboardLayoutAlt:

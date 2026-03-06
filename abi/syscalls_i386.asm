@@ -7,8 +7,10 @@ global go_0kos.Sleep
 global go_0kos.GetKey
 global go_0kos.SetKeyboardLayoutRaw
 global go_0kos.SetKeyboardLanguageRaw
+global go_0kos.SetSystemLanguageRaw
 global go_0kos.GetKeyboardLayoutRaw
 global go_0kos.GetKeyboardLanguageRaw
+global go_0kos.GetSystemLanguageRaw
 global go_0kos.Event
 global go_0kos.CheckEvent
 global go_0kos.GetThreadInfo
@@ -98,6 +100,18 @@ go_0kos.SetKeyboardLanguageRaw:
     pop ebp
     ret
 
+go_0kos.SetSystemLanguageRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 21
+    mov ebx, 5
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
 go_0kos.GetKeyboardLayoutRaw:
     push ebp
     mov ebp, esp
@@ -116,6 +130,14 @@ go_0kos.GetKeyboardLanguageRaw:
     mov eax, 26
     mov ebx, 2
     mov ecx, 9
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetSystemLanguageRaw:
+    push ebx
+    mov eax, 26
+    mov ebx, 5
     int 0x40
     pop ebx
     ret
