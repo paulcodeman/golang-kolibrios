@@ -46,9 +46,15 @@ global go_0kos.GetMouseScreenPosition
 global go_0kos.GetMouseWindowPosition
 global go_0kos.GetMouseButtonState
 global go_0kos.GetMouseButtonEventState
+global go_0kos.LoadCursorRaw
+global go_0kos.SetCursorRaw
+global go_0kos.DeleteCursorRaw
 global go_0kos.GetMouseScrollData
+global go_0kos.LoadCursorWithEncoding
 global go_0kos.DrawLine
 global go_0kos.DrawBar
+global go_0kos.SetSkin
+global go_0kos.SetSkinWithEncoding
 global go_0kos.DebugOutHex
 global go_0kos.DebugOutChar
 global go_0kos.DebugOutStr
@@ -336,6 +342,39 @@ go_0kos.GetSkinMarginsRaw:
     pop ebp
     ret
 
+go_0kos.SetSkin:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+12]
+    push dword [ebp+8]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov eax, 48
+    mov ebx, 8
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetSkinWithEncoding:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+16]
+    push dword [ebp+12]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov edx, [ebp+8]
+    mov eax, 48
+    mov ebx, 13
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
 go_0kos.WaitEventTimeout:
     push ebp
     mov ebp, esp
@@ -559,12 +598,66 @@ go_0kos.GetMouseButtonEventState:
     pop ebx
     ret
 
+go_0kos.LoadCursorRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 37
+    mov ebx, 4
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetCursorRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 37
+    mov ebx, 5
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.DeleteCursorRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 37
+    mov ebx, 6
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
 go_0kos.GetMouseScrollData:
     push ebx
     mov eax, 37
     mov ebx, 7
     int 0x40
     pop ebx
+    ret
+
+go_0kos.LoadCursorWithEncoding:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+16]
+    push dword [ebp+12]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov edx, [ebp+8]
+    mov eax, 37
+    mov ebx, 8
+    int 0x40
+    pop ebx
+    pop ebp
     ret
 
 go_0kos.DebugOutHex:

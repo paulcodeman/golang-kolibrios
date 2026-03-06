@@ -18,7 +18,7 @@ The project is still in prototype stage. Right now the practical path is
 
 - `cmd/example` builds successfully into `cmd/example/example.kex`
 - the build flow targets 32-bit KolibriOS binaries
-- syscall bindings are being aligned with the official KolibriOS API spec
+- the Phase 1 syscall inventory gaps are closed for the documented bootstrap subset
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
@@ -163,7 +163,7 @@ Main sources:
 - `cmd/assertions` - empty/non-empty interface assertions and type switch probe
 - `cmd/runtimecheck` - integrated in-app runtime smoke panel for the current subset
 - `cmd/timeprobe` - system time, uptime counter, wait timeout, and sleep probe
-- `cmd/sysinfo` - kernel/style/title/skin/keyboard-layout/system-language/active-window probes
+- `cmd/sysinfo` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe
 

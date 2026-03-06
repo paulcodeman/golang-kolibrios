@@ -69,6 +69,12 @@ func GetSkinHeight() int
 // Function 48, subfunction 7 - get skin margins for header text layout.
 func GetSkinMarginsRaw(vertical *uint32) uint32
 
+// Function 48, subfunction 8 - set the current skin using the default encoding path contract.
+func SetSkin(path string) uint32
+
+// Function 48, subfunction 13 - set the current skin using an explicit path encoding.
+func SetSkinWithEncoding(encoding StringEncoding, path string) uint32
+
 // Function 48, subfunction 5 - get packed screen working-area coordinates.
 func GetScreenWorkingArea(bottom *uint32) uint32
 
@@ -126,8 +132,20 @@ func GetMouseButtonState() uint32
 // Function 37, subfunction 3 - get states and events of the mouse buttons.
 func GetMouseButtonEventState() uint32
 
+// Function 37, subfunction 4 - load a cursor from memory/file descriptor arguments.
+func LoadCursorRaw(data uint32, descriptor uint32) uint32
+
+// Function 37, subfunction 5 - set the current thread window cursor.
+func SetCursorRaw(handle uint32) uint32
+
+// Function 37, subfunction 6 - delete a cursor previously loaded by the thread.
+func DeleteCursorRaw(handle uint32)
+
 // Function 37, subfunction 7 - get scroll data.
 func GetMouseScrollData() uint32
+
+// Function 37, subfunction 8 - load a cursor from a path with explicit string encoding.
+func LoadCursorWithEncoding(encoding StringEncoding, path string) uint32
 
 // Function 4 - draw text string.
 func WriteText(x int, y int, color uint32, text string)

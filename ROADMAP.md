@@ -85,6 +85,11 @@ Exit criteria:
 - No wrapper signature is based on guesswork.
 - New wrappers follow a consistent pattern.
 
+Current bootstrap status:
+
+- The documented raw syscall inventory in `docs/SYSCALLS.md` satisfies the
+  original Phase 1 priority audit gaps for the current bootstrap subset.
+
 ## Phase 2 - Build a Minimal Runtime for Real Programs
 
 Goal: replace one-off runtime shims with a documented runtime contract.

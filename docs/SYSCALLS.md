@@ -39,12 +39,18 @@ packed arguments, and return conventions.
 | `37.1` | `kos.GetMouseWindowPosition` | `kos.MouseWindowPosition` | Mouse coordinates relative to the window |
 | `37.2` | `kos.GetMouseButtonState` | `kos.MouseHeldButtons` | Held mouse button states |
 | `37.3` | `kos.GetMouseButtonEventState` | `kos.MouseButtons` | Mouse button states plus edge events |
+| `37.4` | `kos.LoadCursorRaw` | `kos.LoadCursorCURData`, `kos.LoadCursorARGB` | Generic cursor loader for in-memory `.cur` data or indirect ARGB cursor images |
+| `37.5` | `kos.SetCursorRaw` | `kos.SetCursor`, `kos.RestoreDefaultCursor` | Set or restore the current thread window cursor |
+| `37.6` | `kos.DeleteCursorRaw` | `kos.DeleteCursor` | Delete a cursor previously loaded by the thread |
 | `37.7` | `kos.GetMouseScrollData` | `kos.MouseScrollDelta` | Signed horizontal/vertical scroll deltas |
+| `37.8` | `kos.LoadCursorWithEncoding` | `kos.LoadCursorFile`, `kos.LoadCursorFileWithEncoding` | Cursor file load with explicit path encoding |
 | `38` | `kos.DrawLine` | `kos.StrokeLine` | Line draw |
 | `40` | `kos.SetEventMask` | `kos.SwapEventMask` | Event filtering |
 | `48.4` | `kos.GetSkinHeight` | `kos.SkinHeight` | Height of the skinned-window header |
 | `48.5` | `kos.GetScreenWorkingArea` | `kos.ScreenWorkingArea` | Returns inclusive working-area bounds |
 | `48.7` | `kos.GetSkinMarginsRaw` | `kos.WindowSkinMargins` | Returns header text margins for skinned windows |
+| `48.8` | `kos.SetSkin` | `kos.SetSystemSkinLegacy` | Apply a system skin path using the legacy default-encoding contract |
+| `48.13` | `kos.SetSkinWithEncoding` | `kos.SetSystemSkin`, `kos.SetSystemSkinWithEncoding` | Apply a system skin path with explicit string encoding |
 | `60.1` | `kos.SetIPCArea` | `kos.RegisterIPCBuffer` | Registers the process receive buffer for event `7` delivery |
 | `60.2` | `kos.SendIPCMessage` | `kos.SendIPCRaw`, `kos.SendIPC`, `kos.InspectIPCBuffer` | Non-allocating IPC helpers keep the sample within the current bootstrap runtime surface |
 | `63` | `kos.DebugOutHex`, `kos.DebugOutChar`, `kos.DebugOutStr` | `kos.DebugHex`, `kos.DebugChar`, `kos.DebugString` | Debug board helpers |
@@ -58,13 +64,11 @@ packed arguments, and return conventions.
 | `80` | `kos.FileSystemEncoded` | `kos.ReadFile`, `kos.ReadDirectory`, `kos.CreateOrRewriteFile`, `kos.WriteFile`, `kos.SetFileSize`, `kos.GetPathInfo`, `kos.SetPathInfo`, `kos.StartApplication`, `kos.DeletePath`, `kos.CreateDirectory`, `kos.RenamePath` | UTF-8-friendly file system layer |
 | `-1` | `kos.Exit` | - | Terminate thread/process |
 
-## Priority Gaps For Phase 1
+## Phase 1 Status
 
-These are the nearest missing wrappers with high utility and relatively low ABI
-risk:
-
-- `48.8/48.13` switch skin by path with both string contracts
-- `37.4/37.5/37.6/37.8` cursor load/set/delete coverage
+The bootstrap repo currently has no remaining priority gaps from the original
+Phase 1 syscall inventory. Further syscall additions are now SDK expansion work
+rather than initial audit cleanup.
 
 ## Notes
 

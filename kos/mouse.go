@@ -1,5 +1,9 @@
 package kos
 
+type CursorHandle uint32
+
+const cursorARGBImageBytes = 32 * 32 * 4
+
 type MouseButtonInfo struct {
 	Raw              uint32
 	LeftHeld         bool
@@ -36,6 +40,51 @@ func MouseButtons() MouseButtonInfo {
 
 func MouseScrollDelta() Point {
 	return unpackSignedPackedPoint(GetMouseScrollData())
+}
+
+func LoadCursorFile(path string) CursorHandle {
+	return LoadCursorFileWithEncoding(path, EncodingUTF8)
+}
+
+func LoadCursorFileWithEncoding(path string, encoding StringEncoding) CursorHandle {
+	return CursorHandle(LoadCursorWithEncoding(encoding, path))
+}
+
+func LoadCursorCURData(data []byte) CursorHandle {
+	if len(data) == 0 {
+		return 0
+	}
+
+	return CursorHandle(LoadCursorRaw(byteSliceAddress(data), 1))
+}
+
+func LoadCursorARGB(image []byte, hotX int, hotY int) CursorHandle {
+	if len(image) < cursorARGBImageBytes {
+		return 0
+	}
+
+	if hotX < 0 || hotX > 31 || hotY < 0 || hotY > 31 {
+		return 0
+	}
+
+	descriptor := (uint32(hotX) << 24) | (uint32(hotY) << 16) | 2
+	return CursorHandle(LoadCursorRaw(byteSliceAddress(image), descriptor))
+}
+
+func SetCursor(handle CursorHandle) CursorHandle {
+	return CursorHandle(SetCursorRaw(uint32(handle)))
+}
+
+func RestoreDefaultCursor() CursorHandle {
+	return SetCursor(0)
+}
+
+func DeleteCursor(handle CursorHandle) {
+	if handle == 0 {
+		return
+	}
+
+	DeleteCursorRaw(uint32(handle))
 }
 
 func decodeMouseButtonInfo(raw uint32) MouseButtonInfo {

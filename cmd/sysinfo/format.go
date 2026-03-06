@@ -98,6 +98,33 @@ func formatLayoutChecksums(normal kos.KeyboardLayoutTable, shift kos.KeyboardLay
 		" A=" + formatHex32(layoutChecksum(alt))
 }
 
+func formatFileSystemStatus(status kos.FileSystemStatus) string {
+	switch status {
+	case kos.FileSystemOK:
+		return "ok"
+	case kos.FileSystemUnsupported:
+		return "unsupported (2)"
+	case kos.FileSystemNotFound:
+		return "not found (5)"
+	case kos.FileSystemEOF:
+		return "eof (6)"
+	case kos.FileSystemBadPointer:
+		return "bad pointer (7)"
+	case kos.FileSystemDiskFull:
+		return "disk full (8)"
+	case kos.FileSystemInternalError:
+		return "internal (9)"
+	case kos.FileSystemAccessDenied:
+		return "denied (10)"
+	case kos.FileSystemDeviceError:
+		return "device (11)"
+	case kos.FileSystemNeedsMoreMemory:
+		return "memory (12)"
+	}
+
+	return "status " + formatUint32(uint32(status))
+}
+
 func layoutChecksum(layout kos.KeyboardLayoutTable) uint32 {
 	checksum := uint32(2166136261)
 

@@ -138,12 +138,14 @@ successful build.
   - uptime counters from `26.9` and `26.10`
   - timed wait via function `23`
   - delay probe via function `5`
-- `cmd/sysinfo` - implemented, including skin-margin, keyboard-layout, system-language, and active-window/focus probes
+- `cmd/sysinfo` - implemented, including skin-margin, cursor, keyboard-layout, system-language, skin-switch, and active-window/focus probes
   - kernel version query
   - screen working-area query
   - skin height query
   - keyboard layout table and language probe via `21.2/26.2`
   - system language probe via `21.5/26.5`
+  - cursor load/set/delete probe via `37.4/37.5/37.6`
+  - default skin apply probes via `48.8/48.13`
   - active-window slot and focus probe via `18.3/18.7`
   - caption update via function `71.1`
 - `cmd/message` - implemented

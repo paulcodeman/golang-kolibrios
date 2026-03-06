@@ -1,5 +1,7 @@
 package kos
 
+const DefaultSkinPath = "/DEFAULT.SKN"
+
 type SkinMargins struct {
 	Left   int
 	Right  int
@@ -38,4 +40,16 @@ func WindowSkinMargins() SkinMargins {
 		Top:    int(vertical >> 16),
 		Bottom: int(vertical & 0xFFFF),
 	}
+}
+
+func SetSystemSkin(path string) FileSystemStatus {
+	return SetSystemSkinWithEncoding(path, EncodingUTF8)
+}
+
+func SetSystemSkinWithEncoding(path string, encoding StringEncoding) FileSystemStatus {
+	return FileSystemStatus(SetSkinWithEncoding(encoding, path))
+}
+
+func SetSystemSkinLegacy(path string) FileSystemStatus {
+	return FileSystemStatus(SetSkin(path))
 }

@@ -12,13 +12,17 @@ const (
 	sysinfoButtonFocusSelf kos.ButtonID = 4
 	sysinfoButtonReapplyLayout kos.ButtonID = 5
 	sysinfoButtonReapplySystemLanguage kos.ButtonID = 6
+	sysinfoButtonApplySkinLegacy kos.ButtonID = 7
+	sysinfoButtonApplySkinUTF8 kos.ButtonID = 8
+	sysinfoButtonCursorProbe kos.ButtonID = 9
 
 	sysinfoWindowX = 350
 	sysinfoWindowY = 180
 	sysinfoWindowWidth = 540
-	sysinfoWindowHeight = 392
+	sysinfoWindowHeight = 452
 	sysinfoWindowTitle = "KolibriOS Sysinfo"
 	sysinfoUTF8Title = "KolibriOS Проба UTF-8"
+	sysinfoCursorImageBytes = 32 * 32 * 4
 )
 
 type App struct {
@@ -41,28 +45,43 @@ type App struct {
 	focusStatus string
 	layoutStatus string
 	systemLanguageStatus string
+	skinLegacyStatus string
+	skinUTF8Status string
+	cursorStatus string
 	toggleTitle ui.Button
 	refresh ui.Button
 	focusSelf ui.Button
 	reapplyLayout ui.Button
 	reapplySystemLanguage ui.Button
+	applySkinLegacy ui.Button
+	applySkinUTF8 ui.Button
+	cursorProbe ui.Button
 }
 
 func NewApp() App {
-	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 296)
+	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 312)
 	toggleTitle.Width = 128
 
-	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 296)
+	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 312)
 	refresh.Width = 112
 
-	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 296)
+	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 312)
 	focusSelf.Width = 120
 
-	reapplyLayout := ui.NewButton(sysinfoButtonReapplyLayout, "Reapply layout", 28, 328)
+	reapplyLayout := ui.NewButton(sysinfoButtonReapplyLayout, "Reapply layout", 28, 344)
 	reapplyLayout.Width = 144
 
-	reapplySystemLanguage := ui.NewButton(sysinfoButtonReapplySystemLanguage, "Reapply sys lang", 196, 328)
+	reapplySystemLanguage := ui.NewButton(sysinfoButtonReapplySystemLanguage, "Reapply sys lang", 196, 344)
 	reapplySystemLanguage.Width = 156
+
+	applySkinLegacy := ui.NewButton(sysinfoButtonApplySkinLegacy, "Skin 48.8", 28, 376)
+	applySkinLegacy.Width = 128
+
+	applySkinUTF8 := ui.NewButton(sysinfoButtonApplySkinUTF8, "Skin 48.13", 172, 376)
+	applySkinUTF8.Width = 136
+
+	cursorProbe := ui.NewButton(sysinfoButtonCursorProbe, "Cursor probe", 324, 376)
+	cursorProbe.Width = 132
 
 	app := App{
 		toggleTitle: toggleTitle,
@@ -70,9 +89,15 @@ func NewApp() App {
 		focusSelf: focusSelf,
 		reapplyLayout: reapplyLayout,
 		reapplySystemLanguage: reapplySystemLanguage,
+		applySkinLegacy: applySkinLegacy,
+		applySkinUTF8: applySkinUTF8,
+		cursorProbe: cursorProbe,
 		focusStatus: "ready",
 		layoutStatus: "ready",
 		systemLanguageStatus: "ready",
+		skinLegacyStatus: "idle",
+		skinUTF8Status: "idle",
+		cursorStatus: "idle",
 	}
 	app.refreshInfo()
 
@@ -119,6 +144,15 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 	case sysinfoButtonReapplySystemLanguage:
 		app.reapplySystemLanguageValue()
 		app.Redraw()
+	case sysinfoButtonApplySkinLegacy:
+		app.applyDefaultSkinLegacy()
+		app.Redraw()
+	case sysinfoButtonApplySkinUTF8:
+		app.applyDefaultSkinUTF8()
+		app.Redraw()
+	case sysinfoButtonCursorProbe:
+		app.runCursorProbe()
+		app.Redraw()
 	case sysinfoButtonExit:
 		kos.Exit()
 		return true
@@ -142,20 +176,27 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 208, ui.Yellow, "Keyboard lang: "+formatKeyboardLanguage(app.keyboardLanguage))
 	kos.DrawText(28, 226, ui.White, "System lang: "+formatKeyboardLanguage(app.systemLanguage))
 	kos.DrawText(28, 244, ui.Aqua, "Layout sums: "+app.layoutChecksumsString())
+	kos.DrawText(28, 262, ui.Silver, "Default skin path: "+kos.DefaultSkinPath)
 	kos.DrawText(320, 46, ui.Yellow, "Title mode: "+app.titleMode())
 	kos.DrawText(320, 64, ui.White, "Current slot: "+app.currentSlotString())
 	kos.DrawText(320, 82, ui.Silver, "Active slot: "+formatInt(app.activeSlot))
 	kos.DrawText(320, 100, ui.Aqua, "Focus state: "+app.focusStatus)
 	kos.DrawText(320, 118, ui.Lime, "Layout state: "+app.layoutStatus)
 	kos.DrawText(320, 136, ui.White, "System lang state: "+app.systemLanguageStatus)
-	kos.DrawText(320, 154, ui.Silver, "21.2/26.2 keyboard layout + layout language")
-	kos.DrawText(320, 172, ui.Silver, "21.5/26.5 system language")
-	kos.DrawText(320, 190, ui.Silver, "18.3 focuses a slot / 18.7 reports the active slot")
+	kos.DrawText(320, 154, ui.Yellow, "Skin 48.8 state: "+app.skinLegacyStatus)
+	kos.DrawText(320, 172, ui.White, "Skin 48.13 state: "+app.skinUTF8Status)
+	kos.DrawText(320, 190, ui.Aqua, "Cursor state: "+app.cursorStatus)
+	kos.DrawText(320, 208, ui.Silver, "37.4/37.5/37.6 cursor round-trip")
+	kos.DrawText(320, 226, ui.Silver, "48.8/48.13 apply /DEFAULT.SKN")
+	kos.DrawText(320, 244, ui.Silver, "18.3 focuses a slot / 18.7 reports the active slot")
 	app.toggleTitle.Draw()
 	app.refresh.Draw()
 	app.focusSelf.Draw()
 	app.reapplyLayout.Draw()
 	app.reapplySystemLanguage.Draw()
+	app.applySkinLegacy.Draw()
+	app.applySkinUTF8.Draw()
+	app.cursorProbe.Draw()
 	kos.EndRedraw()
 }
 
@@ -265,4 +306,68 @@ func (app *App) reapplySystemLanguageValue() {
 
 	app.refreshInfo()
 	app.systemLanguageStatus = "system language round-trip ok"
+}
+
+func (app *App) applyDefaultSkinLegacy() {
+	status := kos.SetSystemSkinLegacy(kos.DefaultSkinPath)
+	if status != kos.FileSystemOK {
+		app.skinLegacyStatus = formatFileSystemStatus(status)
+		return
+	}
+
+	app.refreshInfo()
+	app.skinLegacyStatus = "ok"
+}
+
+func (app *App) applyDefaultSkinUTF8() {
+	status := kos.SetSystemSkin(kos.DefaultSkinPath)
+	if status != kos.FileSystemOK {
+		app.skinUTF8Status = formatFileSystemStatus(status)
+		return
+	}
+
+	app.refreshInfo()
+	app.skinUTF8Status = "ok"
+}
+
+func (app *App) runCursorProbe() {
+	image := make([]byte, sysinfoCursorImageBytes)
+	handle := kos.LoadCursorARGB(buildCursorProbeImage(image), 15, 15)
+	if handle == 0 {
+		app.cursorStatus = "load failed"
+		return
+	}
+
+	previous := kos.SetCursor(handle)
+	kos.RestoreDefaultCursor()
+	kos.DeleteCursor(handle)
+	app.cursorStatus = "ok prev=" + formatHex32(uint32(previous))
+}
+
+func buildCursorProbeImage(image []byte) []byte {
+	center := 15
+
+	for axis := 0; axis < 32; axis++ {
+		setCursorProbePixel(image, center, axis, 0xFFFF4040)
+		setCursorProbePixel(image, axis, center, 0xFFFF4040)
+	}
+
+	for axis := 12; axis <= 18; axis++ {
+		setCursorProbePixel(image, center-1, axis, 0xFFFFFFFF)
+		setCursorProbePixel(image, center+1, axis, 0xFFFFFFFF)
+		setCursorProbePixel(image, axis, center-1, 0xFFFFFFFF)
+		setCursorProbePixel(image, axis, center+1, 0xFFFFFFFF)
+	}
+
+	setCursorProbePixel(image, center, center, 0xFF101010)
+	return image
+}
+
+func setCursorProbePixel(image []byte, x int, y int, argb uint32) {
+	index := ((y * 32) + x) * 4
+
+	image[index] = byte(argb)
+	image[index+1] = byte(argb >> 8)
+	image[index+2] = byte(argb >> 16)
+	image[index+3] = byte(argb >> 24)
 }
