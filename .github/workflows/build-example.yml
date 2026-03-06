@@ -44,6 +44,7 @@ jobs:
           test -f cmd/assertions/assertions.kex
           test -f cmd/runtimecheck/runtimecheck.kex
           test -f cmd/timeprobe/timeprobe.kex
+          test -f cmd/smokeapp/smokeapp.kex
           test -f cmd/sysinfo/sysinfo.kex
           test -f cmd/message/message.kex
           test -f cmd/ipc/ipc.kex
@@ -62,6 +63,7 @@ jobs:
             cmd/assertions/assertions.kex
             cmd/runtimecheck/runtimecheck.kex
             cmd/timeprobe/timeprobe.kex
+            cmd/smokeapp/smokeapp.kex
             cmd/sysinfo/sysinfo.kex
             cmd/message/message.kex
             cmd/ipc/ipc.kex

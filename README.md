@@ -18,7 +18,8 @@ The project is still in prototype stage. Right now the practical path is
 
 - `cmd/example` builds successfully into `cmd/example/example.kex`
 - the build flow targets 32-bit KolibriOS binaries
-- the Phase 1 syscall inventory gaps are closed for the documented bootstrap subset
+- the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
+- the shared linker script emits separate RX/RW load segments, so sample builds no longer trigger the old RWX warning
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
@@ -117,6 +118,7 @@ Output:
 - `cmd/assertions/assertions.kex`
 - `cmd/runtimecheck/runtimecheck.kex`
 - `cmd/timeprobe/timeprobe.kex`
+- `cmd/smokeapp/smokeapp.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -130,9 +132,10 @@ while the probe inventory still validates the `gccgo -m32` symbol path.
 New applications can be scaffolded from `templates/basic-app` via
 `scripts/new-app.sh`.
 The first emulator-backed smoke path is available through
-`scripts/check-emulator-smoke.sh`; it boots the official KolibriOS image in
-QEMU and expects the autorun smoke app to power the guest off after its
-self-checks pass.
+`scripts/check-emulator-smoke.sh`; it boots a pruned temporary copy of the
+official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with
+`cmd/smokeapp`, and expects the smoke app to power the guest off after runtime
+and system self-checks pass.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
@@ -163,6 +166,7 @@ Main sources:
 - `cmd/assertions` - empty/non-empty interface assertions and type switch probe
 - `cmd/runtimecheck` - integrated in-app runtime smoke panel for the current subset
 - `cmd/timeprobe` - system time, uptime counter, wait timeout, and sleep probe
+- `cmd/smokeapp` - headless QEMU autorun smoke for the runtime and system bootstrap subset
 - `cmd/sysinfo` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe

@@ -26,6 +26,8 @@ This installs:
 - `make`
 - `nasm`
 - `binutils`
+- `mtools`
+- `qemu-system-x86`
 
 ## Build Commands
 
@@ -87,6 +89,7 @@ Successful build output:
 - `cmd/assertions/assertions.kex`
 - `cmd/runtimecheck/runtimecheck.kex`
 - `cmd/timeprobe/timeprobe.kex`
+- `cmd/smokeapp/smokeapp.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -138,6 +141,10 @@ successful build.
   - uptime counters from `26.9` and `26.10`
   - timed wait via function `23`
   - delay probe via function `5`
+- `cmd/smokeapp` - implemented
+  - headless autorun QEMU smoke for the documented bootstrap subset
+  - runtime checks for strings, slices, interfaces, assertions, and timed wait
+  - system geometry checks against a temporary pruned copy of the official `kolibri.img`
 - `cmd/sysinfo` - implemented, including skin-margin, cursor, keyboard-layout, system-language, skin-switch, and active-window/focus probes
   - kernel version query
   - screen working-area query
@@ -164,6 +171,8 @@ successful build.
 - New applications can be scaffolded from `templates/basic-app` via
   `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.
+- The linker template emits separate RX and RW load segments, so bootstrap
+  builds no longer carry the old RWX `LOAD` warning.
 - The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
 - Focused compiler/runtime symbol checks live in `tests/runtime` and run via
   `scripts/check-runtime-probes.sh`.
@@ -175,6 +184,7 @@ successful build.
 - Template verification lives in `scripts/check-app-template.sh` and confirms
   that `scripts/new-app.sh` generates a buildable sample under `cmd/`.
 - Emulator smoke verification lives in `scripts/check-emulator-smoke.sh`; it
-  downloads the official `kolibri.img`, injects `cmd/smokeapp`, updates
-  `SETTINGS/AUTORUN.DAT`, boots QEMU headless, and waits for the smoke app to
-  power the guest off after its runtime self-checks pass.
+  downloads the official `kolibri.img`, prunes non-system payload from a
+  temporary copy to free space, replaces the existing `@HA` autorun slot with
+  `cmd/smokeapp`, boots QEMU headless, and waits for the smoke app to power the
+  guest off after runtime plus system self-checks pass.

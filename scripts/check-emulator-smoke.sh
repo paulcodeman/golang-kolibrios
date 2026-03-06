@@ -6,7 +6,6 @@ repo_root=$(cd "$(dirname "$0")/.." && pwd)
 base_image=$(bash "$repo_root/scripts/download-kolibri-image.sh")
 work_dir=$(mktemp -d -p /tmp kolibri-qemu-smoke-XXXXXX)
 image_path="$work_dir/kolibri-smoke.img"
-autorun_path="$work_dir/AUTORUN.DAT"
 pidfile="$work_dir/qemu.pid"
 app_binary="$repo_root/cmd/smokeapp/smokeapp.kex"
 qemu_binary=${QEMU_SYSTEM_I386:-qemu-system-i386}
@@ -36,15 +35,17 @@ require_tool() {
 
 require_tool "$qemu_binary"
 require_tool mcopy
+require_tool mdeltree
+require_tool mdel
 require_tool curl
 
 make -C "$repo_root/cmd/smokeapp" clean all
 
 cp "$base_image" "$image_path"
-mcopy -o -i "$image_path" "$app_binary" ::/SMOKEAPP
-mcopy -i "$image_path" ::/SETTINGS/AUTORUN.DAT "$autorun_path"
-printf '/SYS/SMOKEAPP "" -1\t# Go smoke app\n' >>"$autorun_path"
-mcopy -o -i "$image_path" "$autorun_path" ::/SETTINGS/AUTORUN.DAT
+bash "$repo_root/scripts/prune-kolibri-image.sh" "$image_path"
+# Reuse an existing autorun slot from the stock image instead of depending on
+# path-resolution quirks in AUTORUN.DAT for new entries.
+mcopy -o -i "$image_path" "$app_binary" ::/@HA
 
 "$qemu_binary" \
   -daemonize \
@@ -72,4 +73,8 @@ while (( SECONDS < deadline )); do
 done
 
 echo "guest did not power off within ${timeout_seconds}s" >&2
+if kill -0 "$pid" 2>/dev/null; then
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+fi
 exit 1

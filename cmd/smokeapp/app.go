@@ -11,8 +11,8 @@ const (
 	smokeWindowTitle  = "KolibriOS Emulator Smoke"
 	smokeWindowX      = 250
 	smokeWindowY      = 150
-	smokeWindowWidth  = 720
-	smokeWindowHeight = 250
+	smokeWindowWidth  = 760
+	smokeWindowHeight = 280
 )
 
 type sourceText interface {
@@ -38,6 +38,7 @@ type App struct {
 	slicesOK     bool
 	ifaceOK      bool
 	assertionsOK bool
+	systemOK     bool
 	shutdownOK   bool
 	summary      string
 	clockLine    string
@@ -46,6 +47,7 @@ type App struct {
 	slicesLine   string
 	ifaceLine    string
 	assertLine   string
+	systemLine   string
 	powerLine    string
 }
 
@@ -56,9 +58,13 @@ func NewApp() App {
 }
 
 func (app *App) Run() {
-	app.Redraw()
 	app.waitForTimeout()
 	app.tryPowerOff()
+	if app.shutdownOK {
+		return
+	}
+
+	app.Redraw()
 	app.eventLoop()
 }
 
@@ -77,7 +83,7 @@ func (app *App) eventLoop() {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(smokeButtonExit, "Exit", 28, 196)
+	exit := ui.NewButton(smokeButtonExit, "Exit", 632, 236)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -90,17 +96,29 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 154, app.statusColor(app.slicesOK), app.slicesLine)
 	kos.DrawText(28, 174, app.statusColor(app.ifaceOK), app.ifaceLine)
 	kos.DrawText(28, 194, app.statusColor(app.assertionsOK), app.assertLine)
-	kos.DrawText(280, 214, app.statusColor(app.shutdownOK), app.powerLine)
+	kos.DrawText(28, 214, app.statusColor(app.systemOK), app.systemLine)
+	kos.DrawText(28, 236, app.statusColor(app.shutdownOK), app.powerLine)
 	exit.Draw()
 	kos.EndRedraw()
 }
 
 func (app *App) runChecks() {
+	app.summary = "emulator smoke checks running"
+	app.clockLine = "clock : pending"
+	app.timeoutLine = "event : pending"
+	app.stringsLine = "text  : pending"
+	app.slicesLine = "slice : pending"
+	app.ifaceLine = "iface : pending"
+	app.assertLine = "assert: pending"
+	app.systemLine = "sys   : pending"
+	app.powerLine = "power : pending"
+
 	app.timeOK, app.clockLine = checkClock()
 	app.stringsOK, app.stringsLine = checkStrings()
 	app.slicesOK, app.slicesLine = checkSlices()
 	app.ifaceOK, app.ifaceLine = checkInterfaces()
 	app.assertionsOK, app.assertLine = checkAssertions()
+	app.systemOK, app.systemLine = checkSystemSurface()
 	app.powerLine = "power : waiting for timeout gate"
 
 	if app.allOK() {
@@ -112,55 +130,42 @@ func (app *App) runChecks() {
 }
 
 func (app *App) waitForTimeout() {
-	app.timeoutLine = "event : FAIL / timed wait did not reach idle"
-
-	for attempts := 0; attempts < 8; attempts++ {
-		switch kos.WaitEventFor(5) {
-		case kos.EventRedraw:
-			app.Redraw()
-		case kos.EventNone:
-			app.timeoutOK = true
-			app.timeoutLine = "event : PASS / WaitEventFor returned idle"
-			if app.allOK() {
-				app.summary = "emulator smoke checks passed"
-			} else {
-				app.summary = "emulator smoke checks failed"
-			}
-			app.Redraw()
-			return
-		}
+	start := kos.UptimeCentiseconds()
+	event := kos.WaitEventFor(5)
+	end := kos.UptimeCentiseconds()
+	if end < start {
+		app.timeoutLine = "event : FAIL / timed wait regressed uptime"
+		return
 	}
 
-	app.Redraw()
+	app.timeoutOK = true
+	if event == kos.EventNone {
+		app.timeoutLine = "event : PASS / WaitEventFor returned idle"
+	} else {
+		app.timeoutLine = "event : PASS / WaitEventFor observed event " + formatInt(int(event))
+	}
+
+	if app.allOK() {
+		app.summary = "emulator smoke checks passed"
+	} else {
+		app.summary = "emulator smoke checks failed"
+	}
 }
 
 func (app *App) tryPowerOff() {
 	if !app.allOK() {
-		app.powerLine = "power : skipped / checks failed"
-		app.Redraw()
 		return
 	}
 
-	if !app.timeoutOK {
-		app.powerLine = "power : skipped / timeout gate failed"
-		app.Redraw()
-		return
-	}
-
-	app.powerLine = "power : issuing system shutdown"
-	app.Redraw()
-	kos.DebugString("smoke: pass, requesting poweroff\r\n")
+	kos.SleepCentiseconds(2)
 	app.shutdownOK = kos.PowerOff()
 	if app.shutdownOK {
-		for {
-			kos.SleepCentiseconds(20)
-		}
+		return
 	}
 
 	app.powerLine = "power : FAIL / system shutdown rejected"
 	app.summary = "emulator smoke checks passed but poweroff failed"
 	kos.DebugString("smoke: poweroff rejected\r\n")
-	app.Redraw()
 }
 
 func (app *App) allOK() bool {
@@ -169,7 +174,8 @@ func (app *App) allOK() bool {
 		app.stringsOK &&
 		app.slicesOK &&
 		app.ifaceOK &&
-		app.assertionsOK
+		app.assertionsOK &&
+		app.systemOK
 }
 
 func (app *App) statusColor(ok bool) kos.Color {
@@ -244,6 +250,35 @@ func checkAssertions() (bool, string) {
 	}
 
 	return false, "assert: FAIL / assertion runtime mismatch"
+}
+
+func checkSystemSurface() (bool, string) {
+	version := kos.KernelVersion()
+	screenWidth, screenHeight := kos.ScreenSize()
+	workArea := kos.ScreenWorkingArea()
+	skinHeight := kos.SkinHeight()
+	margins := kos.WindowSkinMargins()
+
+	if screenWidth <= 0 || screenHeight <= 0 {
+		return false, "sys   : FAIL / invalid screen size"
+	}
+
+	if workArea.Width() <= 0 || workArea.Height() <= 0 {
+		return false, "sys   : FAIL / invalid work area"
+	}
+
+	if workArea.Left < 0 || workArea.Top < 0 || workArea.Right >= screenWidth || workArea.Bottom >= screenHeight {
+		return false, "sys   : FAIL / work area outside screen"
+	}
+
+	if skinHeight < 0 || margins.Left < 0 || margins.Top < 0 || margins.Right < 0 || margins.Bottom < 0 {
+		return false, "sys   : FAIL / invalid skin geometry"
+	}
+
+	return true, "sys   : PASS / v " + formatKernelVersion(version) +
+		" / " + formatInt(screenWidth) + "x" + formatInt(screenHeight) +
+		" / work " + formatInt(workArea.Width()) + "x" + formatInt(workArea.Height()) +
+		" / skin " + formatInt(skinHeight)
 }
 
 func describeAssertionValue(value interface{}) string {

@@ -1,3 +1,10 @@
+PHDRS
+{
+    text PT_LOAD FLAGS(5);
+    data PT_LOAD FLAGS(6);
+    stack PT_GNU_STACK FLAGS(6);
+}
+
 SECTIONS
 {
     . = 0x00000;
@@ -15,36 +22,39 @@ SECTIONS
         LONG(0);
 
         *(.text)
-    }
+        *(.text.*)
+    } :text
 
     .rodata :
     {
         *(.rodata)
         *(.rodata.*)
-    }
+    } :text
 
     .data :
     {
         *(.data)
-    }
+        *(.data.*)
+    } :data
 
     .bss :
     {
         *(COMMON)
         *(.bss)
-    }
+        *(.bss.*)
+    } :data
 
     .eh_frame :
     {
         *(.eh_frame)
-    }
+    } :text
 
     .group :
     {
         *(.group)
-    }
+    } :text
 
     __end = .;
 
-    .note.GNU-stack : { }
+    .note.GNU-stack : { } :text :stack
 }

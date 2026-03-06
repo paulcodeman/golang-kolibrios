@@ -15,7 +15,8 @@ native `go build` target.
 - Higher-level wrappers live in `kos/*.go` and `ui/*.go`.
 - The syscall specification is already present in `sysfuncs.txt`.
 - The project is still a prototype: small runtime surface, hand-curated
-  toolchain, and no automated emulator validation yet.
+  toolchain, but the documented bootstrap subset now has host-side runtime
+  checks and headless QEMU smoke validation.
 
 ## Strategic Direction
 
@@ -171,6 +172,12 @@ Exit criteria:
 - Every push can build the SDK and boot at least one smoke-test app.
 - Syscall and runtime regressions are detected automatically.
 - Manual desktop testing is no longer required for every change.
+
+Current bootstrap status:
+
+- For the documented `gccgo` bootstrap subset, milestones `M0-M4` are in place.
+- Remaining roadmap work now starts at standard-library growth and the native
+  `GOOS=kolibrios GOARCH=386` path.
 
 ## Phase 5 - Grow Standard Library Compatibility
 
