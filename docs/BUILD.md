@@ -64,6 +64,7 @@ Successful build output:
 - `cmd/interfaces/interfaces.kex`
 - `cmd/emptyiface/emptyiface.kex`
 - `cmd/assertions/assertions.kex`
+- `cmd/runtimecheck/runtimecheck.kex`
 - `cmd/sysinfo/sysinfo.kex`
 - `cmd/message/message.kex`
 - `cmd/ipc/ipc.kex`
@@ -106,6 +107,10 @@ successful build.
   - empty interface to interface assertion
   - non-empty interface to interface assertion
   - empty interface type switch
+- `cmd/runtimecheck` - implemented
+  - integrated runtime smoke panel
+  - strings, slices, interfaces, empty interface equality
+  - assertions and type switch in one `.kex`
 - `cmd/sysinfo` - implemented
   - kernel version query
   - screen working-area query

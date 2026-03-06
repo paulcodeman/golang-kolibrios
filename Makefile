@@ -1,6 +1,6 @@
-.PHONY: all check-runtime check-runtime-probes check-runtime-behavior example hello strings slices interfaces emptyiface assertions sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all check-runtime check-runtime-probes check-runtime-behavior example hello strings slices interfaces emptyiface assertions runtimecheck sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
 
-all: example hello strings slices interfaces emptyiface assertions sysinfo message ipc
+all: example hello strings slices interfaces emptyiface assertions runtimecheck sysinfo message ipc
 
 check-runtime: check-runtime-probes check-runtime-behavior
 
@@ -31,6 +31,9 @@ emptyiface:
 assertions:
 	$(MAKE) -C cmd/assertions all
 
+runtimecheck:
+	$(MAKE) -C cmd/runtimecheck all
+
 sysinfo:
 	$(MAKE) -C cmd/sysinfo all
 
@@ -40,7 +43,7 @@ message:
 ipc:
 	$(MAKE) -C cmd/ipc all
 
-clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc
+clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-sysinfo clean-message clean-ipc
 
 clean-example:
 	$(MAKE) -C cmd/example clean
@@ -62,6 +65,9 @@ clean-emptyiface:
 
 clean-assertions:
 	$(MAKE) -C cmd/assertions clean
+
+clean-runtimecheck:
+	$(MAKE) -C cmd/runtimecheck clean
 
 clean-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean
@@ -92,6 +98,9 @@ rebuild-emptyiface:
 
 rebuild-assertions:
 	$(MAKE) -C cmd/assertions clean all
+
+rebuild-runtimecheck:
+	$(MAKE) -C cmd/runtimecheck clean all
 
 rebuild-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean all

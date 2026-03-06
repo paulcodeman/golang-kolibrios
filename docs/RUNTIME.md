@@ -118,6 +118,8 @@ Sample coverage:
   matching comparable concrete values
 - `cmd/assertions` validates empty/non-empty interface assertions, comma-ok
   assertions, and a simple type switch
+- `cmd/runtimecheck` validates the current runtime subset inside one interactive
+  KolibriOS smoke sample
 - `cmd/ipc` validates that small real apps can stay within the current runtime
   envelope while using the syscall/UI layers
 
