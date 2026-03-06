@@ -77,6 +77,12 @@ Validated by current samples:
 - strings
   - equality with `==`
   - concatenation with `+`
+- fixed-size arrays
+  - declaration with `[N]T`
+  - literals with `[...]T{...}`
+  - indexing and `len`
+  - value assignment/copy
+  - equality for comparable element types
 - heap allocation
   - `new(T)`
   - compiler-generated object temporaries
@@ -110,10 +116,10 @@ Validated by current samples:
 
 Sample coverage:
 
-- `examples/runtime` validates string equality/concatenation, byte-slice
-  growth and conversion, non-empty interface dispatch/equality, empty
-  interface equality, assertions, comma-ok assertions, and a simple type switch
-  inside one interactive KolibriOS app
+- `examples/runtime` validates string equality/concatenation, fixed-array
+  equality and value-copy, byte-slice growth and conversion, non-empty
+  interface dispatch/equality, empty interface equality, assertions, comma-ok
+  assertions, and a simple type switch inside one interactive KolibriOS app
 - `examples/ipc` validates that a small real app can stay within the current
   runtime envelope while using the syscall/UI layers
 - `tests/smokeapp` validates a headless runtime subset under the emulator smoke
@@ -123,6 +129,7 @@ Focused runtime check coverage:
 
 - `tests/runtime/strings.go` validates the emitted string concat/equality
   symbol path
+- `tests/runtime/arrays.go` validates the emitted fixed-array equality path
 - `tests/runtime/slices.go` validates the emitted byte-slice/string conversion
   and growth symbol path
 - `tests/runtime/interfaces.go` validates the emitted non-empty interface
@@ -136,9 +143,12 @@ Focused runtime check coverage:
 - `tests/runtime/iface_to_iface.go` validates the emitted non-empty interface
   assertion symbol path
 - `tests/runtime/type_switch.go` validates the emitted type-switch symbol path
+- `tests/runtime/gcbarrier.go` validates the emitted heap-allocation plus
+  pointer-write barrier symbol path for the current malloc-based runtime
 - `tests/runtime/behavior.c` validates host-side runtime behavior for
-  allocation, string concat, byte-slice helpers, empty-interface equality, and
-  the validated interface assertion/dispatch helpers
+  allocation, fixed-array equality helpers, byte-slice helpers,
+  write-barrier stubs, empty-interface equality, and the validated interface
+  assertion/dispatch helpers
 - `scripts/check-runtime-probes.sh` compiles these probes and checks that
   `abi/runtime_gccgo.c` exports the required symbol set
 - `scripts/check-runtime-behavior.sh` compiles and runs the host-side behavior
@@ -163,6 +173,16 @@ These features are not yet a supported part of the bootstrap contract:
 
 Some of these may partially compile in isolated cases, but they are not yet
 documented or guaranteed.
+
+## Garbage Collector Status
+
+- the current bootstrap runtime does not implement tracing or collection
+- heap allocation is backed directly by `malloc`/`realloc`/`free` inside
+  `abi/runtime_gccgo.c`
+- `runtime.registerGCRoots`, `runtime.gcWriteBarrier`, and
+  `runtime.writeBarrier` only provide the symbol surface needed by `gccgo`
+- pointer-write paths can link and execute for the validated subset, but no
+  heap memory is reclaimed automatically
 
 ## Failure Behavior
 

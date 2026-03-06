@@ -100,7 +100,7 @@ successful build.
   - primitive drawing
 - `examples/runtime` - implemented
   - integrated runtime smoke panel
-  - strings, slices, interfaces, empty interface equality
+  - strings, fixed arrays, slices, interfaces, empty interface equality
   - assertions and type switch in one `.kex`
 - `examples/time` - implemented
   - system time decode from syscall `3`
@@ -147,6 +147,8 @@ successful build.
   On hosts that cannot execute a 32-bit ELF directly, this harness falls back
   to a native-host build while `scripts/check-runtime-probes.sh` still validates
   the bootstrap `gccgo -m32` symbol inventory.
+- The bootstrap runtime still has no real GC; current heap paths are
+  `malloc`-based and the GC/barrier symbols only satisfy the validated subset.
 - Template verification lives in `scripts/check-app-template.sh` and confirms
   that `scripts/new-app.sh` generates a buildable example under `examples/`.
 - Emulator smoke verification lives in `scripts/check-emulator-smoke.sh`; it

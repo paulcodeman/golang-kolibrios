@@ -85,12 +85,14 @@ main() {
     "memcmp" \
     "memmove" \
     "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
     "runtime.growslice" \
     "runtime.makeslice" \
     "runtime.assertitab" \
     "runtime.ifaceE2I2" \
     "runtime.ifaceE2T2" \
     "runtime.ifaceI2I2" \
+    "runtime.memequal" \
     "runtime.slicebytetostring" \
     "runtime.stringtoslicebyte" \
     "runtime.ifaceeq" \
@@ -104,9 +106,16 @@ main() {
     "runtime.newobject" \
     "runtime.panicdottype" \
     "runtime.panicmem" \
+    "runtime.registerGCRoots" \
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
+
+  compile_probe "arrays"
+  probe_symbols=$(probe_unresolved_symbols "arrays")
+  require_list_symbols "arrays probe" "$probe_symbols" \
+    "memcmp" \
+    "runtime.memequal"
 
   compile_probe "strings"
   probe_symbols=$(probe_unresolved_symbols "strings")
@@ -179,6 +188,16 @@ main() {
   require_list_symbols "type_switch probe" "$probe_symbols" \
     "runtime.memequal32..f" \
     "runtime.strequal..f"
+
+  compile_probe "gcbarrier"
+  probe_symbols=$(probe_unresolved_symbols "gcbarrier")
+  require_list_symbols "gcbarrier probe" "$probe_symbols" \
+    "runtime.gcWriteBarrier" \
+    "runtime.memequal" \
+    "runtime.memequal32..f" \
+    "runtime.newobject" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
 
   printf 'runtime probes passed\n'
 }

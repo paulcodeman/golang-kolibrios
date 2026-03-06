@@ -102,6 +102,9 @@ extern go_interface_method_table* runtime_assertitab(const go_type_descriptor* t
 extern go_interface_assert_result runtime_ifaceE2I2(const go_type_descriptor* target_type, const go_type_descriptor* source_type, const void* source_data);
 extern go_interface_assert_result runtime_ifaceI2I2(const go_type_descriptor* target_type, const go_interface_method_table* source_methods, const void* source_data);
 extern bool runtime_interequal(const void* left_value, const void* right_value);
+extern bool runtime_memequal_export(const void* left, const void* right, size_t size) __asm__("runtime.memequal");
+extern void runtime_write_barrier(void** slot, void* ptr);
+extern void runtime_gc_write_barrier(void** slot, void* ptr);
 
 static int failures = 0;
 
@@ -416,6 +419,30 @@ static void test_allocation_and_copy(void) {
     expect_go_string(dest.value, "copy", 4, "runtime_typedmemmove copies typed value");
 }
 
+static void test_arrays_and_barriers(void) {
+    const unsigned char left[] = {'k', 'o', 's', '!'};
+    const unsigned char equal[] = {'k', 'o', 's', '!'};
+    const unsigned char different[] = {'k', 'o', 's', '?'};
+    void* slot;
+    uintptr_t tagged_value;
+
+    expect_true(
+        runtime_memequal_export(left, equal, sizeof(left)),
+        "runtime.memequal matches equal fixed arrays");
+    expect_false(
+        runtime_memequal_export(left, different, sizeof(left)),
+        "runtime.memequal rejects different fixed arrays");
+
+    slot = NULL;
+    tagged_value = 2026;
+    runtime_write_barrier(&slot, (void*)tagged_value);
+    expect_ptr_eq(slot, (void*)tagged_value, "runtime_write_barrier stores pointer");
+
+    slot = NULL;
+    runtime_gc_write_barrier(&slot, (void*)tagged_value);
+    expect_ptr_eq(slot, (void*)tagged_value, "runtime_gc_write_barrier stores pointer");
+}
+
 static void test_empty_interface_paths(void) {
     go_string left;
     go_string equal_right;
@@ -544,6 +571,7 @@ static void test_interface_paths(void) {
 int main(void) {
     test_concat_and_slices();
     test_allocation_and_copy();
+    test_arrays_and_barriers();
     test_empty_interface_paths();
     test_interface_paths();
 

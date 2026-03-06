@@ -12,7 +12,7 @@ const (
 	runtimeCheckWindowX      = 280
 	runtimeCheckWindowY      = 180
 	runtimeCheckWindowWidth  = 720
-	runtimeCheckWindowHeight = 260
+	runtimeCheckWindowHeight = 284
 	runtimeCheckWindowTitle  = "KolibriOS Runtime Demo"
 )
 
@@ -51,12 +51,14 @@ func (value bridgeText) Text() string {
 type App struct {
 	enabled        bool
 	stringsOK      bool
+	arraysOK       bool
 	slicesOK       bool
 	ifaceOK        bool
 	emptyIfaceOK   bool
 	assertionsOK   bool
 	summary        string
 	stringsLine    string
+	arraysLine     string
 	slicesLine     string
 	ifaceLine      string
 	emptyIfaceLine string
@@ -65,7 +67,7 @@ type App struct {
 }
 
 func NewApp() App {
-	recheck := ui.NewButton(runtimeCheckButtonRecheck, "Recheck", 28, 206)
+	recheck := ui.NewButton(runtimeCheckButtonRecheck, "Recheck", 28, 230)
 	recheck.Width = 132
 
 	app := App{
@@ -104,7 +106,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(runtimeCheckButtonExit, "Exit", 182, 206)
+	exit := ui.NewButton(runtimeCheckButtonExit, "Exit", 182, 230)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -112,10 +114,11 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 48, app.summaryColor(), app.summary)
 	kos.DrawText(28, 74, ui.Silver, "recheck toggles the string/int assertion branch and reruns the runtime smoke set")
 	kos.DrawText(28, 104, app.statusColor(app.stringsOK), app.stringsLine)
-	kos.DrawText(28, 124, app.statusColor(app.slicesOK), app.slicesLine)
-	kos.DrawText(28, 144, app.statusColor(app.ifaceOK), app.ifaceLine)
-	kos.DrawText(28, 164, app.statusColor(app.emptyIfaceOK), app.emptyIfaceLine)
-	kos.DrawText(28, 184, app.statusColor(app.assertionsOK), app.assertionsLine)
+	kos.DrawText(28, 124, app.statusColor(app.arraysOK), app.arraysLine)
+	kos.DrawText(28, 144, app.statusColor(app.slicesOK), app.slicesLine)
+	kos.DrawText(28, 164, app.statusColor(app.ifaceOK), app.ifaceLine)
+	kos.DrawText(28, 184, app.statusColor(app.emptyIfaceOK), app.emptyIfaceLine)
+	kos.DrawText(28, 204, app.statusColor(app.assertionsOK), app.assertionsLine)
 	app.recheck.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -123,6 +126,7 @@ func (app *App) Redraw() {
 
 func (app *App) runChecks() {
 	app.stringsOK, app.stringsLine = checkStrings(app.enabled)
+	app.arraysOK, app.arraysLine = checkArrays(app.enabled)
 	app.slicesOK, app.slicesLine = checkSlices(app.enabled)
 	app.ifaceOK, app.ifaceLine = checkInterfaces(app.enabled)
 	app.emptyIfaceOK, app.emptyIfaceLine = checkEmptyInterface(app.enabled)
@@ -146,6 +150,7 @@ func (app *App) runChecks() {
 
 func (app *App) allOK() bool {
 	return app.stringsOK &&
+		app.arraysOK &&
 		app.slicesOK &&
 		app.ifaceOK &&
 		app.emptyIfaceOK &&
@@ -177,6 +182,24 @@ func checkStrings(enabled bool) (bool, string) {
 	}
 
 	return false, "strings: FAIL / equality mismatch"
+}
+
+func checkArrays(enabled bool) (bool, string) {
+	left := [4]byte{'k', 'o', 's', '!'}
+	copyValue := left
+	match := [4]byte{'k', 'o', 's', '!'}
+
+	if enabled {
+		copyValue[3] = '+'
+	} else {
+		copyValue[3] = '.'
+	}
+
+	if left == match && copyValue != match && len(left) == 4 && left[1] == 'o' {
+		return true, "arrays : PASS / eq + copy ok"
+	}
+
+	return false, "arrays : FAIL / fixed array value mismatch"
 }
 
 func checkSlices(enabled bool) (bool, string) {

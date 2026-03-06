@@ -153,7 +153,7 @@ Main sources:
 ## Example Matrix
 
 - `examples/window` - basic window loop, redraw handling, buttons, and primitive drawing
-- `examples/runtime` - integrated runtime smoke panel for strings, slices, interfaces, empty interfaces, assertions, and type switches
+- `examples/runtime` - integrated runtime smoke panel for strings, fixed arrays, slices, interfaces, empty interfaces, assertions, and type switches
 - `examples/time` - system time, uptime counters, wait timeout, and sleep probe
 - `examples/system` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `examples/input` - function `72` button/key injection and input event probe
@@ -165,6 +165,8 @@ Main sources:
 - This is not yet a complete Go port for KolibriOS.
 - Runtime support is intentionally minimal and currently tuned for the example
   and small bootstrap programs.
+- The current bootstrap runtime does not implement a real GC yet; heap objects
+  are still allocated through a malloc-based shim with barrier/root stubs.
 - The project should evolve toward a reusable SDK first, and eventually toward
   native `GOOS=kolibrios GOARCH=386` support.
 
