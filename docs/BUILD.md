@@ -41,6 +41,21 @@ Check the focused bootstrap runtime validation:
 make check-runtime
 ```
 
+Create a new app from the shared template:
+
+```sh
+bash ./scripts/new-app.sh demo "KolibriOS Demo"
+```
+
+This creates `cmd/demo` with a package-local `Main`, a minimal window loop, and
+the shared `mk/kolibri-app.mk` build wiring.
+
+Verify that the template itself still works:
+
+```sh
+make check-app-template
+```
+
 Clean the sample builds:
 
 ```sh
@@ -129,6 +144,8 @@ successful build.
 
 - The syscall reference for all new bindings is `sysfuncs.txt`.
 - Shared bootstrap build logic now lives in `mk/kolibri-app.mk`.
+- New applications can be scaffolded from `templates/basic-app` via
+  `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.
 - The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
 - Focused compiler/runtime symbol checks live in `tests/runtime` and run via
@@ -138,3 +155,5 @@ successful build.
   On hosts that cannot execute a 32-bit ELF directly, this harness falls back
   to a native-host build while `scripts/check-runtime-probes.sh` still validates
   the bootstrap `gccgo -m32` symbol inventory.
+- Template verification lives in `scripts/check-app-template.sh` and confirms
+  that `scripts/new-app.sh` generates a buildable sample under `cmd/`.

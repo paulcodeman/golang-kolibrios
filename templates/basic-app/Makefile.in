@@ -1,0 +1,4 @@
+PROGRAM = __PROGRAM__
+PACKAGE_NAME = __PACKAGE_NAME__
+
+include ../../mk/kolibri-app.mk

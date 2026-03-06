@@ -86,6 +86,18 @@ Focused runtime checks:
 make check-runtime
 ```
 
+Create a new scaffolded app:
+
+```sh
+bash ./scripts/new-app.sh demo "KolibriOS Demo"
+```
+
+Verify that the shared app template still generates a buildable sample:
+
+```sh
+make check-app-template
+```
+
 Output:
 
 - `cmd/example/example.kex`
@@ -106,6 +118,8 @@ now runs both the unresolved-symbol inventory probes and a host-side C behavior
 harness for the documented bootstrap subset. On hosts that cannot execute a
 32-bit ELF directly, the behavior harness falls back to native host execution
 while the probe inventory still validates the `gccgo -m32` symbol path.
+New applications can be scaffolded from `templates/basic-app` via
+`scripts/new-app.sh`.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.

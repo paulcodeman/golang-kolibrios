@@ -24,6 +24,9 @@ jobs:
       - name: Check runtime probes and behavior
         run: make check-runtime
 
+      - name: Check app template
+        run: make check-app-template
+
       - name: Build sample matrix
         run: make rebuild-all
 

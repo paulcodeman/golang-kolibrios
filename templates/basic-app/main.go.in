@@ -1,0 +1,6 @@
+package __PACKAGE_NAME__
+
+func Main() {
+	app := NewApp()
+	app.Run()
+}
