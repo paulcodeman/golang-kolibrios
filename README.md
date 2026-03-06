@@ -1,5 +1,7 @@
 # golang-kolibrios
 
+[![Build Example](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml/badge.svg)](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml)
+
 Experimental Go bootstrap for building KolibriOS applications.
 
 This repository currently provides:

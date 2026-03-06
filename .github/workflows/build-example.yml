@@ -1,0 +1,36 @@
+name: Build Example
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-example:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc gccgo gcc-multilib gccgo-multilib make nasm binutils
+
+      - name: Build example.kex
+        run: make -C cmd/example clean all
+
+      - name: Verify build output
+        run: test -f cmd/example/example.kex
+
+      - name: Upload example artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-kex
+          path: cmd/example/example.kex
