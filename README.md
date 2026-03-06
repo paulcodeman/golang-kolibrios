@@ -89,6 +89,7 @@ The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
+For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
 
 ## Example Application
 

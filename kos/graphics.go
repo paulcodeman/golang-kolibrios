@@ -17,6 +17,10 @@ func OpenWindow(x int, y int, width int, height int, title string) {
 	Window(x, y, width, height, title)
 }
 
+func SetWindowTitle(title string) {
+	SetCaption(title)
+}
+
 func DrawText(x int, y int, color Color, text string) {
 	WriteText(x, y, uint32(color), text)
 }

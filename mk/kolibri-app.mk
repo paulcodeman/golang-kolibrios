@@ -58,6 +58,7 @@ $(PROGRAM).kex: $(OBJS) $(KOS_GOX) $(UI_GOX) $(LDSCRIPT)
 	strip $(PROGRAM).kex
 	$(OBJCOPY) $(PROGRAM).kex -O binary
 	rm -f $(INTERMEDIATE_ARTIFACTS)
+	rmdir $(BUILD_DIR) 2>/dev/null || true
 
 $(KOS_OBJ): $(KOS_SOURCES)
 	$(GO) $(GO_COMPILER_FLAGS) -o $@ $(KOS_SOURCES)

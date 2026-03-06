@@ -3,7 +3,10 @@ SECTION .text
 extern runtime_prepare_window_title
 
 global go_0kos.Sleep
+global go_0kos.GetKey
 global go_0kos.Event
+global go_0kos.CheckEvent
+global go_0kos.GetThreadInfo
 global go_0kos.GetButtonID
 global go_0kos.CreateButton
 global go_0kos.Exit
@@ -11,6 +14,17 @@ global go_0kos.Redraw
 global go_0kos.Window
 global go_0kos.WriteText
 global go_0kos.GetTime
+global go_0kos.GetScreenSize
+global go_0kos.WaitEventTimeout
+global go_0kos.SetEventMask
+global go_0kos.GetFreeRAM
+global go_0kos.GetTotalRAM
+global go_0kos.SetCaption
+global go_0kos.GetMouseScreenPosition
+global go_0kos.GetMouseWindowPosition
+global go_0kos.GetMouseButtonState
+global go_0kos.GetMouseButtonEventState
+global go_0kos.GetMouseScrollData
 global go_0kos.DrawLine
 global go_0kos.DrawBar
 global go_0kos.DebugOutHex
@@ -31,6 +45,28 @@ go_0kos.Sleep:
 go_0kos.Event:
     mov eax, 10
     int 0x40
+    ret
+
+go_0kos.GetKey:
+    mov eax, 2
+    int 0x40
+    ret
+
+go_0kos.CheckEvent:
+    mov eax, 11
+    int 0x40
+    ret
+
+go_0kos.GetThreadInfo:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 9
+    mov ebx, [ebp+8]
+    mov ecx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
     ret
 
 go_0kos.GetButtonID:
@@ -147,6 +183,107 @@ go_0kos.DrawBar:
 go_0kos.GetTime:
     mov eax, 3
     int 0x40
+    ret
+
+go_0kos.GetScreenSize:
+    mov eax, 14
+    int 0x40
+    ret
+
+go_0kos.WaitEventTimeout:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 23
+    mov ebx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetEventMask:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 40
+    mov ebx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetFreeRAM:
+    push ebx
+    mov eax, 18
+    mov ebx, 16
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetTotalRAM:
+    push ebx
+    mov eax, 18
+    mov ebx, 17
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.SetCaption:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+12]
+    push dword [ebp+8]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov eax, 71
+    mov ebx, 2
+    xor edx, edx
+    mov dl, 3
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetMouseScreenPosition:
+    push ebx
+    mov eax, 37
+    xor ebx, ebx
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetMouseWindowPosition:
+    push ebx
+    mov eax, 37
+    mov ebx, 1
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetMouseButtonState:
+    push ebx
+    mov eax, 37
+    mov ebx, 2
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetMouseButtonEventState:
+    push ebx
+    mov eax, 37
+    mov ebx, 3
+    int 0x40
+    pop ebx
+    ret
+
+go_0kos.GetMouseScrollData:
+    push ebx
+    mov eax, 37
+    mov ebx, 7
+    int 0x40
+    pop ebx
     ret
 
 go_0kos.DebugOutHex:
