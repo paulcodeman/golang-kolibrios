@@ -24,6 +24,8 @@ global go_0kos.WaitEventTimeout
 global go_0kos.SetEventMask
 global go_0kos.SetIPCArea
 global go_0kos.SendIPCMessage
+global go_0kos.FocusWindowBySlot
+global go_0kos.GetActiveWindowSlotRaw
 global go_0kos.GetKernelVersion
 global go_0kos.SystemShutdown
 global go_0kos.GetFreeRAM
@@ -292,6 +294,26 @@ go_0kos.SendIPCMessage:
     pop esi
     pop ebx
     pop ebp
+    ret
+
+go_0kos.FocusWindowBySlot:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 18
+    mov ebx, 3
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetActiveWindowSlotRaw:
+    push ebx
+    mov eax, 18
+    mov ebx, 7
+    int 0x40
+    pop ebx
     ret
 
 go_0kos.GetKernelVersion:

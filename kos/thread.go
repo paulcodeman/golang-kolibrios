@@ -75,3 +75,28 @@ func CurrentThreadID() (id uint32, ok bool) {
 
 	return littleEndianUint32(buffer[:], 30), true
 }
+
+func CurrentThreadSlotIndex() (slot int, ok bool) {
+	id, ok := CurrentThreadID()
+	if !ok {
+		return 0, false
+	}
+
+	_, maxSlot, ok := ReadCurrentThreadInfo()
+	if !ok {
+		return 0, false
+	}
+
+	for slot = 1; slot <= maxSlot; slot++ {
+		info, _, ok := ReadThreadInfo(slot)
+		if !ok {
+			continue
+		}
+
+		if info.ID == id {
+			return slot, true
+		}
+	}
+
+	return 0, false
+}

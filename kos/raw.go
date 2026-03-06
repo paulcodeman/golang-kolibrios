@@ -39,6 +39,12 @@ func SetIPCArea(buffer *byte, size uint32) uint32
 // Function 60, subfunction 2 - send an IPC message to a PID/TID.
 func SendIPCMessage(pid uint32, data *byte, size uint32) uint32
 
+// Function 18, subfunction 3 - make active the window of the given thread slot.
+func FocusWindowBySlot(int)
+
+// Function 18, subfunction 7 - get the slot number of the active window.
+func GetActiveWindowSlotRaw() int
+
 // Function 48, subfunction 4 - get skinned-window header height.
 func GetSkinHeight() int
 

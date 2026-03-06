@@ -22,6 +22,8 @@ packed arguments, and return conventions.
 | `13` | `kos.DrawBar` | `kos.FillRect` | Rectangle fill |
 | `14` | `kos.GetScreenSize` | `kos.ScreenSize` | Returns packed lower-right coords |
 | `17` | `kos.GetButtonID` | `kos.CurrentButtonID` | Button ID extraction |
+| `18.3` | `kos.FocusWindowBySlot` | `kos.FocusWindowSlot` | Focus the window of a thread slot |
+| `18.7` | `kos.GetActiveWindowSlotRaw` | `kos.ActiveWindowSlot` | Return the active window thread slot |
 | `18.9` | `kos.SystemShutdown` | `kos.Shutdown`, `kos.PowerOff`, `kos.Reboot`, `kos.RestartKernel` | System shutdown and reboot helpers |
 | `18.13` | `kos.GetKernelVersion` | `kos.KernelVersion` | Reads the kernel version/ABI metadata block |
 | `18.16` | `kos.GetFreeRAM` | `kos.FreeRAMKB` | Returns free RAM in kilobytes |

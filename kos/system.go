@@ -36,6 +36,14 @@ func Shutdown(mode ShutdownMode) bool {
 	return SystemShutdown(uint32(mode)) == 0
 }
 
+func FocusWindowSlot(slot int) {
+	FocusWindowBySlot(slot)
+}
+
+func ActiveWindowSlot() int {
+	return GetActiveWindowSlotRaw()
+}
+
 func PowerOff() bool {
 	return Shutdown(ShutdownPowerOff)
 }

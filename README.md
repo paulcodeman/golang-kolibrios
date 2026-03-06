@@ -71,6 +71,8 @@ This installs:
 - `make`
 - `nasm`
 - `binutils`
+- `mtools`
+- `qemu-system-x86`
 
 ## Build Samples
 
@@ -161,7 +163,7 @@ Main sources:
 - `cmd/assertions` - empty/non-empty interface assertions and type switch probe
 - `cmd/runtimecheck` - integrated in-app runtime smoke panel for the current subset
 - `cmd/timeprobe` - system time, uptime counter, wait timeout, and sleep probe
-- `cmd/sysinfo` - kernel/style/title probes
+- `cmd/sysinfo` - kernel/style/title/active-window probes
 - `cmd/message` - function `72` message injection probe
 - `cmd/ipc` - function `60` self-IPC event and buffer probe
 

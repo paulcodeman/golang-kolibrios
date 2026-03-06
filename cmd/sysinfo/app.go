@@ -9,6 +9,7 @@ const (
 	sysinfoButtonExit kos.ButtonID = 1
 	sysinfoButtonToggleTitle kos.ButtonID = 2
 	sysinfoButtonRefresh kos.ButtonID = 3
+	sysinfoButtonFocusSelf kos.ButtonID = 4
 
 	sysinfoWindowX = 350
 	sysinfoWindowY = 180
@@ -24,9 +25,14 @@ type App struct {
 	screenHeight int
 	workArea kos.Rect
 	skinHeight int
+	currentSlot int
+	activeSlot int
+	hasCurrentSlot bool
 	usingUTF8Title bool
+	focusStatus string
 	toggleTitle ui.Button
 	refresh ui.Button
+	focusSelf ui.Button
 }
 
 func NewApp() App {
@@ -36,9 +42,14 @@ func NewApp() App {
 	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 196)
 	refresh.Width = 112
 
+	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 196)
+	focusSelf.Width = 120
+
 	app := App{
 		toggleTitle: toggleTitle,
 		refresh: refresh,
+		focusSelf: focusSelf,
+		focusStatus: "ready",
 	}
 	app.refreshInfo()
 
@@ -72,6 +83,10 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.Redraw()
 	case sysinfoButtonRefresh:
 		app.refreshInfo()
+		app.focusStatus = "refreshed"
+		app.Redraw()
+	case sysinfoButtonFocusSelf:
+		app.focusSelfWindow()
 		app.Redraw()
 	case sysinfoButtonExit:
 		kos.Exit()
@@ -92,10 +107,14 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 136, ui.White, "Work area: "+formatRect(app.workArea))
 	kos.DrawText(28, 154, ui.Silver, "Work size: "+formatInt(app.workArea.Width())+"x"+formatInt(app.workArea.Height()))
 	kos.DrawText(28, 172, ui.Aqua, "Skin height: "+formatInt(app.skinHeight))
-	kos.DrawText(320, 196, ui.Yellow, "Title mode: "+app.titleMode())
-	kos.DrawText(320, 214, ui.Silver, "Refresh after skin or taskbar changes")
+	kos.DrawText(320, 46, ui.Yellow, "Title mode: "+app.titleMode())
+	kos.DrawText(320, 64, ui.White, "Current slot: "+app.currentSlotString())
+	kos.DrawText(320, 82, ui.Silver, "Active slot: "+formatInt(app.activeSlot))
+	kos.DrawText(320, 100, ui.Aqua, "Focus state: "+app.focusStatus)
+	kos.DrawText(320, 118, ui.Silver, "18.3 focuses a slot / 18.7 reports the active slot")
 	app.toggleTitle.Draw()
 	app.refresh.Draw()
+	app.focusSelf.Draw()
 	kos.EndRedraw()
 }
 
@@ -104,6 +123,8 @@ func (app *App) refreshInfo() {
 	app.screenWidth, app.screenHeight = kos.ScreenSize()
 	app.workArea = kos.ScreenWorkingArea()
 	app.skinHeight = kos.SkinHeight()
+	app.currentSlot, app.hasCurrentSlot = kos.CurrentThreadSlotIndex()
+	app.activeSlot = kos.ActiveWindowSlot()
 }
 
 func (app *App) debugTagString() string {
@@ -120,4 +141,28 @@ func (app *App) titleMode() string {
 	}
 
 	return "71.2 direct encoding"
+}
+
+func (app *App) currentSlotString() string {
+	if !app.hasCurrentSlot {
+		return "-"
+	}
+
+	return formatInt(app.currentSlot)
+}
+
+func (app *App) focusSelfWindow() {
+	if !app.hasCurrentSlot {
+		app.focusStatus = "current slot unavailable"
+		return
+	}
+
+	kos.FocusWindowSlot(app.currentSlot)
+	app.refreshInfo()
+	if app.activeSlot == app.currentSlot {
+		app.focusStatus = "self active"
+		return
+	}
+
+	app.focusStatus = "focus requested for slot " + formatInt(app.currentSlot)
 }
