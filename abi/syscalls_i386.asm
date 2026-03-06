@@ -5,6 +5,10 @@ extern runtime_prepare_window_title_with_prefix
 
 global go_0kos.Sleep
 global go_0kos.GetKey
+global go_0kos.SetKeyboardLayoutRaw
+global go_0kos.SetKeyboardLanguageRaw
+global go_0kos.GetKeyboardLayoutRaw
+global go_0kos.GetKeyboardLanguageRaw
 global go_0kos.Event
 global go_0kos.CheckEvent
 global go_0kos.GetThreadInfo
@@ -66,6 +70,54 @@ go_0kos.Event:
 go_0kos.GetKey:
     mov eax, 2
     int 0x40
+    ret
+
+go_0kos.SetKeyboardLayoutRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 21
+    mov ebx, 2
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SetKeyboardLanguageRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 21
+    mov ebx, 2
+    mov ecx, 9
+    mov edx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetKeyboardLayoutRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 26
+    mov ebx, 2
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.GetKeyboardLanguageRaw:
+    push ebx
+    mov eax, 26
+    mov ebx, 2
+    mov ecx, 9
+    int 0x40
+    pop ebx
     ret
 
 go_0kos.CheckEvent:

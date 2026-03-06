@@ -138,10 +138,12 @@ successful build.
   - uptime counters from `26.9` and `26.10`
   - timed wait via function `23`
   - delay probe via function `5`
-- `cmd/sysinfo` - implemented, including skin-margin and active-window/focus probes
+- `cmd/sysinfo` - implemented, including skin-margin, keyboard-layout, and active-window/focus probes
   - kernel version query
   - screen working-area query
   - skin height query
+  - keyboard layout table and language probe via `21.2/26.2`
+  - active-window slot and focus probe via `18.3/18.7`
   - caption update via function `71.1`
 - `cmd/message` - implemented
   - active-window button injection via function `72`

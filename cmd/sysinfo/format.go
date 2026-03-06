@@ -62,3 +62,49 @@ func formatSkinMargins(margins kos.SkinMargins) string {
 		" R" + formatInt(margins.Right) +
 		" B" + formatInt(margins.Bottom)
 }
+
+func formatKeyboardLanguage(language kos.KeyboardLanguage) string {
+	switch language {
+	case kos.KeyboardLanguageEnglish:
+		return "en (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageFinnish:
+		return "fi (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageGerman:
+		return "ge (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageRussian:
+		return "ru (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageFrench:
+		return "fr (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageEstonian:
+		return "et (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageUkrainian:
+		return "ua (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageItalian:
+		return "it (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageBelarusian:
+		return "be (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageSpanish:
+		return "sp (" + formatInt(int(language)) + ")"
+	case kos.KeyboardLanguageCatalan:
+		return "ca (" + formatInt(int(language)) + ")"
+	}
+
+	return "unknown (" + formatInt(int(language)) + ")"
+}
+
+func formatLayoutChecksums(normal kos.KeyboardLayoutTable, shift kos.KeyboardLayoutTable, alt kos.KeyboardLayoutTable) string {
+	return "N=" + formatHex32(layoutChecksum(normal)) +
+		" S=" + formatHex32(layoutChecksum(shift)) +
+		" A=" + formatHex32(layoutChecksum(alt))
+}
+
+func layoutChecksum(layout kos.KeyboardLayoutTable) uint32 {
+	checksum := uint32(2166136261)
+
+	for index := 0; index < len(layout); index++ {
+		checksum ^= uint32(layout[index])
+		checksum *= 16777619
+	}
+
+	return checksum
+}

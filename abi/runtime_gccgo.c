@@ -320,6 +320,19 @@ static bool runtime_memequal8_impl(const void* left, const void* right) {
     return left_bytes[0] == right_bytes[0];
 }
 
+static bool runtime_memequal16_impl(const void* left, const void* right) {
+    const uint16_t* left_words;
+    const uint16_t* right_words;
+
+    if (left == NULL || right == NULL) {
+        return false;
+    }
+
+    left_words = (const uint16_t*)left;
+    right_words = (const uint16_t*)right;
+    return left_words[0] == right_words[0];
+}
+
 static bool runtime_memequal32_impl(const void* left, const void* right) {
     const uint32_t* left_words;
     const uint32_t* right_words;
@@ -331,6 +344,20 @@ static bool runtime_memequal32_impl(const void* left, const void* right) {
     left_words = (const uint32_t*)left;
     right_words = (const uint32_t*)right;
     return left_words[0] == right_words[0];
+}
+
+static bool runtime_memequal64_impl(const void* left, const void* right) {
+    const uint32_t* left_words;
+    const uint32_t* right_words;
+
+    if (left == NULL || right == NULL) {
+        return false;
+    }
+
+    left_words = (const uint32_t*)left;
+    right_words = (const uint32_t*)right;
+    return left_words[0] == right_words[0] &&
+           left_words[1] == right_words[1];
 }
 
 static const char* runtime_prepare_window_title_impl(uint32_t prefix, int use_prefix, const char* src, intptr_t len) {
@@ -1046,15 +1073,29 @@ __asm__(".global runtime.memequal32..f");
 static go_equal_function runtime_memequal32_descriptor = runtime_memequal32_impl;
 __asm__(".set runtime.memequal32..f, runtime_memequal32_descriptor");
 
+__asm__(".global runtime.memequal16..f");
+static go_equal_function runtime_memequal16_descriptor = runtime_memequal16_impl;
+__asm__(".set runtime.memequal16..f, runtime_memequal16_descriptor");
+
 __asm__(".global runtime.memequal8..f");
 static go_equal_function runtime_memequal8_descriptor = runtime_memequal8_impl;
 __asm__(".set runtime.memequal8..f, runtime_memequal8_descriptor");
 
+__asm__(".global runtime.memequal64..f");
+static go_equal_function runtime_memequal64_descriptor = runtime_memequal64_impl;
+__asm__(".set runtime.memequal64..f, runtime_memequal64_descriptor");
+
 __asm__(".global runtime.memequal");
 __asm__(".set runtime.memequal, runtime_memequal_impl");
 
+__asm__(".global runtime.memequal64");
+__asm__(".set runtime.memequal64, runtime_memequal64_impl");
+
 __asm__(".global runtime.memequal32");
 __asm__(".set runtime.memequal32, runtime_memequal32_impl");
+
+__asm__(".global runtime.memequal16");
+__asm__(".set runtime.memequal16, runtime_memequal16_impl");
 
 __asm__(".global runtime.memequal8");
 __asm__(".set runtime.memequal8, runtime_memequal8_impl");

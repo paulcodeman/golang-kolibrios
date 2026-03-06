@@ -1,5 +1,29 @@
 package kos
 
+type KeyboardLayoutKind int
+type KeyboardLanguage int
+type KeyboardLayoutTable [128]byte
+
+const (
+	KeyboardLayoutNormal KeyboardLayoutKind = 1
+	KeyboardLayoutShift  KeyboardLayoutKind = 2
+	KeyboardLayoutAlt    KeyboardLayoutKind = 3
+)
+
+const (
+	KeyboardLanguageEnglish   KeyboardLanguage = 1
+	KeyboardLanguageFinnish   KeyboardLanguage = 2
+	KeyboardLanguageGerman    KeyboardLanguage = 3
+	KeyboardLanguageRussian   KeyboardLanguage = 4
+	KeyboardLanguageFrench    KeyboardLanguage = 5
+	KeyboardLanguageEstonian  KeyboardLanguage = 6
+	KeyboardLanguageUkrainian KeyboardLanguage = 7
+	KeyboardLanguageItalian   KeyboardLanguage = 8
+	KeyboardLanguageBelarusian KeyboardLanguage = 9
+	KeyboardLanguageSpanish   KeyboardLanguage = 10
+	KeyboardLanguageCatalan   KeyboardLanguage = 11
+)
+
 type KeyEvent struct {
 	Raw       int
 	Empty     bool
@@ -31,4 +55,47 @@ func ReadKey() KeyEvent {
 	event.Code = byte(value >> 8)
 	event.ScanCode = byte(value >> 16)
 	return event
+}
+
+func ReadKeyboardLayoutTable(kind KeyboardLayoutKind) (KeyboardLayoutTable, bool) {
+	var table KeyboardLayoutTable
+
+	if !isValidKeyboardLayoutKind(kind) {
+		return table, false
+	}
+
+	return table, GetKeyboardLayoutRaw(int(kind), &table[0]) != -1
+}
+
+func SetKeyboardLayoutTable(kind KeyboardLayoutKind, table *KeyboardLayoutTable) bool {
+	if table == nil || !isValidKeyboardLayoutKind(kind) {
+		return false
+	}
+
+	return SetKeyboardLayoutRaw(int(kind), &table[0]) == 0
+}
+
+func KeyboardLayoutLanguage() KeyboardLanguage {
+	return KeyboardLanguage(GetKeyboardLanguageRaw())
+}
+
+func SetKeyboardLayoutLanguage(language KeyboardLanguage) bool {
+	if !isValidKeyboardLanguage(language) {
+		return false
+	}
+
+	return SetKeyboardLanguageRaw(int(language)) == 0
+}
+
+func isValidKeyboardLayoutKind(kind KeyboardLayoutKind) bool {
+	switch kind {
+	case KeyboardLayoutNormal, KeyboardLayoutShift, KeyboardLayoutAlt:
+		return true
+	}
+
+	return false
+}
+
+func isValidKeyboardLanguage(language KeyboardLanguage) bool {
+	return language >= KeyboardLanguageEnglish && language <= KeyboardLanguageCatalan
 }

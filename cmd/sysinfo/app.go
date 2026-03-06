@@ -10,11 +10,12 @@ const (
 	sysinfoButtonToggleTitle kos.ButtonID = 2
 	sysinfoButtonRefresh kos.ButtonID = 3
 	sysinfoButtonFocusSelf kos.ButtonID = 4
+	sysinfoButtonReapplyLayout kos.ButtonID = 5
 
 	sysinfoWindowX = 350
 	sysinfoWindowY = 180
 	sysinfoWindowWidth = 540
-	sysinfoWindowHeight = 276
+	sysinfoWindowHeight = 344
 	sysinfoWindowTitle = "KolibriOS Sysinfo"
 	sysinfoUTF8Title = "KolibriOS Проба UTF-8"
 )
@@ -26,31 +27,43 @@ type App struct {
 	workArea kos.Rect
 	skinHeight int
 	skinMargins kos.SkinMargins
+	keyboardLanguage kos.KeyboardLanguage
+	normalLayout kos.KeyboardLayoutTable
+	shiftLayout kos.KeyboardLayoutTable
+	altLayout kos.KeyboardLayoutTable
+	hasKeyboardLayouts bool
 	currentSlot int
 	activeSlot int
 	hasCurrentSlot bool
 	usingUTF8Title bool
 	focusStatus string
+	layoutStatus string
 	toggleTitle ui.Button
 	refresh ui.Button
 	focusSelf ui.Button
+	reapplyLayout ui.Button
 }
 
 func NewApp() App {
-	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 220)
+	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 264)
 	toggleTitle.Width = 128
 
-	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 220)
+	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 264)
 	refresh.Width = 112
 
-	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 220)
+	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 264)
 	focusSelf.Width = 120
+
+	reapplyLayout := ui.NewButton(sysinfoButtonReapplyLayout, "Reapply layout", 28, 296)
+	reapplyLayout.Width = 144
 
 	app := App{
 		toggleTitle: toggleTitle,
 		refresh: refresh,
 		focusSelf: focusSelf,
+		reapplyLayout: reapplyLayout,
 		focusStatus: "ready",
+		layoutStatus: "ready",
 	}
 	app.refreshInfo()
 
@@ -85,9 +98,13 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 	case sysinfoButtonRefresh:
 		app.refreshInfo()
 		app.focusStatus = "refreshed"
+		app.layoutStatus = "reloaded"
 		app.Redraw()
 	case sysinfoButtonFocusSelf:
 		app.focusSelfWindow()
+		app.Redraw()
+	case sysinfoButtonReapplyLayout:
+		app.reapplyKeyboardLayout()
 		app.Redraw()
 	case sysinfoButtonExit:
 		kos.Exit()
@@ -109,23 +126,37 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 154, ui.Silver, "Work size: "+formatInt(app.workArea.Width())+"x"+formatInt(app.workArea.Height()))
 	kos.DrawText(28, 172, ui.Aqua, "Skin height: "+formatInt(app.skinHeight))
 	kos.DrawText(28, 190, ui.Lime, "Skin margins: "+formatSkinMargins(app.skinMargins))
+	kos.DrawText(28, 208, ui.Yellow, "Keyboard lang: "+formatKeyboardLanguage(app.keyboardLanguage))
+	kos.DrawText(28, 226, ui.White, "Layout sums: "+app.layoutChecksumsString())
 	kos.DrawText(320, 46, ui.Yellow, "Title mode: "+app.titleMode())
 	kos.DrawText(320, 64, ui.White, "Current slot: "+app.currentSlotString())
 	kos.DrawText(320, 82, ui.Silver, "Active slot: "+formatInt(app.activeSlot))
 	kos.DrawText(320, 100, ui.Aqua, "Focus state: "+app.focusStatus)
-	kos.DrawText(320, 118, ui.Silver, "18.3 focuses a slot / 18.7 reports the active slot")
+	kos.DrawText(320, 118, ui.Lime, "Layout state: "+app.layoutStatus)
+	kos.DrawText(320, 136, ui.Silver, "21.2 replays current tables / 26.2 reads them")
+	kos.DrawText(320, 154, ui.Silver, "18.3 focuses a slot / 18.7 reports the active slot")
 	app.toggleTitle.Draw()
 	app.refresh.Draw()
 	app.focusSelf.Draw()
+	app.reapplyLayout.Draw()
 	kos.EndRedraw()
 }
 
 func (app *App) refreshInfo() {
+	var normalOK bool
+	var shiftOK bool
+	var altOK bool
+
 	app.version = kos.KernelVersion()
 	app.screenWidth, app.screenHeight = kos.ScreenSize()
 	app.workArea = kos.ScreenWorkingArea()
 	app.skinHeight = kos.SkinHeight()
 	app.skinMargins = kos.WindowSkinMargins()
+	app.keyboardLanguage = kos.KeyboardLayoutLanguage()
+	app.normalLayout, normalOK = kos.ReadKeyboardLayoutTable(kos.KeyboardLayoutNormal)
+	app.shiftLayout, shiftOK = kos.ReadKeyboardLayoutTable(kos.KeyboardLayoutShift)
+	app.altLayout, altOK = kos.ReadKeyboardLayoutTable(kos.KeyboardLayoutAlt)
+	app.hasKeyboardLayouts = normalOK && shiftOK && altOK
 	app.currentSlot, app.hasCurrentSlot = kos.CurrentThreadSlotIndex()
 	app.activeSlot = kos.ActiveWindowSlot()
 }
@@ -168,4 +199,42 @@ func (app *App) focusSelfWindow() {
 	}
 
 	app.focusStatus = "focus requested for slot " + formatInt(app.currentSlot)
+}
+
+func (app *App) layoutChecksumsString() string {
+	if !app.hasKeyboardLayouts {
+		return "unavailable"
+	}
+
+	return formatLayoutChecksums(app.normalLayout, app.shiftLayout, app.altLayout)
+}
+
+func (app *App) reapplyKeyboardLayout() {
+	if !app.hasKeyboardLayouts {
+		app.layoutStatus = "layout tables unavailable"
+		return
+	}
+
+	if !kos.SetKeyboardLayoutTable(kos.KeyboardLayoutNormal, &app.normalLayout) {
+		app.layoutStatus = "normal layout apply failed"
+		return
+	}
+
+	if !kos.SetKeyboardLayoutTable(kos.KeyboardLayoutShift, &app.shiftLayout) {
+		app.layoutStatus = "shift layout apply failed"
+		return
+	}
+
+	if !kos.SetKeyboardLayoutTable(kos.KeyboardLayoutAlt, &app.altLayout) {
+		app.layoutStatus = "alt layout apply failed"
+		return
+	}
+
+	if !kos.SetKeyboardLayoutLanguage(app.keyboardLanguage) {
+		app.layoutStatus = "language apply failed"
+		return
+	}
+
+	app.refreshInfo()
+	app.layoutStatus = "layout round-trip ok"
 }

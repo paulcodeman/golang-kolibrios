@@ -28,7 +28,9 @@ packed arguments, and return conventions.
 | `18.13` | `kos.GetKernelVersion` | `kos.KernelVersion` | Reads the kernel version/ABI metadata block |
 | `18.16` | `kos.GetFreeRAM` | `kos.FreeRAMKB` | Returns free RAM in kilobytes |
 | `18.17` | `kos.GetTotalRAM` | `kos.TotalRAMKB` | Returns total RAM in kilobytes |
+| `21.2` | `kos.SetKeyboardLayoutRaw`, `kos.SetKeyboardLanguageRaw` | `kos.SetKeyboardLayoutTable`, `kos.SetKeyboardLayoutLanguage` | Per-layout keyboard table upload and global layout language id |
 | `23` | `kos.WaitEventTimeout` | `kos.WaitEventFor` | Timed wait |
+| `26.2` | `kos.GetKeyboardLayoutRaw`, `kos.GetKeyboardLanguageRaw` | `kos.ReadKeyboardLayoutTable`, `kos.KeyboardLayoutLanguage` | Per-layout keyboard table dump and current layout language id |
 | `26.9` | `kos.GetTimeCounter` | `kos.UptimeCentiseconds` | Returns uptime in 1/100 second |
 | `26.10` | `kos.GetTimeCounterPro` | `kos.UptimeNanoseconds` | Returns uptime in nanoseconds |
 | `37.0` | `kos.GetMouseScreenPosition` | `kos.MouseScreenPosition` | Mouse coordinates on the screen |
@@ -59,10 +61,9 @@ packed arguments, and return conventions.
 These are the nearest missing wrappers with high utility and relatively low ABI
 risk:
 
-- `48.7` skin margins for skinned-window hit-testing/layout
 - `48.8/48.13` switch skin by path with both string contracts
 - `37.4/37.5/37.6/37.8` cursor load/set/delete coverage
-- `21.2/26.2` keyboard layout set/get helpers
+- `21.5/26.5` system language set/get helpers
 
 ## Notes
 

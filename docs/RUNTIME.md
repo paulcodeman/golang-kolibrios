@@ -18,7 +18,8 @@ The current runtime glue in `abi/runtime_gccgo.c` provides these key helpers:
   `runtime.interequal`, `runtime.assertitab`, `runtime.ifaceE2I2`,
   `runtime.ifaceE2T2`, `runtime.ifaceI2I2`, `runtime.nilinterequal`
 - memory helpers: `runtime.memmove`, `runtime.memequal`,
-  `runtime.memequal8`, `runtime.memequal32`, `runtime.typedmemmove`,
+  `runtime.memequal8`, `runtime.memequal16`, `runtime.memequal32`,
+  `runtime.memequal64`, `runtime.typedmemmove`,
   internal `memcpy`/`memcmp`/zeroing helpers
 - bootstrap GC stubs: `runtime.registerGCRoots`, `runtime.gcWriteBarrier`,
   `runtime.writeBarrier`

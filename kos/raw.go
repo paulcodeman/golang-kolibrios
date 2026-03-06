@@ -21,6 +21,18 @@ func Event() int
 // Function 2 - get the code of the pressed key.
 func GetKey() int
 
+// Function 21, subfunction 2 - set one of the keyboard layout tables.
+func SetKeyboardLayoutRaw(which int, table *byte) int
+
+// Function 21, subfunction 2 - set the global keyboard layout language id.
+func SetKeyboardLanguageRaw(language int) int
+
+// Function 26, subfunction 2 - get one of the keyboard layout tables.
+func GetKeyboardLayoutRaw(which int, buffer *byte) int
+
+// Function 26, subfunction 2 - get the global keyboard layout language id.
+func GetKeyboardLanguageRaw() int
+
 // Function 11 - check for event, no wait.
 func CheckEvent() int
 
