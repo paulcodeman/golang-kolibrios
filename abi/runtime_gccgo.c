@@ -4,6 +4,11 @@
 
 extern void* malloc(size_t size);
 
+typedef struct {
+    const char* str;
+    intptr_t len;
+} go_string;
+
 static size_t kos_strlen(const char* str) {
     const char* cursor = str;
     while (*cursor != '\0') {
@@ -84,45 +89,54 @@ bool runtime_memequal8(const unsigned char* left, const unsigned char* right, si
     return true;
 }
 
-char* runtime_concatstrings(const char** strings, size_t count) {
+go_string runtime_concatstrings(uintptr_t ignored, const go_string* strings, size_t count) {
     size_t total_length;
     size_t offset;
     size_t index;
     char* result;
+    go_string out;
+
+    (void)ignored;
 
     if (strings == NULL || count == 0) {
-        return NULL;
+        out.str = NULL;
+        out.len = 0;
+        return out;
     }
 
     total_length = 0;
     for (index = 0; index < count; index++) {
-        if (strings[index] != NULL) {
-            total_length += kos_strlen(strings[index]);
+        if (strings[index].str != NULL && strings[index].len > 0) {
+            total_length += (size_t)strings[index].len;
         }
     }
 
     result = (char*)malloc(total_length + 1);
     if (result == NULL) {
-        return NULL;
+        out.str = NULL;
+        out.len = 0;
+        return out;
     }
 
     offset = 0;
     for (index = 0; index < count; index++) {
-        const char* current;
+        go_string current;
         size_t length;
 
         current = strings[index];
-        if (current == NULL) {
+        if (current.str == NULL || current.len <= 0) {
             continue;
         }
 
-        length = kos_strlen(current);
-        kos_memcpy(result + offset, current, length);
+        length = (size_t)current.len;
+        kos_memcpy(result + offset, current.str, length);
         offset += length;
     }
 
     result[offset] = '\0';
-    return result;
+    out.str = result;
+    out.len = (intptr_t)offset;
+    return out;
 }
 
 void runtime_set_byte_string(unsigned char* dest, const unsigned char* src, size_t size) {
@@ -143,12 +157,23 @@ void runtime_gc_write_barrier(void** slot, void* ptr) {
     runtime_write_barrier(slot, ptr);
 }
 
-bool runtime_strequal(const char* left, const char* right) {
-    if (left == NULL || right == NULL) {
+bool runtime_strequal(go_string left, go_string right) {
+    size_t length;
+
+    if (left.len != right.len) {
         return false;
     }
 
-    return kos_strcmp(left, right) == 0;
+    if (left.str == right.str) {
+        return true;
+    }
+
+    if (left.str == NULL || right.str == NULL) {
+        return false;
+    }
+
+    length = (size_t)left.len;
+    return kos_memcmp(left.str, right.str, length) == 0;
 }
 
 int memcmp(const void* left, const void* right, size_t size) {
