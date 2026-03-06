@@ -1,4 +1,4 @@
-.PHONY: all check-runtime check-runtime-probes check-runtime-behavior check-app-template example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-timeprobe rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe smokeapp sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-smokeapp clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-timeprobe rebuild-smokeapp rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
 
 all: example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe sysinfo message ipc
 
@@ -12,6 +12,9 @@ check-runtime-behavior:
 
 check-app-template:
 	bash ./scripts/check-app-template.sh
+
+check-emulator-smoke:
+	bash ./scripts/check-emulator-smoke.sh
 
 example:
 	$(MAKE) -C cmd/example all
@@ -40,6 +43,9 @@ runtimecheck:
 timeprobe:
 	$(MAKE) -C cmd/timeprobe all
 
+smokeapp:
+	$(MAKE) -C cmd/smokeapp all
+
 sysinfo:
 	$(MAKE) -C cmd/sysinfo all
 
@@ -49,7 +55,7 @@ message:
 ipc:
 	$(MAKE) -C cmd/ipc all
 
-clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-sysinfo clean-message clean-ipc
+clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-smokeapp clean-sysinfo clean-message clean-ipc
 
 clean-example:
 	$(MAKE) -C cmd/example clean
@@ -77,6 +83,9 @@ clean-runtimecheck:
 
 clean-timeprobe:
 	$(MAKE) -C cmd/timeprobe clean
+
+clean-smokeapp:
+	$(MAKE) -C cmd/smokeapp clean
 
 clean-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean
@@ -113,6 +122,9 @@ rebuild-runtimecheck:
 
 rebuild-timeprobe:
 	$(MAKE) -C cmd/timeprobe clean all
+
+rebuild-smokeapp:
+	$(MAKE) -C cmd/smokeapp clean all
 
 rebuild-sysinfo:
 	$(MAKE) -C cmd/sysinfo clean all

@@ -25,6 +25,7 @@ global go_0kos.SetEventMask
 global go_0kos.SetIPCArea
 global go_0kos.SendIPCMessage
 global go_0kos.GetKernelVersion
+global go_0kos.SystemShutdown
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
 global go_0kos.SetCaption
@@ -299,6 +300,18 @@ go_0kos.GetKernelVersion:
     push ebx
     mov eax, 18
     mov ebx, 13
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.SystemShutdown:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 18
+    mov ebx, 9
     mov ecx, [ebp+8]
     int 0x40
     pop ebx

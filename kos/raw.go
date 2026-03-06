@@ -48,6 +48,9 @@ func GetScreenWorkingArea(bottom *uint32) uint32
 // Function 18, subfunction 13 - get kernel version metadata.
 func GetKernelVersion(buffer *byte)
 
+// Function 18, subfunction 9 - system shutdown with a mode parameter.
+func SystemShutdown(uint32) uint32
+
 // Function 18, subfunction 16 - get size of free RAM in kilobytes.
 func GetFreeRAM() uint32
 

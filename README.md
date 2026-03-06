@@ -98,6 +98,12 @@ Verify that the shared app template still generates a buildable sample:
 make check-app-template
 ```
 
+Run the headless emulator smoke check:
+
+```sh
+make check-emulator-smoke
+```
+
 Output:
 
 - `cmd/example/example.kex`
@@ -121,6 +127,10 @@ harness for the documented bootstrap subset. On hosts that cannot execute a
 while the probe inventory still validates the `gccgo -m32` symbol path.
 New applications can be scaffolded from `templates/basic-app` via
 `scripts/new-app.sh`.
+The first emulator-backed smoke path is available through
+`scripts/check-emulator-smoke.sh`; it boots the official KolibriOS image in
+QEMU and expects the autorun smoke app to power the guest off after its
+self-checks pass.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.

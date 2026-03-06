@@ -56,6 +56,12 @@ Verify that the template itself still works:
 make check-app-template
 ```
 
+Run the emulator-backed smoke test:
+
+```sh
+make check-emulator-smoke
+```
+
 Clean the sample builds:
 
 ```sh
@@ -163,3 +169,7 @@ successful build.
   the bootstrap `gccgo -m32` symbol inventory.
 - Template verification lives in `scripts/check-app-template.sh` and confirms
   that `scripts/new-app.sh` generates a buildable sample under `cmd/`.
+- Emulator smoke verification lives in `scripts/check-emulator-smoke.sh`; it
+  downloads the official `kolibri.img`, injects `cmd/smokeapp`, updates
+  `SETTINGS/AUTORUN.DAT`, boots QEMU headless, and waits for the smoke app to
+  power the guest off after its runtime self-checks pass.

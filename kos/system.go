@@ -1,5 +1,13 @@
 package kos
 
+type ShutdownMode uint32
+
+const (
+	ShutdownPowerOff      ShutdownMode = 2
+	ShutdownReboot        ShutdownMode = 3
+	ShutdownRestartKernel ShutdownMode = 4
+)
+
 func KernelVersion() KernelVersionInfo {
 	var buffer [16]byte
 
@@ -22,4 +30,20 @@ func FreeRAMKB() uint32 {
 
 func TotalRAMKB() uint32 {
 	return GetTotalRAM()
+}
+
+func Shutdown(mode ShutdownMode) bool {
+	return SystemShutdown(uint32(mode)) == 0
+}
+
+func PowerOff() bool {
+	return Shutdown(ShutdownPowerOff)
+}
+
+func Reboot() bool {
+	return Shutdown(ShutdownReboot)
+}
+
+func RestartKernel() bool {
+	return Shutdown(ShutdownRestartKernel)
 }

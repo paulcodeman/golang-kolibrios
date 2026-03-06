@@ -30,6 +30,9 @@ jobs:
       - name: Build sample matrix
         run: make rebuild-all
 
+      - name: Check emulator smoke path
+        run: make check-emulator-smoke
+
       - name: Verify build outputs
         run: |
           test -f cmd/example/example.kex

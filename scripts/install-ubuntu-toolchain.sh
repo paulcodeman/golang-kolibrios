@@ -15,4 +15,6 @@ sudo apt-get install -y \
   gccgo-multilib \
   make \
   nasm \
-  binutils
+  binutils \
+  mtools \
+  qemu-system-x86
