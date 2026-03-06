@@ -80,7 +80,7 @@ From the repository root:
 make all
 ```
 
-Focused runtime symbol checks:
+Focused runtime checks:
 
 ```sh
 make check-runtime
@@ -100,7 +100,11 @@ Output:
 - `cmd/ipc/ipc.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
-successful build, so only the final `.kex` artifact remains.
+successful build, so only the final `.kex` artifact remains. `make check-runtime`
+now runs both the unresolved-symbol inventory probes and a host-side C behavior
+harness for the documented bootstrap subset. On hosts that cannot execute a
+32-bit ELF directly, the behavior harness falls back to native host execution
+while the probe inventory still validates the `gccgo -m32` symbol path.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.

@@ -21,7 +21,7 @@ jobs:
       - name: Install toolchain
         run: bash ./scripts/install-ubuntu-toolchain.sh
 
-      - name: Check runtime probe inventory
+      - name: Check runtime probes and behavior
         run: make check-runtime
 
       - name: Build sample matrix

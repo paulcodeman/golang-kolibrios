@@ -35,7 +35,7 @@ From the repository root:
 make all
 ```
 
-Check the focused bootstrap runtime probes:
+Check the focused bootstrap runtime validation:
 
 ```sh
 make check-runtime
@@ -128,3 +128,8 @@ successful build.
 - The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
 - Focused compiler/runtime symbol checks live in `tests/runtime` and run via
   `scripts/check-runtime-probes.sh`.
+- Host-side runtime behavior checks live in `tests/runtime/behavior.c` and run
+  via `scripts/check-runtime-behavior.sh`.
+  On hosts that cannot execute a 32-bit ELF directly, this harness falls back
+  to a native-host build while `scripts/check-runtime-probes.sh` still validates
+  the bootstrap `gccgo -m32` symbol inventory.

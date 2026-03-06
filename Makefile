@@ -1,9 +1,14 @@
-.PHONY: all check-runtime example hello strings slices interfaces emptyiface assertions sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all check-runtime check-runtime-probes check-runtime-behavior example hello strings slices interfaces emptyiface assertions sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
 
 all: example hello strings slices interfaces emptyiface assertions sysinfo message ipc
 
-check-runtime:
+check-runtime: check-runtime-probes check-runtime-behavior
+
+check-runtime-probes:
 	bash ./scripts/check-runtime-probes.sh
+
+check-runtime-behavior:
+	bash ./scripts/check-runtime-behavior.sh
 
 example:
 	$(MAKE) -C cmd/example all

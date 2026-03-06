@@ -121,7 +121,7 @@ Sample coverage:
 - `cmd/ipc` validates that small real apps can stay within the current runtime
   envelope while using the syscall/UI layers
 
-Focused runtime probe coverage:
+Focused runtime check coverage:
 
 - `tests/runtime/strings.go` validates the emitted string concat/equality
   symbol path
@@ -138,8 +138,15 @@ Focused runtime probe coverage:
 - `tests/runtime/iface_to_iface.go` validates the emitted non-empty interface
   assertion symbol path
 - `tests/runtime/type_switch.go` validates the emitted type-switch symbol path
+- `tests/runtime/behavior.c` validates host-side runtime behavior for
+  allocation, string concat, byte-slice helpers, empty-interface equality, and
+  the validated interface assertion/dispatch helpers
 - `scripts/check-runtime-probes.sh` compiles these probes and checks that
   `abi/runtime_gccgo.c` exports the required symbol set
+- `scripts/check-runtime-behavior.sh` compiles and runs the host-side behavior
+  harness against `abi/runtime_gccgo.c`; it prefers a 32-bit host build and
+  falls back to native-host execution when the environment cannot run 32-bit
+  ELF binaries directly
 
 ## Not Yet Supported
 
@@ -179,4 +186,5 @@ The next runtime milestones after this slice/string subset are:
 - document the emitted `gccgo` runtime symbol inventory more formally
 - add broader interface conversions beyond the validated assertion paths
 - make runtime failure reporting richer than the current short debug-board text
-- grow the runtime probes beyond symbol inventory into behavior checks
+- broaden the current host-side behavior checks toward failure paths and
+  emulator-backed execution
