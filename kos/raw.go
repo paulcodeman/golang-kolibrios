@@ -48,6 +48,9 @@ func GetActiveWindowSlotRaw() int
 // Function 48, subfunction 4 - get skinned-window header height.
 func GetSkinHeight() int
 
+// Function 48, subfunction 7 - get skin margins for header text layout.
+func GetSkinMarginsRaw(vertical *uint32) uint32
+
 // Function 48, subfunction 5 - get packed screen working-area coordinates.
 func GetScreenWorkingArea(bottom *uint32) uint32
 

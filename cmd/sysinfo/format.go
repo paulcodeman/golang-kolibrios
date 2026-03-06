@@ -55,3 +55,10 @@ func formatRect(rect kos.Rect) string {
 	return "(" + formatInt(rect.Left) + "," + formatInt(rect.Top) + ")-(" +
 		formatInt(rect.Right) + "," + formatInt(rect.Bottom) + ")"
 }
+
+func formatSkinMargins(margins kos.SkinMargins) string {
+	return "L" + formatInt(margins.Left) +
+		" T" + formatInt(margins.Top) +
+		" R" + formatInt(margins.Right) +
+		" B" + formatInt(margins.Bottom)
+}

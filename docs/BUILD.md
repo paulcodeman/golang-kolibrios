@@ -138,7 +138,7 @@ successful build.
   - uptime counters from `26.9` and `26.10`
   - timed wait via function `23`
   - delay probe via function `5`
-- `cmd/sysinfo` - implemented, including active-window/focus probes
+- `cmd/sysinfo` - implemented, including skin-margin and active-window/focus probes
   - kernel version query
   - screen working-area query
   - skin height query

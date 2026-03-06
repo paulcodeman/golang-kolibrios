@@ -1,5 +1,12 @@
 package kos
 
+type SkinMargins struct {
+	Left   int
+	Right  int
+	Top    int
+	Bottom int
+}
+
 func ScreenSize() (width int, height int) {
 	packed := GetScreenSize()
 	return int(packed>>16) + 1, int(packed&0xFFFF) + 1
@@ -19,4 +26,16 @@ func ScreenWorkingArea() Rect {
 
 func SkinHeight() int {
 	return GetSkinHeight()
+}
+
+func WindowSkinMargins() SkinMargins {
+	var vertical uint32
+
+	horizontal := GetSkinMarginsRaw(&vertical)
+	return SkinMargins{
+		Left:   int(horizontal >> 16),
+		Right:  int(horizontal & 0xFFFF),
+		Top:    int(vertical >> 16),
+		Bottom: int(vertical & 0xFFFF),
+	}
 }

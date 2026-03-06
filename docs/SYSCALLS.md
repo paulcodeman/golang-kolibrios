@@ -40,6 +40,7 @@ packed arguments, and return conventions.
 | `40` | `kos.SetEventMask` | `kos.SwapEventMask` | Event filtering |
 | `48.4` | `kos.GetSkinHeight` | `kos.SkinHeight` | Height of the skinned-window header |
 | `48.5` | `kos.GetScreenWorkingArea` | `kos.ScreenWorkingArea` | Returns inclusive working-area bounds |
+| `48.7` | `kos.GetSkinMarginsRaw` | `kos.WindowSkinMargins` | Returns header text margins for skinned windows |
 | `60.1` | `kos.SetIPCArea` | `kos.RegisterIPCBuffer` | Registers the process receive buffer for event `7` delivery |
 | `60.2` | `kos.SendIPCMessage` | `kos.SendIPCRaw`, `kos.SendIPC`, `kos.InspectIPCBuffer` | Non-allocating IPC helpers keep the sample within the current bootstrap runtime surface |
 | `63` | `kos.DebugOutHex`, `kos.DebugOutChar`, `kos.DebugOutStr` | `kos.DebugHex`, `kos.DebugChar`, `kos.DebugString` | Debug board helpers |

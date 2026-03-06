@@ -14,7 +14,7 @@ const (
 	sysinfoWindowX = 350
 	sysinfoWindowY = 180
 	sysinfoWindowWidth = 540
-	sysinfoWindowHeight = 250
+	sysinfoWindowHeight = 276
 	sysinfoWindowTitle = "KolibriOS Sysinfo"
 	sysinfoUTF8Title = "KolibriOS Проба UTF-8"
 )
@@ -25,6 +25,7 @@ type App struct {
 	screenHeight int
 	workArea kos.Rect
 	skinHeight int
+	skinMargins kos.SkinMargins
 	currentSlot int
 	activeSlot int
 	hasCurrentSlot bool
@@ -36,13 +37,13 @@ type App struct {
 }
 
 func NewApp() App {
-	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 196)
+	toggleTitle := ui.NewButton(sysinfoButtonToggleTitle, "Use UTF-8", 28, 220)
 	toggleTitle.Width = 128
 
-	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 196)
+	refresh := ui.NewButton(sysinfoButtonRefresh, "Refresh", 176, 220)
 	refresh.Width = 112
 
-	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 196)
+	focusSelf := ui.NewButton(sysinfoButtonFocusSelf, "Focus self", 320, 220)
 	focusSelf.Width = 120
 
 	app := App{
@@ -107,6 +108,7 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 136, ui.White, "Work area: "+formatRect(app.workArea))
 	kos.DrawText(28, 154, ui.Silver, "Work size: "+formatInt(app.workArea.Width())+"x"+formatInt(app.workArea.Height()))
 	kos.DrawText(28, 172, ui.Aqua, "Skin height: "+formatInt(app.skinHeight))
+	kos.DrawText(28, 190, ui.Lime, "Skin margins: "+formatSkinMargins(app.skinMargins))
 	kos.DrawText(320, 46, ui.Yellow, "Title mode: "+app.titleMode())
 	kos.DrawText(320, 64, ui.White, "Current slot: "+app.currentSlotString())
 	kos.DrawText(320, 82, ui.Silver, "Active slot: "+formatInt(app.activeSlot))
@@ -123,6 +125,7 @@ func (app *App) refreshInfo() {
 	app.screenWidth, app.screenHeight = kos.ScreenSize()
 	app.workArea = kos.ScreenWorkingArea()
 	app.skinHeight = kos.SkinHeight()
+	app.skinMargins = kos.WindowSkinMargins()
 	app.currentSlot, app.hasCurrentSlot = kos.CurrentThreadSlotIndex()
 	app.activeSlot = kos.ActiveWindowSlot()
 }

@@ -20,6 +20,7 @@ global go_0kos.GetTimeCounterPro
 global go_0kos.GetScreenSize
 global go_0kos.GetScreenWorkingArea
 global go_0kos.GetSkinHeight
+global go_0kos.GetSkinMarginsRaw
 global go_0kos.WaitEventTimeout
 global go_0kos.SetEventMask
 global go_0kos.SetIPCArea
@@ -243,6 +244,22 @@ go_0kos.GetSkinHeight:
     mov ebx, 4
     int 0x40
     pop ebx
+    ret
+
+go_0kos.GetSkinMarginsRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 48
+    mov ebx, 7
+    int 0x40
+    mov edx, [ebp+8]
+    test edx, edx
+    jz .done_skin_margins
+    mov [edx], ebx
+.done_skin_margins:
+    pop ebx
+    pop ebp
     ret
 
 go_0kos.WaitEventTimeout:
