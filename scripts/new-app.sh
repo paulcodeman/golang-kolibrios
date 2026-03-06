@@ -26,7 +26,7 @@ if [[ ! "$name" =~ ^[a-z_][a-z0-9_]*$ ]]; then
   exit 1
 fi
 
-target_dir="$repo_root/cmd/$name"
+target_dir="$repo_root/examples/$name"
 if [[ -e "$target_dir" ]]; then
   echo "target already exists: $target_dir" >&2
   exit 1
@@ -53,4 +53,4 @@ render_template "main.go.in" "main.go"
 render_template "app.go.in" "app.go"
 
 printf 'created %s\n' "$target_dir"
-printf 'build with: make -C cmd/%s all\n' "$name"
+printf 'build with: make -C examples/%s all\n' "$name"

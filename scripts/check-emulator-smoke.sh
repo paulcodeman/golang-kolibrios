@@ -7,7 +7,7 @@ base_image=$(bash "$repo_root/scripts/download-kolibri-image.sh")
 work_dir=$(mktemp -d -p /tmp kolibri-qemu-smoke-XXXXXX)
 image_path="$work_dir/kolibri-smoke.img"
 pidfile="$work_dir/qemu.pid"
-app_binary="$repo_root/cmd/smokeapp/smokeapp.kex"
+app_binary="$repo_root/tests/smokeapp/smokeapp.kex"
 qemu_binary=${QEMU_SYSTEM_I386:-qemu-system-i386}
 timeout_seconds=${KOLIBRI_SMOKE_TIMEOUT_SECONDS:-45}
 
@@ -39,7 +39,7 @@ require_tool mdeltree
 require_tool mdel
 require_tool curl
 
-make -C "$repo_root/cmd/smokeapp" clean all
+make -C "$repo_root/tests/smokeapp" clean all
 
 cp "$base_image" "$image_path"
 bash "$repo_root/scripts/prune-kolibri-image.sh" "$image_path"

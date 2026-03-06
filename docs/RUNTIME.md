@@ -110,19 +110,14 @@ Validated by current samples:
 
 Sample coverage:
 
-- `cmd/strings` validates string equality and concatenation
-- `cmd/slices` validates `make([]byte, n)`, `[]byte(string)`, and
-  `string([]byte)`
-- `cmd/interfaces` validates non-empty interface assignment, dispatch, and
-  equality
-- `cmd/emptyiface` validates empty interface assignment and equality for
-  matching comparable concrete values
-- `cmd/assertions` validates empty/non-empty interface assertions, comma-ok
-  assertions, and a simple type switch
-- `cmd/runtimecheck` validates the current runtime subset inside one interactive
-  KolibriOS smoke sample
-- `cmd/ipc` validates that small real apps can stay within the current runtime
-  envelope while using the syscall/UI layers
+- `examples/runtime` validates string equality/concatenation, byte-slice
+  growth and conversion, non-empty interface dispatch/equality, empty
+  interface equality, assertions, comma-ok assertions, and a simple type switch
+  inside one interactive KolibriOS app
+- `examples/ipc` validates that a small real app can stay within the current
+  runtime envelope while using the syscall/UI layers
+- `tests/smokeapp` validates a headless runtime subset under the emulator smoke
+  path
 
 Focused runtime check coverage:
 

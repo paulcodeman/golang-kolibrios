@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 app_name=templatedemo
-app_dir="$repo_root/cmd/$app_name"
+app_dir="$repo_root/examples/$app_name"
 
 cleanup() {
   rm -rf "$app_dir"

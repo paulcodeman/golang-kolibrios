@@ -8,7 +8,7 @@ native `go build` target.
 
 ## Current Baseline
 
-- `cmd/example` already builds into `example.kex`.
+- `examples/window` already builds into `window.kex`.
 - The low-level syscall ABI lives in `abi/syscalls_i386.asm`.
 - Runtime glue currently lives in `abi/runtime_gccgo.c`.
 - Exported low-level Go declarations live in `kos/raw.go`.
@@ -53,7 +53,7 @@ Tasks:
   list.
 - Replace per-example build assumptions with shared build scripts or shared
   `make` includes.
-- Document the one command required to build `cmd/example/example.kex`.
+- Document the one command required to build `examples/window/window.kex`.
 - Add a small example matrix:
   - hello world
   - window app

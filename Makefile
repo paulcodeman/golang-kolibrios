@@ -1,6 +1,8 @@
-.PHONY: all check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe smokeapp sysinfo message ipc clean clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-smokeapp clean-sysinfo clean-message clean-ipc rebuild-example rebuild-hello rebuild-strings rebuild-slices rebuild-interfaces rebuild-emptyiface rebuild-assertions rebuild-runtimecheck rebuild-timeprobe rebuild-smokeapp rebuild-sysinfo rebuild-message rebuild-ipc rebuild-all
+.PHONY: all examples check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke window runtime time system input ipc smokeapp clean clean-examples clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-smokeapp rebuild-all
 
-all: example hello strings slices interfaces emptyiface assertions runtimecheck timeprobe smokeapp sysinfo message ipc
+all: examples smokeapp
+
+examples: window runtime time system input ipc
 
 check-runtime: check-runtime-probes check-runtime-behavior
 
@@ -16,124 +18,72 @@ check-app-template:
 check-emulator-smoke:
 	bash ./scripts/check-emulator-smoke.sh
 
-example:
-	$(MAKE) -C cmd/example all
+window:
+	$(MAKE) -C examples/window all
 
-hello:
-	$(MAKE) -C cmd/hello all
+runtime:
+	$(MAKE) -C examples/runtime all
 
-strings:
-	$(MAKE) -C cmd/strings all
+time:
+	$(MAKE) -C examples/time all
 
-slices:
-	$(MAKE) -C cmd/slices all
+system:
+	$(MAKE) -C examples/system all
 
-interfaces:
-	$(MAKE) -C cmd/interfaces all
-
-emptyiface:
-	$(MAKE) -C cmd/emptyiface all
-
-assertions:
-	$(MAKE) -C cmd/assertions all
-
-runtimecheck:
-	$(MAKE) -C cmd/runtimecheck all
-
-timeprobe:
-	$(MAKE) -C cmd/timeprobe all
-
-smokeapp:
-	$(MAKE) -C cmd/smokeapp all
-
-sysinfo:
-	$(MAKE) -C cmd/sysinfo all
-
-message:
-	$(MAKE) -C cmd/message all
+input:
+	$(MAKE) -C examples/input all
 
 ipc:
-	$(MAKE) -C cmd/ipc all
+	$(MAKE) -C examples/ipc all
 
-clean: clean-example clean-hello clean-strings clean-slices clean-interfaces clean-emptyiface clean-assertions clean-runtimecheck clean-timeprobe clean-smokeapp clean-sysinfo clean-message clean-ipc
+smokeapp:
+	$(MAKE) -C tests/smokeapp all
 
-clean-example:
-	$(MAKE) -C cmd/example clean
+clean: clean-examples clean-smokeapp
 
-clean-hello:
-	$(MAKE) -C cmd/hello clean
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc
 
-clean-strings:
-	$(MAKE) -C cmd/strings clean
+clean-window:
+	$(MAKE) -C examples/window clean
 
-clean-slices:
-	$(MAKE) -C cmd/slices clean
+clean-runtime:
+	$(MAKE) -C examples/runtime clean
 
-clean-interfaces:
-	$(MAKE) -C cmd/interfaces clean
+clean-time:
+	$(MAKE) -C examples/time clean
 
-clean-emptyiface:
-	$(MAKE) -C cmd/emptyiface clean
+clean-system:
+	$(MAKE) -C examples/system clean
 
-clean-assertions:
-	$(MAKE) -C cmd/assertions clean
-
-clean-runtimecheck:
-	$(MAKE) -C cmd/runtimecheck clean
-
-clean-timeprobe:
-	$(MAKE) -C cmd/timeprobe clean
-
-clean-smokeapp:
-	$(MAKE) -C cmd/smokeapp clean
-
-clean-sysinfo:
-	$(MAKE) -C cmd/sysinfo clean
-
-clean-message:
-	$(MAKE) -C cmd/message clean
+clean-input:
+	$(MAKE) -C examples/input clean
 
 clean-ipc:
-	$(MAKE) -C cmd/ipc clean
+	$(MAKE) -C examples/ipc clean
 
-rebuild-example:
-	$(MAKE) -C cmd/example clean all
+clean-smokeapp:
+	$(MAKE) -C tests/smokeapp clean
 
-rebuild-hello:
-	$(MAKE) -C cmd/hello clean all
+rebuild-window:
+	$(MAKE) -C examples/window clean all
 
-rebuild-strings:
-	$(MAKE) -C cmd/strings clean all
+rebuild-runtime:
+	$(MAKE) -C examples/runtime clean all
 
-rebuild-slices:
-	$(MAKE) -C cmd/slices clean all
+rebuild-time:
+	$(MAKE) -C examples/time clean all
 
-rebuild-interfaces:
-	$(MAKE) -C cmd/interfaces clean all
+rebuild-system:
+	$(MAKE) -C examples/system clean all
 
-rebuild-emptyiface:
-	$(MAKE) -C cmd/emptyiface clean all
-
-rebuild-assertions:
-	$(MAKE) -C cmd/assertions clean all
-
-rebuild-runtimecheck:
-	$(MAKE) -C cmd/runtimecheck clean all
-
-rebuild-timeprobe:
-	$(MAKE) -C cmd/timeprobe clean all
-
-rebuild-smokeapp:
-	$(MAKE) -C cmd/smokeapp clean all
-
-rebuild-sysinfo:
-	$(MAKE) -C cmd/sysinfo clean all
-
-rebuild-message:
-	$(MAKE) -C cmd/message clean all
+rebuild-input:
+	$(MAKE) -C examples/input clean all
 
 rebuild-ipc:
-	$(MAKE) -C cmd/ipc clean all
+	$(MAKE) -C examples/ipc clean all
+
+rebuild-smokeapp:
+	$(MAKE) -C tests/smokeapp clean all
 
 rebuild-all:
 	$(MAKE) clean all

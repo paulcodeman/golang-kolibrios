@@ -49,8 +49,8 @@ Create a new app from the shared template:
 bash ./scripts/new-app.sh demo "KolibriOS Demo"
 ```
 
-This creates `cmd/demo` with a package-local `Main`, a minimal window loop, and
-the shared `mk/kolibri-app.mk` build wiring.
+This creates `examples/demo` with a package-local `Main`, a minimal window
+loop, and the shared `mk/kolibri-app.mk` build wiring.
 
 Verify that the template itself still works:
 
@@ -64,7 +64,7 @@ Run the emulator-backed smoke test:
 make check-emulator-smoke
 ```
 
-Clean the sample builds:
+Clean the example builds:
 
 ```sh
 make clean
@@ -80,72 +80,34 @@ make rebuild-all
 
 Successful build output:
 
-- `cmd/example/example.kex`
-- `cmd/hello/hello.kex`
-- `cmd/strings/strings.kex`
-- `cmd/slices/slices.kex`
-- `cmd/interfaces/interfaces.kex`
-- `cmd/emptyiface/emptyiface.kex`
-- `cmd/assertions/assertions.kex`
-- `cmd/runtimecheck/runtimecheck.kex`
-- `cmd/timeprobe/timeprobe.kex`
-- `cmd/smokeapp/smokeapp.kex`
-- `cmd/sysinfo/sysinfo.kex`
-- `cmd/message/message.kex`
-- `cmd/ipc/ipc.kex`
+- `examples/window/window.kex`
+- `examples/runtime/runtime.kex`
+- `examples/time/time.kex`
+- `examples/system/system.kex`
+- `examples/input/input.kex`
+- `examples/ipc/ipc.kex`
+- `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
 successful build.
 
-## Current Sample Matrix
+## Current Example Matrix
 
-- `cmd/example` - implemented
+- `examples/window` - implemented
   - window creation
   - redraw loop
   - button input
   - primitive drawing
-- `cmd/hello` - implemented
-  - minimal window loop
-  - text drawing
-- `cmd/strings` - implemented
-  - string concatenation
-  - string equality
-  - button-triggered redraw
-- `cmd/slices` - implemented
-  - `make([]byte, n)`
-  - `append(dst, src...)`
-  - `append(dst, b1, b2, ...)`
-  - `copy(dst, src)`
-  - `[]byte(string)`
-  - `string([]byte)`
-  - slice indexing and `len`
-- `cmd/interfaces` - implemented
-  - concrete-to-interface assignment
-  - non-empty interface method dispatch
-  - interface equality for matching comparable concrete types
-- `cmd/emptyiface` - implemented
-  - empty interface assignment
-  - empty interface equality for matching comparable concrete types
-- `cmd/assertions` - implemented
-  - empty interface to concrete assertion
-  - empty interface comma-ok assertion
-  - empty interface to interface assertion
-  - non-empty interface to interface assertion
-  - empty interface type switch
-- `cmd/runtimecheck` - implemented
+- `examples/runtime` - implemented
   - integrated runtime smoke panel
   - strings, slices, interfaces, empty interface equality
   - assertions and type switch in one `.kex`
-- `cmd/timeprobe` - implemented
+- `examples/time` - implemented
   - system time decode from syscall `3`
   - uptime counters from `26.9` and `26.10`
   - timed wait via function `23`
   - delay probe via function `5`
-- `cmd/smokeapp` - implemented
-  - headless autorun QEMU smoke for the documented bootstrap subset
-  - runtime checks for strings, slices, interfaces, assertions, and timed wait
-  - system geometry checks against a temporary pruned copy of the official `kolibri.img`
-- `cmd/sysinfo` - implemented, including skin-margin, cursor, keyboard-layout, system-language, skin-switch, and active-window/focus probes
+- `examples/system` - implemented, including skin-margin, cursor, keyboard-layout, system-language, skin-switch, and active-window/focus probes
   - kernel version query
   - screen working-area query
   - skin height query
@@ -155,14 +117,18 @@ successful build.
   - default skin apply probes via `48.8/48.13`
   - active-window slot and focus probe via `18.3/18.7`
   - caption update via function `71.1`
-- `cmd/message` - implemented
+- `examples/input` - implemented
   - active-window button injection via function `72`
   - active-window key injection via function `72`
   - key event decoding via function `2`
-- `cmd/ipc` - implemented
+- `examples/ipc` - implemented
   - IPC buffer registration via function `60.1`
   - self-targeted IPC send via function `60.2`
   - IPC event `7` handling and buffer drain
+- `tests/smokeapp` - implemented
+  - headless autorun QEMU smoke for the documented bootstrap subset
+  - runtime checks for strings, slices, interfaces, assertions, and timed wait
+  - system geometry checks against a temporary pruned copy of the official `kolibri.img`
 
 ## Notes
 
@@ -182,9 +148,9 @@ successful build.
   to a native-host build while `scripts/check-runtime-probes.sh` still validates
   the bootstrap `gccgo -m32` symbol inventory.
 - Template verification lives in `scripts/check-app-template.sh` and confirms
-  that `scripts/new-app.sh` generates a buildable sample under `cmd/`.
+  that `scripts/new-app.sh` generates a buildable example under `examples/`.
 - Emulator smoke verification lives in `scripts/check-emulator-smoke.sh`; it
   downloads the official `kolibri.img`, prunes non-system payload from a
   temporary copy to free space, replaces the existing `@HA` autorun slot with
-  `cmd/smokeapp`, boots QEMU headless, and waits for the smoke app to power the
-  guest off after runtime plus system self-checks pass.
+  `tests/smokeapp`, boots QEMU headless, and waits for the smoke app to power
+  the guest off after runtime plus system self-checks pass.

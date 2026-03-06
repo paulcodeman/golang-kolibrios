@@ -1,6 +1,6 @@
 # golang-kolibrios
 
-[![Build Samples](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml/badge.svg)](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml)
+[![Build Examples](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml/badge.svg)](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml)
 
 Experimental Go bootstrap for building KolibriOS applications.
 
@@ -9,29 +9,30 @@ This repository currently provides:
 - low-level KolibriOS syscall entrypoints in assembly
 - Go declarations and small typed wrappers for those syscalls
 - a minimal `gccgo`-based runtime glue layer
-- working sample applications that build into `.kex` binaries
+- working example applications that build into `.kex` binaries
 
 The project is still in prototype stage. Right now the practical path is
 `gccgo` + custom ABI/runtime glue, not native `go build`.
 
 ## Current Status
 
-- `cmd/example` builds successfully into `cmd/example/example.kex`
+- `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- the shared linker script emits separate RX/RW load segments, so sample builds no longer trigger the old RWX warning
+- the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
+- public demos now live under `examples/`, while internal smoke/test programs live under `tests/`
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
 - `docs/` - bootstrap and build documentation
+- `examples/` - curated public KolibriOS demo applications
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `tests/` - focused bootstrap runtime probes
+- `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
-- `cmd/` - sample KolibriOS applications and linker/build files
 - `sysfuncs.txt` - KolibriOS system function specification
 - `AGENTS.md` - repository instructions for future agent work
 - `ROADMAP.md` - staged plan for turning this into a fuller Go target
@@ -75,7 +76,7 @@ This installs:
 - `mtools`
 - `qemu-system-x86`
 
-## Build Samples
+## Build Examples
 
 From the repository root:
 
@@ -95,7 +96,7 @@ Create a new scaffolded app:
 bash ./scripts/new-app.sh demo "KolibriOS Demo"
 ```
 
-Verify that the shared app template still generates a buildable sample:
+Verify that the shared app template still generates a buildable example:
 
 ```sh
 make check-app-template
@@ -109,19 +110,13 @@ make check-emulator-smoke
 
 Output:
 
-- `cmd/example/example.kex`
-- `cmd/hello/hello.kex`
-- `cmd/strings/strings.kex`
-- `cmd/slices/slices.kex`
-- `cmd/interfaces/interfaces.kex`
-- `cmd/emptyiface/emptyiface.kex`
-- `cmd/assertions/assertions.kex`
-- `cmd/runtimecheck/runtimecheck.kex`
-- `cmd/timeprobe/timeprobe.kex`
-- `cmd/smokeapp/smokeapp.kex`
-- `cmd/sysinfo/sysinfo.kex`
-- `cmd/message/message.kex`
-- `cmd/ipc/ipc.kex`
+- `examples/window/window.kex`
+- `examples/runtime/runtime.kex`
+- `examples/time/time.kex`
+- `examples/system/system.kex`
+- `examples/input/input.kex`
+- `examples/ipc/ipc.kex`
+- `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains. `make check-runtime`
@@ -130,20 +125,20 @@ harness for the documented bootstrap subset. On hosts that cannot execute a
 32-bit ELF directly, the behavior harness falls back to native host execution
 while the probe inventory still validates the `gccgo -m32` symbol path.
 New applications can be scaffolded from `templates/basic-app` via
-`scripts/new-app.sh`.
+`scripts/new-app.sh` into `examples/<name>`.
 The first emulator-backed smoke path is available through
 `scripts/check-emulator-smoke.sh`; it boots a pruned temporary copy of the
 official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with
-`cmd/smokeapp`, and expects the smoke app to power the guest off after runtime
+`tests/smokeapp`, and expects the smoke app to power the guest off after runtime
 and system self-checks pass.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
 For the current bootstrap runtime contract, see `docs/RUNTIME.md`.
 
-## Example Application
+## Window Example
 
-The example app:
+The window demo:
 
 - opens a KolibriOS window
 - draws a red bar and a guide line
@@ -152,24 +147,18 @@ The example app:
 
 Main sources:
 
-- `cmd/example/app.go`
-- `cmd/example/main.go`
+- `examples/window/app.go`
+- `examples/window/main.go`
 
-## Sample Matrix
+## Example Matrix
 
-- `cmd/example` - implemented
-- `cmd/hello` - implemented
-- `cmd/strings` - implemented
-- `cmd/slices` - byte-slice growth, copy, and string conversion probe
-- `cmd/interfaces` - non-empty interface dispatch and equality probe
-- `cmd/emptyiface` - empty interface equality probe for comparable values
-- `cmd/assertions` - empty/non-empty interface assertions and type switch probe
-- `cmd/runtimecheck` - integrated in-app runtime smoke panel for the current subset
-- `cmd/timeprobe` - system time, uptime counter, wait timeout, and sleep probe
-- `cmd/smokeapp` - headless QEMU autorun smoke for the runtime and system bootstrap subset
-- `cmd/sysinfo` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
-- `cmd/message` - function `72` message injection probe
-- `cmd/ipc` - function `60` self-IPC event and buffer probe
+- `examples/window` - basic window loop, redraw handling, buttons, and primitive drawing
+- `examples/runtime` - integrated runtime smoke panel for strings, slices, interfaces, empty interfaces, assertions, and type switches
+- `examples/time` - system time, uptime counters, wait timeout, and sleep probe
+- `examples/system` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
+- `examples/input` - function `72` button/key injection and input event probe
+- `examples/ipc` - function `60` self-IPC event and buffer probe
+- `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes
 

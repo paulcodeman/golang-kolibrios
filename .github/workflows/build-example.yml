@@ -1,4 +1,4 @@
-name: Build Samples
+name: Build Examples
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  build-samples:
+  build-examples:
     runs-on: ubuntu-24.04
 
     steps:
@@ -27,7 +27,7 @@ jobs:
       - name: Check app template
         run: make check-app-template
 
-      - name: Build sample matrix
+      - name: Build example matrix
         run: make rebuild-all
 
       - name: Check emulator smoke path
@@ -35,35 +35,23 @@ jobs:
 
       - name: Verify build outputs
         run: |
-          test -f cmd/example/example.kex
-          test -f cmd/hello/hello.kex
-          test -f cmd/strings/strings.kex
-          test -f cmd/slices/slices.kex
-          test -f cmd/interfaces/interfaces.kex
-          test -f cmd/emptyiface/emptyiface.kex
-          test -f cmd/assertions/assertions.kex
-          test -f cmd/runtimecheck/runtimecheck.kex
-          test -f cmd/timeprobe/timeprobe.kex
-          test -f cmd/smokeapp/smokeapp.kex
-          test -f cmd/sysinfo/sysinfo.kex
-          test -f cmd/message/message.kex
-          test -f cmd/ipc/ipc.kex
+          test -f examples/window/window.kex
+          test -f examples/runtime/runtime.kex
+          test -f examples/time/time.kex
+          test -f examples/system/system.kex
+          test -f examples/input/input.kex
+          test -f examples/ipc/ipc.kex
+          test -f tests/smokeapp/smokeapp.kex
 
-      - name: Upload sample artifacts
+      - name: Upload example artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sample-kex
+          name: example-kex
           path: |
-            cmd/example/example.kex
-            cmd/hello/hello.kex
-            cmd/strings/strings.kex
-            cmd/slices/slices.kex
-            cmd/interfaces/interfaces.kex
-            cmd/emptyiface/emptyiface.kex
-            cmd/assertions/assertions.kex
-            cmd/runtimecheck/runtimecheck.kex
-            cmd/timeprobe/timeprobe.kex
-            cmd/smokeapp/smokeapp.kex
-            cmd/sysinfo/sysinfo.kex
-            cmd/message/message.kex
-            cmd/ipc/ipc.kex
+            examples/window/window.kex
+            examples/runtime/runtime.kex
+            examples/time/time.kex
+            examples/system/system.kex
+            examples/input/input.kex
+            examples/ipc/ipc.kex
+            tests/smokeapp/smokeapp.kex
