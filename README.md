@@ -1,6 +1,6 @@
 # golang-kolibrios
 
-[![Build Example](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml/badge.svg)](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml)
+[![Build Samples](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml/badge.svg)](https://github.com/paulcodeman/golang-kolibrios/actions/workflows/build-example.yml)
 
 Experimental Go bootstrap for building KolibriOS applications.
 
@@ -76,12 +76,14 @@ This installs:
 From the repository root:
 
 ```sh
-make example
+make all
 ```
 
 Output:
 
 - `cmd/example/example.kex`
+- `cmd/hello/hello.kex`
+- `cmd/strings/strings.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
 successful build, so only the final `.kex` artifact remains.
@@ -105,8 +107,8 @@ Main sources:
 ## Sample Matrix
 
 - `cmd/example` - implemented
-- `cmd/hello` - planned
-- `cmd/strings` - planned
+- `cmd/hello` - implemented
+- `cmd/strings` - implemented
 
 ## Development Notes
 

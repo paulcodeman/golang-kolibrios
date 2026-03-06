@@ -1,4 +1,4 @@
-name: Build Example
+name: Build Samples
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  build-example:
+  build-samples:
     runs-on: ubuntu-24.04
 
     steps:
@@ -21,14 +21,20 @@ jobs:
       - name: Install toolchain
         run: bash ./scripts/install-ubuntu-toolchain.sh
 
-      - name: Build example.kex
-        run: make rebuild-example
+      - name: Build sample matrix
+        run: make rebuild-all
 
-      - name: Verify build output
-        run: test -f cmd/example/example.kex
+      - name: Verify build outputs
+        run: |
+          test -f cmd/example/example.kex
+          test -f cmd/hello/hello.kex
+          test -f cmd/strings/strings.kex
 
-      - name: Upload example artifact
+      - name: Upload sample artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: example-kex
-          path: cmd/example/example.kex
+          name: sample-kex
+          path: |
+            cmd/example/example.kex
+            cmd/hello/hello.kex
+            cmd/strings/strings.kex

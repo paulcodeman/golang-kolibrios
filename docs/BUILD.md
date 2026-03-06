@@ -32,7 +32,7 @@ This installs:
 From the repository root:
 
 ```sh
-make example
+make all
 ```
 
 Clean the example build:
@@ -44,7 +44,7 @@ make clean
 Rebuild from scratch:
 
 ```sh
-make rebuild-example
+make rebuild-all
 ```
 
 ## Current Output
@@ -52,6 +52,8 @@ make rebuild-example
 Successful build output:
 
 - `cmd/example/example.kex`
+- `cmd/hello/hello.kex`
+- `cmd/strings/strings.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
 successful build.
@@ -63,8 +65,13 @@ successful build.
   - redraw loop
   - button input
   - primitive drawing
-- `cmd/hello` - planned
-- `cmd/strings` - planned
+- `cmd/hello` - implemented
+  - minimal window loop
+  - text drawing
+- `cmd/strings` - implemented
+  - string concatenation
+  - string equality
+  - button-triggered redraw
 
 ## Notes
 
