@@ -1,10 +1,9 @@
 PROGRAM ?= app
 PACKAGE_NAME ?= $(PROGRAM)
 ROOT ?= ../..
+ROOT_ABS := $(abspath $(ROOT))
 
 ABI_DIR = $(ROOT)/abi
-KOS_DIR = $(ROOT)/kos
-UI_DIR = $(ROOT)/ui
 MK_DIR = $(ROOT)/mk
 BUILD_DIR = .build
 
@@ -19,23 +18,37 @@ ENTRYPOINT = go_0$(PACKAGE_NAME).Main
 LDSCRIPT_TEMPLATE = $(MK_DIR)/static.lds.in
 LDSCRIPT = $(BUILD_DIR)/$(PROGRAM).lds
 
-GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I.
+GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I. -I$(ROOT_ABS)
 GCC_COMPILER_FLAGS = -m32 -c -ffunction-sections -fdata-sections -fno-pic -fno-pie -fno-stack-protector
 LDFLAGS = -n -T $(LDSCRIPT) -m elf_i386 --no-ld-generated-unwind-info -z noexecstack -z relro -z now --gc-sections --entry=$(ENTRYPOINT)
 
-KOS_SOURCES = $(wildcard $(KOS_DIR)/*.go)
-UI_SOURCES = $(wildcard $(UI_DIR)/*.go)
 APP_SOURCES = $(wildcard *.go)
 
-KOS_OBJ = $(ROOT)/kos.gccgo.o
-KOS_GOX = $(ROOT)/kos.gox
-UI_OBJ = $(ROOT)/ui.gccgo.o
-UI_GOX = $(ROOT)/ui.gox
+PACKAGE_DIRS ?= kos ui
+PACKAGE_OBJS =
+PACKAGE_GOXS =
+PREVIOUS_PACKAGE_GOXS =
+
+define REGISTER_PACKAGE
+PACKAGE_OBJS += $(ROOT)/$(1).gccgo.o
+PACKAGE_GOXS += $(ROOT)/$(1).gox
+
+$(ROOT)/$(1).gccgo.o: $(wildcard $(ROOT_ABS)/$(1)/*.go) $(PREVIOUS_PACKAGE_GOXS)
+	cd $(ROOT_ABS)/$(1) && $(GO) $(GO_COMPILER_FLAGS) -o $(ROOT_ABS)/$(1).gccgo.o $(notdir $(wildcard $(ROOT_ABS)/$(1)/*.go))
+
+$(ROOT)/$(1).gox: $(ROOT)/$(1).gccgo.o
+	$(OBJCOPY) -j .go_export $$< $$@
+
+PREVIOUS_PACKAGE_GOXS += $(ROOT)/$(1).gox
+endef
+
+$(foreach pkg,$(PACKAGE_DIRS),$(eval $(call REGISTER_PACKAGE,$(pkg))))
+
 APP_OBJ = $(PROGRAM).gccgo.o
 
 ABI_OBJS = $(ABI_DIR)/syscalls_i386.o $(ABI_DIR)/runtime_gccgo.o
-OBJS = $(ABI_OBJS) $(KOS_OBJ) $(UI_OBJ) $(APP_OBJ)
-INTERMEDIATE_ARTIFACTS = $(ABI_OBJS) $(KOS_OBJ) $(KOS_GOX) $(UI_OBJ) $(UI_GOX) $(APP_OBJ) $(LDSCRIPT)
+OBJS = $(ABI_OBJS) $(PACKAGE_OBJS) $(APP_OBJ)
+INTERMEDIATE_ARTIFACTS = $(ABI_OBJS) $(PACKAGE_OBJS) $(PACKAGE_GOXS) $(APP_OBJ) $(LDSCRIPT)
 
 .PHONY: all clean link
 
@@ -53,26 +66,14 @@ $(BUILD_DIR):
 $(LDSCRIPT): $(LDSCRIPT_TEMPLATE) | $(BUILD_DIR)
 	$(SED) 's/@ENTRYPOINT@/$(ENTRYPOINT)/g' $< > $@
 
-$(PROGRAM).kex: $(OBJS) $(KOS_GOX) $(UI_GOX) $(LDSCRIPT)
+$(PROGRAM).kex: $(OBJS) $(PACKAGE_GOXS) $(LDSCRIPT)
 	ld $(LDFLAGS) -o $(PROGRAM).kex $(OBJS)
 	strip $(PROGRAM).kex
 	$(OBJCOPY) $(PROGRAM).kex -O binary
 	rm -f $(INTERMEDIATE_ARTIFACTS)
 	rmdir $(BUILD_DIR) 2>/dev/null || true
 
-$(KOS_OBJ): $(KOS_SOURCES)
-	$(GO) $(GO_COMPILER_FLAGS) -o $@ $(KOS_SOURCES)
-
-$(KOS_GOX): $(KOS_OBJ)
-	$(OBJCOPY) -j .go_export $< $@
-
-$(UI_OBJ): $(UI_SOURCES) $(KOS_GOX)
-	cd $(UI_DIR) && $(GO) $(GO_COMPILER_FLAGS) -o ../$(notdir $@) $(notdir $(UI_SOURCES))
-
-$(UI_GOX): $(UI_OBJ)
-	$(OBJCOPY) -j .go_export $< $@
-
-$(APP_OBJ): $(APP_SOURCES) $(KOS_GOX) $(UI_GOX)
+$(APP_OBJ): $(APP_SOURCES) $(PACKAGE_GOXS)
 	$(GO) $(GO_COMPILER_FLAGS) -o $@ $(APP_SOURCES)
 
 $(ABI_DIR)/runtime_gccgo.o: $(ABI_DIR)/runtime_gccgo.c

@@ -207,6 +207,15 @@ Exit criteria:
 - Non-Unix behavior is specified instead of left implicit.
 - The supported package set is tested and versioned.
 
+Current bootstrap status:
+
+- The first bootstrap stdlib-compatible shim is now in place with local
+  support for `errors.New`, `errors.Unwrap`, and `errors.Is`.
+- `examples/files` is the first compatibility sample that imports `errors`
+  through the ordinary Go import path.
+- Broader package coverage (`bytes`, `strings`, `io`, `time`, `path`, `os`,
+  `syscall`) remains pending.
+
 ## Phase 6 - Port the Native Go Toolchain
 
 Goal: reach a real `go build` story instead of relying on `gccgo` forever.

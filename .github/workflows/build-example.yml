@@ -41,6 +41,7 @@ jobs:
           test -f examples/system/system.kex
           test -f examples/input/input.kex
           test -f examples/ipc/ipc.kex
+          test -f examples/files/files.kex
           test -f tests/smokeapp/smokeapp.kex
 
       - name: Upload example artifacts
@@ -54,4 +55,5 @@ jobs:
             examples/system/system.kex
             examples/input/input.kex
             examples/ipc/ipc.kex
+            examples/files/files.kex
             tests/smokeapp/smokeapp.kex

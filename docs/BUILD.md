@@ -86,6 +86,7 @@ Successful build output:
 - `examples/system/system.kex`
 - `examples/input/input.kex`
 - `examples/ipc/ipc.kex`
+- `examples/files/files.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -125,6 +126,10 @@ successful build.
   - IPC buffer registration via function `60.1`
   - self-targeted IPC send via function `60.2`
   - IPC event `7` handling and buffer drain
+- `examples/files` - implemented
+  - path info probe via function `80.5`
+  - file head read via function `80.0`
+  - bootstrap-compatible `import "errors"` sample with wrapped sentinel checks
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset
   - runtime checks for strings, slices, interfaces, assertions, and timed wait
@@ -134,6 +139,8 @@ successful build.
 
 - The syscall reference for all new bindings is `sysfuncs.txt`.
 - Shared bootstrap build logic now lives in `mk/kolibri-app.mk`.
+- `mk/kolibri-app.mk` now accepts an ordered `PACKAGE_DIRS` list so apps can
+  precompile extra shared packages before the final app object.
 - New applications can be scaffolded from `templates/basic-app` via
   `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.
@@ -149,6 +156,8 @@ successful build.
   the bootstrap `gccgo -m32` symbol inventory.
 - The bootstrap runtime still has no real GC; current heap paths are
   `malloc`-based and the GC/barrier symbols only satisfy the validated subset.
+- The current bootstrap stdlib-compatible package surface is tracked in
+  `docs/STDLIB.md`.
 - Template verification lives in `scripts/check-app-template.sh` and confirms
   that `scripts/new-app.sh` generates a buildable example under `examples/`.
 - Emulator smoke verification lives in `scripts/check-emulator-smoke.sh`; it

@@ -1,8 +1,8 @@
-.PHONY: all examples check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke window runtime time system input ipc smokeapp clean clean-examples clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-smokeapp rebuild-all
+.PHONY: all examples check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke window runtime time system input ipc files smokeapp clean clean-examples clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-smokeapp rebuild-all
 
 all: examples smokeapp
 
-examples: window runtime time system input ipc
+examples: window runtime time system input ipc files
 
 check-runtime: check-runtime-probes check-runtime-behavior
 
@@ -36,12 +36,15 @@ input:
 ipc:
 	$(MAKE) -C examples/ipc all
 
+files:
+	$(MAKE) -C examples/files all
+
 smokeapp:
 	$(MAKE) -C tests/smokeapp all
 
 clean: clean-examples clean-smokeapp
 
-clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files
 
 clean-window:
 	$(MAKE) -C examples/window clean
@@ -60,6 +63,9 @@ clean-input:
 
 clean-ipc:
 	$(MAKE) -C examples/ipc clean
+
+clean-files:
+	$(MAKE) -C examples/files clean
 
 clean-smokeapp:
 	$(MAKE) -C tests/smokeapp clean
@@ -81,6 +87,9 @@ rebuild-input:
 
 rebuild-ipc:
 	$(MAKE) -C examples/ipc clean all
+
+rebuild-files:
+	$(MAKE) -C examples/files clean all
 
 rebuild-smokeapp:
 	$(MAKE) -C tests/smokeapp clean all

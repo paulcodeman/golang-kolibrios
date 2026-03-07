@@ -19,6 +19,7 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
+- Phase 5 bootstrap work has started with a local `errors` package shim plus an `examples/files` compatibility sample that imports `errors` through the ordinary Go import path
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - public demos now live under `examples/`, while internal smoke/test programs live under `tests/`
 - a longer-term plan is tracked in `ROADMAP.md`
@@ -27,6 +28,7 @@ The project is still in prototype stage. Right now the practical path is
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
 - `docs/` - bootstrap and build documentation
+- `errors/` - bootstrap-compatible `errors` package shim for ordinary Go imports
 - `examples/` - curated public KolibriOS demo applications
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
@@ -116,6 +118,7 @@ Output:
 - `examples/system/system.kex`
 - `examples/input/input.kex`
 - `examples/ipc/ipc.kex`
+- `examples/files/files.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
@@ -126,6 +129,8 @@ harness for the documented bootstrap subset. On hosts that cannot execute a
 while the probe inventory still validates the `gccgo -m32` symbol path.
 New applications can be scaffolded from `templates/basic-app` via
 `scripts/new-app.sh` into `examples/<name>`.
+The shared app makefile now accepts an ordered `PACKAGE_DIRS` list so bootstrap
+apps can precompile additional shared packages beyond `kos` and `ui`.
 The first emulator-backed smoke path is available through
 `scripts/check-emulator-smoke.sh`; it boots a pruned temporary copy of the
 official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with
@@ -135,6 +140,8 @@ and system self-checks pass.
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
 For the current bootstrap runtime contract, see `docs/RUNTIME.md`.
+For the current bootstrap stdlib-compatible package surface, see
+`docs/STDLIB.md`.
 
 ## Window Example
 
@@ -158,6 +165,7 @@ Main sources:
 - `examples/system` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
+- `examples/files` - file info/read probe plus ordinary `import "errors"` compatibility sample
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes
