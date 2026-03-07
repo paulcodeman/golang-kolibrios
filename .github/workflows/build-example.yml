@@ -52,6 +52,7 @@ jobs:
           test -f examples/io/io.kex
           test -f examples/os/os.kex
           test -f examples/fmt/fmt.kex
+          test -f examples/console/console.kex
           test -f tests/smokeapp/smokeapp.kex
 
       - name: Upload example artifacts
@@ -73,4 +74,5 @@ jobs:
             examples/io/io.kex
             examples/os/os.kex
             examples/fmt/fmt.kex
+            examples/console/console.kex
             tests/smokeapp/smokeapp.kex

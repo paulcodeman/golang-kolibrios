@@ -106,6 +106,13 @@ extern bool runtime_interequal(const void* left_value, const void* right_value);
 extern bool runtime_memequal_export(const void* left, const void* right, size_t size) __asm__("runtime.memequal");
 extern void runtime_write_barrier(void** slot, void* ptr);
 extern void runtime_gc_write_barrier(void** slot, void* ptr);
+extern uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name);
+extern uint32_t runtime_kos_call_stdcall0(uint32_t proc);
+extern uint32_t runtime_kos_call_stdcall1(uint32_t proc, uint32_t arg0);
+extern uint32_t runtime_kos_call_stdcall2(uint32_t proc, uint32_t arg0, uint32_t arg1);
+extern void runtime_kos_call_stdcall1_void(uint32_t proc, uint32_t arg0);
+extern void runtime_kos_call_stdcall2_void(uint32_t proc, uint32_t arg0, uint32_t arg1);
+extern void runtime_kos_call_stdcall5_void(uint32_t proc, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4);
 
 static int failures = 0;
 
@@ -571,12 +578,112 @@ static void test_interface_paths(void) {
     free(other.methods);
 }
 
+#if UINTPTR_MAX == 0xFFFFFFFFu
+typedef struct {
+    uint32_t name;
+    uint32_t data;
+} test_kos_dll_export;
+
+static uint32_t __attribute__((stdcall)) test_stdcall0_impl(void) {
+    return 77;
+}
+
+static uint32_t __attribute__((stdcall)) test_stdcall1_impl(uint32_t value) {
+    return value + 5;
+}
+
+static uint32_t __attribute__((stdcall)) test_stdcall2_impl(uint32_t left, uint32_t right) {
+    return left ^ right;
+}
+
+static uint32_t test_void_args[5];
+
+static void __attribute__((stdcall)) test_stdcall1_void_impl(uint32_t value) {
+    test_void_args[0] = value;
+}
+
+static void __attribute__((stdcall)) test_stdcall2_void_impl(uint32_t left, uint32_t right) {
+    test_void_args[0] = left;
+    test_void_args[1] = right;
+}
+
+static void __attribute__((stdcall)) test_stdcall5_void_impl(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e) {
+    test_void_args[0] = a;
+    test_void_args[1] = b;
+    test_void_args[2] = c;
+    test_void_args[3] = d;
+    test_void_args[4] = e;
+}
+
+static void test_kos_dll_helpers(void) {
+    const char alpha[] = "alpha";
+    const char beta[] = "beta";
+    const char missing[] = "missing";
+    test_kos_dll_export exports[] = {
+        {(uint32_t)(uintptr_t)alpha, (uint32_t)(uintptr_t)test_stdcall0_impl},
+        {(uint32_t)(uintptr_t)beta, (uint32_t)(uintptr_t)test_stdcall1_impl},
+        {0, 0},
+    };
+
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_lookup_dll_export((uint32_t)(uintptr_t)exports, alpha),
+        (intptr_t)(uintptr_t)test_stdcall0_impl,
+        "runtime_kos_lookup_dll_export resolves first export");
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_lookup_dll_export((uint32_t)(uintptr_t)exports, beta),
+        (intptr_t)(uintptr_t)test_stdcall1_impl,
+        "runtime_kos_lookup_dll_export resolves later export");
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_lookup_dll_export((uint32_t)(uintptr_t)exports, missing),
+        0,
+        "runtime_kos_lookup_dll_export returns zero for missing export");
+
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_call_stdcall0((uint32_t)(uintptr_t)test_stdcall0_impl),
+        77,
+        "runtime_kos_call_stdcall0 dispatches function pointer");
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_call_stdcall1((uint32_t)(uintptr_t)test_stdcall1_impl, 9),
+        14,
+        "runtime_kos_call_stdcall1 dispatches function pointer");
+    expect_intptr_eq(
+        (intptr_t)runtime_kos_call_stdcall2((uint32_t)(uintptr_t)test_stdcall2_impl, 0xAA, 0x55),
+        (intptr_t)(0xAA ^ 0x55),
+        "runtime_kos_call_stdcall2 dispatches function pointer");
+
+    test_void_args[0] = 0;
+    runtime_kos_call_stdcall1_void((uint32_t)(uintptr_t)test_stdcall1_void_impl, 123);
+    expect_intptr_eq((intptr_t)test_void_args[0], 123, "runtime_kos_call_stdcall1_void passes argument");
+
+    test_void_args[0] = 0;
+    test_void_args[1] = 0;
+    runtime_kos_call_stdcall2_void((uint32_t)(uintptr_t)test_stdcall2_void_impl, 7, 11);
+    expect_intptr_eq((intptr_t)test_void_args[0], 7, "runtime_kos_call_stdcall2_void passes first argument");
+    expect_intptr_eq((intptr_t)test_void_args[1], 11, "runtime_kos_call_stdcall2_void passes second argument");
+
+    test_void_args[0] = 0;
+    test_void_args[1] = 0;
+    test_void_args[2] = 0;
+    test_void_args[3] = 0;
+    test_void_args[4] = 0;
+    runtime_kos_call_stdcall5_void((uint32_t)(uintptr_t)test_stdcall5_void_impl, 1, 2, 3, 4, 5);
+    expect_intptr_eq((intptr_t)test_void_args[0], 1, "runtime_kos_call_stdcall5_void passes first argument");
+    expect_intptr_eq((intptr_t)test_void_args[1], 2, "runtime_kos_call_stdcall5_void passes second argument");
+    expect_intptr_eq((intptr_t)test_void_args[2], 3, "runtime_kos_call_stdcall5_void passes third argument");
+    expect_intptr_eq((intptr_t)test_void_args[3], 4, "runtime_kos_call_stdcall5_void passes fourth argument");
+    expect_intptr_eq((intptr_t)test_void_args[4], 5, "runtime_kos_call_stdcall5_void passes fifth argument");
+}
+#endif
+
 int main(void) {
     test_concat_and_slices();
     test_allocation_and_copy();
     test_arrays_and_barriers();
     test_empty_interface_paths();
     test_interface_paths();
+#if UINTPTR_MAX == 0xFFFFFFFFu
+    test_kos_dll_helpers();
+#endif
 
     if (failures != 0) {
         fprintf(stderr, "runtime behavior checks failed: %d\n", failures);

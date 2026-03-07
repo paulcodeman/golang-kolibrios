@@ -174,6 +174,40 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "kos"
+  probe_symbols=$(package_unresolved_symbols "kos")
+  require_list_symbols "kos package" "$probe_symbols" \
+    "go_0kos.LoadDLL" \
+    "go_0kos.LoadDLLWithEncoding" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.growslice" \
+    "runtime.makeslice" \
+    "runtime.memequal" \
+    "runtime_kos_call_stdcall0" \
+    "runtime_kos_call_stdcall1" \
+    "runtime_kos_call_stdcall1_void" \
+    "runtime_kos_call_stdcall2" \
+    "runtime_kos_call_stdcall2_void" \
+    "runtime_kos_call_stdcall5_void" \
+    "runtime_kos_lookup_dll_export" \
+    "runtime_alloc_cstring" \
+    "runtime_free_cstring" \
+    "runtime_pointer_value" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceAcapU" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.memequal32..f" \
+    "runtime.newobject" \
+    "runtime.panicmem" \
+    "runtime.slicebytetostring" \
+    "runtime.strequal..f" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
   compile_package "path"
   probe_symbols=$(package_unresolved_symbols "path")
   require_list_symbols "path package" "$probe_symbols" \

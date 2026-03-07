@@ -245,6 +245,12 @@ Current bootstrap status:
   `import "fmt"`.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
+- `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,
+  including DLL export lookup plus narrow `con_init`, `con_write_string`,
+  `con_set_title`, `con_getch`, and `con_exit` coverage.
+- `examples/console` is the first non-window SDK sample built on that console
+  wrapper, and `apps/diag` headless validation now exercises the real
+  `CONSOLE.OBJ` init/write/exit path instead of DLL load alone.
 - Broader package coverage (`time`, `syscall`)
   remains pending.
 

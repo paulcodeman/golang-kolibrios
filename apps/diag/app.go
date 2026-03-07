@@ -197,6 +197,7 @@ func (app *App) resultColor(ok bool) kos.Color {
 }
 
 func runDiagnostics() snapshot {
+	headless := headlessModeRequested()
 	version := kos.KernelVersion()
 	screenWidth, screenHeight := kos.ScreenSize()
 	currentTime := kos.SystemTime()
@@ -213,9 +214,12 @@ func runDiagnostics() snapshot {
 		checkFmt(),
 		checkFiles(),
 		checkOS(),
-		checkDLL(),
-		checkSystem(version, screenWidth, screenHeight),
-		checkReportProbe(),
+	}
+	results = append(results, checkDLL())
+	results = append(results, checkSystem(version, screenWidth, screenHeight))
+	results = append(results, checkReportProbe())
+	if headless {
+		results = append(results, checkConsole())
 	}
 
 	overallOK := allResultsOK(results)
@@ -853,10 +857,76 @@ func checkDLL() checkResult {
 		}
 	}
 
+	initProc := table.Lookup("con_init")
+	writeProc := table.Lookup("con_write_string")
+	exitProc := table.Lookup("con_exit")
+	startProc := table.Lookup("START")
+	version := uint32(table.Lookup("version"))
+	if !startProc.Valid() || !initProc.Valid() || !writeProc.Valid() || !exitProc.Valid() {
+		return checkResult{
+			label:  "dll",
+			ok:     false,
+			detail: "required console export missing",
+		}
+	}
+
 	return checkResult{
 		label:  "dll",
 		ok:     true,
-		detail: kos.ConsoleDLLPath + " / export table " + formatHex64(uint64(table)),
+		detail: kos.ConsoleDLLPath +
+			" / table " + formatHex64(uint64(table)) +
+			" / ver " + formatHex64(uint64(version)) +
+			" / start " + formatHex64(uint64(startProc)) +
+			" / init " + formatHex64(uint64(initProc)) +
+			" / write " + formatHex64(uint64(writeProc)),
+	}
+}
+
+func checkConsole() checkResult {
+	console, ok := kos.OpenConsole("KolibriOS Go Diagnostics Console")
+	if !ok {
+		return checkResult{
+			label:  "console",
+			ok:     false,
+			detail: "open console failed",
+		}
+	}
+
+	titleState := "title skipped"
+	if console.SupportsTitle() {
+		if !console.SetTitle("KolibriOS Go Diagnostics Console / live") {
+			console.Exit(true)
+			return checkResult{
+				label:  "console",
+				ok:     false,
+				detail: "set title failed",
+			}
+		}
+		titleState = "title ok"
+	}
+
+	if !console.WriteString("golang-kolibrios console probe\r\n") {
+		console.Exit(true)
+		return checkResult{
+			label:  "console",
+			ok:     false,
+			detail: "write header failed",
+		}
+	}
+	if !console.WriteString("write_string and exit path active\r\n") {
+		console.Exit(true)
+		return checkResult{
+			label:  "console",
+			ok:     false,
+			detail: "write body failed",
+		}
+	}
+
+	console.Exit(true)
+	return checkResult{
+		label:  "console",
+		ok:     true,
+		detail: "init write exit / " + titleState,
 	}
 }
 

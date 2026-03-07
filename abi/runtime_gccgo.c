@@ -439,6 +439,90 @@ uint32_t runtime_pointer_value(void* ptr) {
     return (uint32_t)(uintptr_t)ptr;
 }
 
+typedef struct {
+    const char* name;
+    void* data;
+} kos_dll_export;
+
+#if defined(__i386__)
+#define KOS_STDCALL __attribute__((stdcall))
+#else
+#define KOS_STDCALL
+#endif
+
+typedef uint32_t (KOS_STDCALL *kos_stdcall0_fn)(void);
+typedef uint32_t (KOS_STDCALL *kos_stdcall1_fn)(uint32_t arg0);
+typedef uint32_t (KOS_STDCALL *kos_stdcall2_fn)(uint32_t arg0, uint32_t arg1);
+typedef void (KOS_STDCALL *kos_stdcall1_void_fn)(uint32_t arg0);
+typedef void (KOS_STDCALL *kos_stdcall2_void_fn)(uint32_t arg0, uint32_t arg1);
+typedef void (KOS_STDCALL *kos_stdcall5_void_fn)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4);
+
+uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name) {
+    const kos_dll_export* cursor;
+
+    if (table_addr == 0 || name == NULL) {
+        return 0;
+    }
+
+    cursor = (const kos_dll_export*)(uintptr_t)table_addr;
+    while (cursor->name != NULL) {
+        if (kos_strcmp(cursor->name, name) == 0) {
+            return (uint32_t)(uintptr_t)cursor->data;
+        }
+        cursor++;
+    }
+
+    return 0;
+}
+
+uint32_t runtime_kos_call_stdcall0(uint32_t proc) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall0_fn)(uintptr_t)proc)();
+}
+
+uint32_t runtime_kos_call_stdcall1(uint32_t proc, uint32_t arg0) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall1_fn)(uintptr_t)proc)(arg0);
+}
+
+uint32_t runtime_kos_call_stdcall2(uint32_t proc, uint32_t arg0, uint32_t arg1) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall2_fn)(uintptr_t)proc)(arg0, arg1);
+}
+
+void runtime_kos_call_stdcall1_void(uint32_t proc, uint32_t arg0) {
+    if (proc == 0) {
+        return;
+    }
+
+    ((kos_stdcall1_void_fn)(uintptr_t)proc)(arg0);
+}
+
+void runtime_kos_call_stdcall2_void(uint32_t proc, uint32_t arg0, uint32_t arg1) {
+    if (proc == 0) {
+        return;
+    }
+
+    ((kos_stdcall2_void_fn)(uintptr_t)proc)(arg0, arg1);
+}
+
+void runtime_kos_call_stdcall5_void(uint32_t proc, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    if (proc == 0) {
+        return;
+    }
+
+    ((kos_stdcall5_void_fn)(uintptr_t)proc)(arg0, arg1, arg2, arg3, arg4);
+}
+
 static bool runtime_memequal_impl(const void* left, const void* right, size_t size) {
     if (left == NULL || right == NULL) {
         return false;

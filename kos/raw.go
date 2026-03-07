@@ -99,6 +99,27 @@ func LoadDLLWithEncoding(encoding StringEncoding, path string) uint32
 // Function 68, subfunction 19 - load DLL using the legacy/default path contract.
 func LoadDLL(path string) uint32
 
+// Runtime helper - resolve a function pointer from a DLL export table.
+func LookupDLLExportRaw(table uint32, name *byte) uint32 __asm__("runtime_kos_lookup_dll_export")
+
+// Runtime helper - invoke a stdcall function pointer with 0 arguments.
+func CallStdcall0Raw(proc uint32) uint32 __asm__("runtime_kos_call_stdcall0")
+
+// Runtime helper - invoke a stdcall function pointer with 1 argument.
+func CallStdcall1Raw(proc uint32, arg0 uint32) uint32 __asm__("runtime_kos_call_stdcall1")
+
+// Runtime helper - invoke a stdcall function pointer with 2 arguments.
+func CallStdcall2Raw(proc uint32, arg0 uint32, arg1 uint32) uint32 __asm__("runtime_kos_call_stdcall2")
+
+// Runtime helper - invoke a stdcall function pointer with 1 argument and no return value.
+func CallStdcall1VoidRaw(proc uint32, arg0 uint32) __asm__("runtime_kos_call_stdcall1_void")
+
+// Runtime helper - invoke a stdcall function pointer with 2 arguments and no return value.
+func CallStdcall2VoidRaw(proc uint32, arg0 uint32, arg1 uint32) __asm__("runtime_kos_call_stdcall2_void")
+
+// Runtime helper - invoke a stdcall function pointer with 5 arguments and no return value.
+func CallStdcall5VoidRaw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32, arg3 uint32, arg4 uint32) __asm__("runtime_kos_call_stdcall5_void")
+
 // Function 70 - file system interface with long names support.
 func FileSystem(request *FileSystemRequest, secondary *uint32) int
 
