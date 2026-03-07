@@ -124,13 +124,16 @@ func CallStdcall5VoidRaw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32, arg
 func ConsoleBridgeReadyRaw() uint32 __asm__("runtime_console_bridge_ready")
 
 // Runtime helper - register active console write/exit procedures in shared runtime state.
-func ConsoleBridgeSetRaw(table uint32, writeProc uint32, exitProc uint32) __asm__("runtime_console_bridge_set")
+func ConsoleBridgeSetRaw(table uint32, writeProc uint32, exitProc uint32, getsProc uint32) __asm__("runtime_console_bridge_set")
 
 // Runtime helper - clear the shared active console bridge if the table matches.
 func ConsoleBridgeClearRaw(table uint32) __asm__("runtime_console_bridge_clear")
 
 // Runtime helper - write directly through the shared active console bridge.
 func ConsoleBridgeWriteRaw(data uint32, size uint32) uint32 __asm__("runtime_console_bridge_write")
+
+// Runtime helper - read one line through the shared active console bridge.
+func ConsoleBridgeReadLineRaw(data uint32, size uint32) uint32 __asm__("runtime_console_bridge_read_line")
 
 // Runtime helper - close the shared active console bridge and clear it.
 func ConsoleBridgeCloseRaw(closeWindow uint32) __asm__("runtime_console_bridge_close")

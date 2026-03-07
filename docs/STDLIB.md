@@ -146,9 +146,13 @@ Supported API:
 - `fmt.Fprint`
 - `fmt.Fprintln`
 - `fmt.Fprintf`
+- `fmt.Fscan`
+- `fmt.Fscanln`
 - `fmt.Print`
 - `fmt.Println`
 - `fmt.Printf`
+- `fmt.Scan`
+- `fmt.Scanln`
 - `fmt.Errorf`
 
 Current behavior notes:
@@ -164,8 +168,16 @@ Current behavior notes:
   so ordinary stdout-style Go code can be exercised either by redirecting
   `os.Stdout` to a pipe-backed `*os.File` or by opening an active
   `CONSOLE.OBJ` backend through `kos.OpenConsole`
-- width, precision, padding, floating-point formatting, maps, structs, and the
-  broader printing/scanning surface are not implemented yet
+- `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, and `fmt.Scanln` currently support
+  narrow token parsing for `string`, `bool`, and signed or unsigned integer
+  pointer targets
+- `fmt.Scan` and `fmt.Scanln` route through `os.Stdin`; when an active
+  `CONSOLE.OBJ` instance has been opened through `kos.OpenConsole`, the
+  bootstrap `os.Stdin` path reads one cooked line at a time through
+  `con_gets`
+- `Scanf`, width/precision directives, floating-point formatting or scanning,
+  maps, structs, custom scanner interfaces, and the broader printing/scanning
+  surface are not implemented yet
 
 ### `os`
 
@@ -218,7 +230,8 @@ Current behavior notes:
   contracts, which are currently specified for pipe descriptors; the default
   `os.Stdout` and `os.Stderr` handles additionally route through the active
   `CONSOLE.OBJ` instance when one has been opened through the bootstrap `kos`
-  console wrapper
+  console wrapper, and `os.Stdin` switches to the active console line-input
+  bridge on the same condition
 - the bootstrap runtime currently re-materializes default stdio handles through
   `os.DefaultStdin`, `os.DefaultStdout`, and `os.DefaultStderr`; `fmt.Print*`
   uses that path internally so ordinary stdout-style Go code stays usable even

@@ -11,6 +11,7 @@ type Console struct {
 	exitProc        DLLProc
 	setTitleProc    DLLProc
 	getchProc       DLLProc
+	getsProc        DLLProc
 	keyHitProc      DLLProc
 	version         uint32
 }
@@ -30,6 +31,7 @@ func LoadConsoleFromDLL(table DLLExportTable) (Console, bool) {
 		exitProc:        table.Lookup("con_exit"),
 		setTitleProc:    table.Lookup("con_set_title"),
 		getchProc:       table.Lookup("con_getch"),
+		getsProc:        table.Lookup("con_gets"),
 		keyHitProc:      table.Lookup("con_kbhit"),
 		version:         uint32(table.Lookup("version")),
 	}
@@ -74,6 +76,10 @@ func (console Console) Version() uint32 {
 
 func (console Console) SupportsInput() bool {
 	return console.getchProc.Valid()
+}
+
+func (console Console) SupportsLineInput() bool {
+	return console.getsProc.Valid()
 }
 
 func (console Console) start() {
@@ -137,6 +143,17 @@ func (console Console) Write(data []byte) (int, error) {
 	return 0, &consoleError{text: "console write failed"}
 }
 
+func (console Console) ReadLine(buffer []byte) (int, error) {
+	if !console.SupportsLineInput() || len(buffer) < 2 {
+		return 0, &consoleError{text: "console line read failed"}
+	}
+	if CallStdcall2Raw(uint32(console.getsProc), byteSliceAddress(buffer), uint32(len(buffer))) == 0 {
+		return 0, &consoleError{text: "console line read failed"}
+	}
+
+	return consoleLineLength(buffer), nil
+}
+
 func HasActiveConsole() bool {
 	return ConsoleBridgeReadyRaw() != 0
 }
@@ -153,6 +170,20 @@ func WriteActiveConsole(data []byte) (int, error) {
 	}
 
 	return len(data), nil
+}
+
+func ReadActiveConsoleLine(buffer []byte) (int, error) {
+	if len(buffer) < 2 {
+		return 0, &consoleError{text: "active console line read failed"}
+	}
+	if !HasActiveConsole() {
+		return 0, &consoleError{text: "active console unavailable"}
+	}
+	if ConsoleBridgeReadLineRaw(byteSliceAddress(buffer), uint32(len(buffer))) == 0 {
+		return 0, &consoleError{text: "active console line read failed"}
+	}
+
+	return consoleLineLength(buffer), nil
 }
 
 func (console Console) KeyHit() bool {
@@ -201,9 +232,19 @@ func (err *consoleError) Error() string {
 	return err.text
 }
 
+func consoleLineLength(buffer []byte) int {
+	for index := 0; index < len(buffer); index++ {
+		if buffer[index] == 0 {
+			return index
+		}
+	}
+
+	return len(buffer)
+}
+
 func registerActiveConsole(console Console) {
 	activeConsole = console
-	ConsoleBridgeSetRaw(uint32(console.table), uint32(console.writeStringProc), uint32(console.exitProc))
+	ConsoleBridgeSetRaw(uint32(console.table), uint32(console.writeStringProc), uint32(console.exitProc), uint32(console.getsProc))
 }
 
 func unregisterActiveConsole(console Console) {

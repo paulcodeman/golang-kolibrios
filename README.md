@@ -24,7 +24,7 @@ The project is still in prototype stage. Right now the practical path is
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
-- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*` through the active console backend, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, and `fmt.Scanln` bootstrap paths, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
 - `kos` now includes a bootstrap `CONSOLE.OBJ` wrapper built on top of the `68.18/68.19` DLL loader path and export-table lookup
 - a longer-term plan is tracked in `ROADMAP.md`
 
@@ -200,9 +200,9 @@ Main sources:
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
 - `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, file create/read/write flows, rename/remove, and narrow error wrappers
-- `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, and `Errorf` via pipe-backed `os.Stdout` capture
-- `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, and real `CONSOLE.OBJ` init/write/exit plus stdout-console bridge checks
+- `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture
+- `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and pipe-backed scanning checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

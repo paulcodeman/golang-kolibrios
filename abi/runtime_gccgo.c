@@ -460,6 +460,7 @@ typedef void (KOS_STDCALL *kos_stdcall5_void_fn)(uint32_t arg0, uint32_t arg1, u
 static uint32_t runtime_console_bridge_table = 0;
 static uint32_t runtime_console_bridge_write_proc = 0;
 static uint32_t runtime_console_bridge_exit_proc = 0;
+static uint32_t runtime_console_bridge_gets_proc = 0;
 
 uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name) {
     const kos_dll_export* cursor;
@@ -531,10 +532,11 @@ int runtime_console_bridge_ready(void) {
     return runtime_console_bridge_write_proc != 0;
 }
 
-void runtime_console_bridge_set(uint32_t table, uint32_t write_proc, uint32_t exit_proc) {
+void runtime_console_bridge_set(uint32_t table, uint32_t write_proc, uint32_t exit_proc, uint32_t gets_proc) {
     runtime_console_bridge_table = table;
     runtime_console_bridge_write_proc = write_proc;
     runtime_console_bridge_exit_proc = exit_proc;
+    runtime_console_bridge_gets_proc = gets_proc;
 }
 
 void runtime_console_bridge_clear(uint32_t table) {
@@ -542,6 +544,7 @@ void runtime_console_bridge_clear(uint32_t table) {
         runtime_console_bridge_table = 0;
         runtime_console_bridge_write_proc = 0;
         runtime_console_bridge_exit_proc = 0;
+        runtime_console_bridge_gets_proc = 0;
     }
 }
 
@@ -554,6 +557,14 @@ int runtime_console_bridge_write(uint32_t data, uint32_t size) {
     return 1;
 }
 
+int runtime_console_bridge_read_line(uint32_t data, uint32_t size) {
+    if (runtime_console_bridge_gets_proc == 0 || data == 0 || size < 2) {
+        return 0;
+    }
+
+    return ((kos_stdcall2_fn)(uintptr_t)runtime_console_bridge_gets_proc)(data, size) != 0;
+}
+
 void runtime_console_bridge_close(uint32_t close_window) {
     if (runtime_console_bridge_exit_proc == 0) {
         return;
@@ -563,6 +574,7 @@ void runtime_console_bridge_close(uint32_t close_window) {
     runtime_console_bridge_table = 0;
     runtime_console_bridge_write_proc = 0;
     runtime_console_bridge_exit_proc = 0;
+    runtime_console_bridge_gets_proc = 0;
 }
 
 static bool runtime_memequal_impl(const void* left, const void* right, size_t size) {

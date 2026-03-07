@@ -656,6 +656,90 @@ func checkFmt() checkResult {
 		}
 	}
 
+	scanReader, scanWriter, scanPipeErr := os.Pipe()
+	if scanPipeErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "stdin pipe " + scanPipeErr.Error(),
+		}
+	}
+	_, scanWriteErr := scanWriter.Write([]byte("scan 42 true\n"))
+	_ = scanWriter.Close()
+	if scanWriteErr != nil {
+		_ = scanReader.Close()
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Fscanln write " + scanWriteErr.Error(),
+		}
+	}
+
+	var scanWord string
+	var scanValue int
+	var scanOK bool
+
+	scanned, scanErr := fmt.Fscanln(scanReader, &scanWord, &scanValue, &scanOK)
+	_ = scanReader.Close()
+	if scanErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Fscanln " + scanErr.Error(),
+		}
+	}
+	if scanned != 3 || scanWord != "scan" || scanValue != 42 || !scanOK {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Fscanln mismatch",
+		}
+	}
+
+	defaultScanReader, defaultScanWriter, defaultScanPipeErr := os.Pipe()
+	if defaultScanPipeErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "default stdin pipe " + defaultScanPipeErr.Error(),
+		}
+	}
+	_, defaultScanWriteErr := defaultScanWriter.Write([]byte("stdin 7 false\n"))
+	_ = defaultScanWriter.Close()
+	if defaultScanWriteErr != nil {
+		_ = defaultScanReader.Close()
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Scanln write " + defaultScanWriteErr.Error(),
+		}
+	}
+
+	previousStdin := os.DefaultStdin()
+	os.Stdin = defaultScanReader
+
+	var stdinWord string
+	var stdinValue int
+	var stdinOK bool
+
+	stdinScanned, stdinErr := fmt.Scanln(&stdinWord, &stdinValue, &stdinOK)
+	os.Stdin = previousStdin
+	_ = defaultScanReader.Close()
+	if stdinErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Scanln " + stdinErr.Error(),
+		}
+	}
+	if stdinScanned != 3 || stdinWord != "stdin" || stdinValue != 7 || stdinOK {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Scanln mismatch",
+		}
+	}
+
 	if fmt.Errorf("%v error %d", label, 7).Error() != "fmt error 7" {
 		return checkResult{
 			label:  "fmt",
@@ -666,7 +750,7 @@ func checkFmt() checkResult {
 	return checkResult{
 		label:  "fmt",
 		ok:     true,
-		detail: "sprintf fprintf print stdout",
+		detail: "sprintf fprintf print scan stdout stdin",
 	}
 }
 
@@ -1043,11 +1127,17 @@ func checkConsole() checkResult {
 		}
 	}
 
+	scanState := "line input missing"
+	if console.SupportsLineInput() {
+		_, _ = fmt.Println("stdin fmt scan path available for manual console demo")
+		scanState = "line input ready"
+	}
+
 	_ = console.Close()
 	return checkResult{
 		label:  "console",
 		ok:     true,
-		detail: "init stdout fmt writer exit / " + titleState,
+		detail: "init stdout fmt writer stdin exit / " + titleState + " / " + scanState,
 	}
 }
 

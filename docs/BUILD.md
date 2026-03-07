@@ -160,15 +160,15 @@ successful build.
   - bootstrap-compatible `import "os"` sample with `Getwd`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, and `Remove`
   - file lifecycle checks against a real writable KolibriOS path with append, rename, and cleanup validation
 - `examples/fmt` - implemented
-  - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, `Print`, `Printf`, `Println`, and `Errorf`
-  - formatted text checks tied to a real KolibriOS file path, current-folder probe, and pipe-backed `os.Stdout` capture
+  - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, `Print`, `Printf`, `Println`, `Fscanln`, `Scanln`, and `Errorf`
+  - formatted text and narrow scanning checks tied to a real KolibriOS file path, current-folder probe, and pipe-backed stdio capture
 - `examples/console` - implemented
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
-  - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `kos.Console` `io.Writer` support
-  - waits for `Esc` so the sample exercises real console input instead of timing out immediately
+  - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `fmt.Scanln` on the same active console-backed `os.Stdin`
+  - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

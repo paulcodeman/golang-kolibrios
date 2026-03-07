@@ -159,8 +159,468 @@ func Printf(format string, values ...interface{}) (n int, err error) {
 	return Fprintf(os.DefaultStdout(), format, values...)
 }
 
+func Fscan(reader io.Reader, values ...interface{}) (n int, err error) {
+	return scanValues(reader, false, values...)
+}
+
+func Fscanln(reader io.Reader, values ...interface{}) (n int, err error) {
+	return scanValues(reader, true, values...)
+}
+
+func Scan(values ...interface{}) (n int, err error) {
+	return Fscan(os.DefaultStdin(), values...)
+}
+
+func Scanln(values ...interface{}) (n int, err error) {
+	return Fscanln(os.DefaultStdin(), values...)
+}
+
 func Errorf(format string, values ...interface{}) error {
 	return errors.New(Sprintf(format, values...))
+}
+
+var errScanSyntax = errors.New("invalid scan syntax")
+var errScanTarget = errors.New("unsupported scan target")
+var errScanNewline = errors.New("unexpected newline")
+var errScanTrailing = errors.New("expected newline")
+
+type scanReader struct {
+	reader     io.Reader
+	byteBuffer [1]byte
+	pending    byte
+	haveByte   bool
+	lineEnded  bool
+}
+
+func scanValues(reader io.Reader, lineMode bool, values ...interface{}) (n int, err error) {
+	scanner := &scanReader{reader: reader}
+
+	for index := 0; index < len(values); index++ {
+		token, readErr := scanner.readToken(lineMode)
+		if readErr != nil {
+			return n, readErr
+		}
+		if assignErr := scanAssign(values[index], token); assignErr != nil {
+			return n, assignErr
+		}
+		n++
+	}
+
+	if lineMode {
+		if err = scanner.consumeLineTail(); err != nil {
+			return n, err
+		}
+	}
+
+	return n, nil
+}
+
+func (scanner *scanReader) readToken(lineMode bool) (string, error) {
+	if lineMode && scanner.lineEnded {
+		return "", errScanNewline
+	}
+
+	for {
+		value, err := scanner.readByte()
+		if err != nil {
+			return "", err
+		}
+		if isScanNewline(value) {
+			if lineMode {
+				scanner.lineEnded = true
+				return "", errScanNewline
+			}
+			continue
+		}
+		if isScanHorizontalSpace(value) {
+			continue
+		}
+
+		scanner.unreadByte(value)
+		break
+	}
+
+	token := &buffer{}
+	for {
+		value, err := scanner.readByte()
+		if err != nil {
+			if len(token.data) > 0 {
+				return token.String(), nil
+			}
+			return "", err
+		}
+		if isScanNewline(value) {
+			if lineMode {
+				scanner.lineEnded = true
+			}
+			break
+		}
+		if isScanHorizontalSpace(value) {
+			break
+		}
+
+		token.writeByte(value)
+	}
+
+	if len(token.data) == 0 {
+		return "", io.EOF
+	}
+
+	return token.String(), nil
+}
+
+func (scanner *scanReader) consumeLineTail() error {
+	if scanner.lineEnded {
+		return nil
+	}
+
+	for {
+		value, err := scanner.readByte()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		if isScanNewline(value) {
+			scanner.lineEnded = true
+			return nil
+		}
+		if isScanHorizontalSpace(value) {
+			continue
+		}
+
+		return errScanTrailing
+	}
+}
+
+func (scanner *scanReader) readByte() (byte, error) {
+	if scanner.haveByte {
+		scanner.haveByte = false
+		return scanner.pending, nil
+	}
+
+	for {
+		read, err := scanner.reader.Read(scanner.byteBuffer[:])
+		if read > 0 {
+			return scanner.byteBuffer[0], nil
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
+}
+
+func (scanner *scanReader) unreadByte(value byte) {
+	scanner.pending = value
+	scanner.haveByte = true
+}
+
+func isScanHorizontalSpace(value byte) bool {
+	switch value {
+	case ' ', '\t', '\v', '\f':
+		return true
+	}
+
+	return false
+}
+
+func isScanNewline(value byte) bool {
+	return value == '\n' || value == '\r'
+}
+
+func scanAssign(target interface{}, token string) error {
+	switch typed := target.(type) {
+	case *string:
+		if typed == nil {
+			return errScanTarget
+		}
+		*typed = token
+		return nil
+	case *bool:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseBoolToken(token)
+		if err != nil {
+			return err
+		}
+		*typed = value
+		return nil
+	case *int:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseSignedToken(token, intBitSize())
+		if err != nil {
+			return err
+		}
+		*typed = int(value)
+		return nil
+	case *int8:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseSignedToken(token, 8)
+		if err != nil {
+			return err
+		}
+		*typed = int8(value)
+		return nil
+	case *int16:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseSignedToken(token, 16)
+		if err != nil {
+			return err
+		}
+		*typed = int16(value)
+		return nil
+	case *int32:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseSignedToken(token, 32)
+		if err != nil {
+			return err
+		}
+		*typed = int32(value)
+		return nil
+	case *int64:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseSignedToken(token, 64)
+		if err != nil {
+			return err
+		}
+		*typed = value
+		return nil
+	case *uint:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, uintBitSize())
+		if err != nil {
+			return err
+		}
+		*typed = uint(value)
+		return nil
+	case *uint8:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, 8)
+		if err != nil {
+			return err
+		}
+		*typed = uint8(value)
+		return nil
+	case *uint16:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, 16)
+		if err != nil {
+			return err
+		}
+		*typed = uint16(value)
+		return nil
+	case *uint32:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, 32)
+		if err != nil {
+			return err
+		}
+		*typed = uint32(value)
+		return nil
+	case *uint64:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, 64)
+		if err != nil {
+			return err
+		}
+		*typed = value
+		return nil
+	case *uintptr:
+		if typed == nil {
+			return errScanTarget
+		}
+		value, err := parseUnsignedToken(token, uintBitSize())
+		if err != nil {
+			return err
+		}
+		*typed = uintptr(value)
+		return nil
+	}
+
+	return errScanTarget
+}
+
+func parseBoolToken(token string) (bool, error) {
+	if equalFoldASCII(token, "true") || equalFoldASCII(token, "t") || token == "1" {
+		return true, nil
+	}
+	if equalFoldASCII(token, "false") || equalFoldASCII(token, "f") || token == "0" {
+		return false, nil
+	}
+
+	return false, errScanSyntax
+}
+
+func parseSignedToken(token string, bits uint) (int64, error) {
+	if token == "" {
+		return 0, errScanSyntax
+	}
+
+	negative := false
+	switch token[0] {
+	case '+':
+		token = token[1:]
+	case '-':
+		negative = true
+		token = token[1:]
+	}
+	if token == "" {
+		return 0, errScanSyntax
+	}
+
+	base := uint64(10)
+	if len(token) > 2 && token[0] == '0' && (token[1] == 'x' || token[1] == 'X') {
+		base = 16
+		token = token[2:]
+	}
+	if token == "" {
+		return 0, errScanSyntax
+	}
+
+	limit := maxSignedMagnitude(bits, negative)
+
+	value, err := parseUnsignedWithBase(token, base, limit)
+	if err != nil {
+		return 0, err
+	}
+	if negative {
+		if value == uint64(1)<<(bits-1) {
+			return -int64(value), nil
+		}
+		return -int64(value), nil
+	}
+
+	return int64(value), nil
+}
+
+func parseUnsignedToken(token string, bits uint) (uint64, error) {
+	if token == "" {
+		return 0, errScanSyntax
+	}
+	if token[0] == '+' {
+		token = token[1:]
+	}
+	if token == "" || token[0] == '-' {
+		return 0, errScanSyntax
+	}
+
+	base := uint64(10)
+	if len(token) > 2 && token[0] == '0' && (token[1] == 'x' || token[1] == 'X') {
+		base = 16
+		token = token[2:]
+	}
+	if token == "" {
+		return 0, errScanSyntax
+	}
+
+	return parseUnsignedWithBase(token, base, maxUnsignedForBits(bits))
+}
+
+func maxSignedMagnitude(bits uint, negative bool) uint64 {
+	if bits >= 64 {
+		if negative {
+			return uint64(1) << 63
+		}
+
+		return (uint64(1) << 63) - 1
+	}
+	if negative {
+		return uint64(1) << (bits - 1)
+	}
+
+	return (uint64(1) << (bits - 1)) - 1
+}
+
+func maxUnsignedForBits(bits uint) uint64 {
+	if bits >= 64 {
+		return ^uint64(0)
+	}
+
+	return (uint64(1) << bits) - 1
+}
+
+func parseUnsignedWithBase(token string, base uint64, limit uint64) (uint64, error) {
+	value := uint64(0)
+
+	for index := 0; index < len(token); index++ {
+		digit, ok := digitValue(token[index])
+		if !ok || digit >= base {
+			return 0, errScanSyntax
+		}
+
+		next := value*base + digit
+		if next < value || next > limit {
+			return 0, errScanSyntax
+		}
+		value = next
+	}
+
+	return value, nil
+}
+
+func digitValue(value byte) (uint64, bool) {
+	switch {
+	case value >= '0' && value <= '9':
+		return uint64(value - '0'), true
+	case value >= 'a' && value <= 'f':
+		return uint64(value-'a') + 10, true
+	case value >= 'A' && value <= 'F':
+		return uint64(value-'A') + 10, true
+	}
+
+	return 0, false
+}
+
+func equalFoldASCII(left string, right string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	for index := 0; index < len(left); index++ {
+		if lowerASCII(left[index]) != lowerASCII(right[index]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func lowerASCII(value byte) byte {
+	if value >= 'A' && value <= 'Z' {
+		return value + ('a' - 'A')
+	}
+
+	return value
+}
+
+func intBitSize() uint {
+	return uintBitSize()
+}
+
+func uintBitSize() uint {
+	return uint(^uint(0)>>63)*32 + 32
 }
 
 var decimalDigits = [...]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}

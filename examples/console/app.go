@@ -28,6 +28,9 @@ func Main() {
 	if console.SupportsTitle() {
 		console.SetTitle(consoleDemoTitle + " / ready")
 	}
+	if console.SupportsLineInput() {
+		runConsoleScanDemo()
+	}
 
 	if console.SupportsInput() {
 		_, _ = fmt.Println("Press Esc to close this console.")
@@ -38,6 +41,18 @@ func Main() {
 	}
 
 	kos.Exit()
+}
+
+func runConsoleScanDemo() {
+	var word string
+
+	_, _ = fmt.Print("Type a word and press Enter: ")
+	if _, err := fmt.Scanln(&word); err != nil {
+		_, _ = fmt.Printf("Scan failed: %v\n", err)
+		return
+	}
+
+	_, _ = fmt.Printf("You typed: %s\n", word)
 }
 
 func waitForConsoleExitKey(console kos.Console) {

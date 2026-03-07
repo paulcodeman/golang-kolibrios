@@ -46,6 +46,7 @@ type App struct {
 	fprintfLine  string
 	printLine    string
 	errorLine    string
+	scanLine     string
 	infoLine     string
 	ok           bool
 	refreshBtn   ui.Button
@@ -101,7 +102,8 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 136, ui.Navy, app.fprintfLine)
 	kos.DrawText(28, 158, ui.Maroon, app.printLine)
 	kos.DrawText(28, 180, ui.Yellow, app.errorLine)
-	kos.DrawText(28, 202, ui.Black, app.infoLine)
+	kos.DrawText(28, 202, ui.Aqua, app.scanLine)
+	kos.DrawText(28, 224, ui.Black, app.infoLine)
 	app.refreshBtn.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -143,6 +145,55 @@ func (app *App) refreshProbe() {
 	os.Stdout = previousStdout
 	_ = stdoutWriter.Close()
 	formatErr := fmt.Errorf("%v error %d", label, 7)
+	scanReader, scanWriter, scanPipeErr := os.Pipe()
+	if scanPipeErr != nil {
+		app.fail("scan pipe unavailable", "Info: "+scanPipeErr.Error())
+		return
+	}
+	_, scanWriteErr := scanWriter.Write([]byte("scan 42 true\n"))
+	_ = scanWriter.Close()
+	if scanWriteErr != nil {
+		_ = scanReader.Close()
+		app.fail("Fscanln write failed", "Info: "+scanWriteErr.Error())
+		return
+	}
+
+	var scanWord string
+	var scanValue int
+	var scanOK bool
+
+	scanned, scanErr := fmt.Fscanln(scanReader, &scanWord, &scanValue, &scanOK)
+	_ = scanReader.Close()
+	if scanErr != nil {
+		app.fail("Fscanln failed", "Info: "+scanErr.Error())
+		return
+	}
+
+	defaultScanReader, defaultScanWriter, defaultScanPipeErr := os.Pipe()
+	if defaultScanPipeErr != nil {
+		app.fail("stdin pipe unavailable", "Info: "+defaultScanPipeErr.Error())
+		return
+	}
+	_, defaultScanWriteErr := defaultScanWriter.Write([]byte("stdin 7 false\n"))
+	_ = defaultScanWriter.Close()
+	if defaultScanWriteErr != nil {
+		_ = defaultScanReader.Close()
+		app.fail("Scanln write failed", "Info: "+defaultScanWriteErr.Error())
+		return
+	}
+
+	previousStdin := os.DefaultStdin()
+	os.Stdin = defaultScanReader
+	var stdinWord string
+	var stdinValue int
+	var stdinOK bool
+	stdinScanned, stdinErr := fmt.Scanln(&stdinWord, &stdinValue, &stdinOK)
+	os.Stdin = previousStdin
+	_ = defaultScanReader.Close()
+	if stdinErr != nil {
+		app.fail("Scanln failed", "Info: "+stdinErr.Error())
+		return
+	}
 
 	expectedPrint := "fmt print 7\ncwd=" + currentFolder + " / size=" + formatInt(len(data)) + " / tail true\n"
 	stdoutData := make([]byte, len(expectedPrint))
@@ -154,6 +205,7 @@ func (app *App) refreshProbe() {
 	app.fprintfLine = "Fprintf: wrote " + formatInt(written) + " / " + string(writer.data)
 	app.printLine = "Print*: wrote " + formatInt(printWritten+printfWritten+printlnWritten) + " / stdout match " + fmt.Sprintf("%t", stdoutRead == len(expectedPrint) && string(stdoutData[:stdoutRead]) == expectedPrint)
 	app.errorLine = "Errorf: " + formatErr.Error()
+	app.scanLine = "Scan*: Fscanln " + scanWord + "/" + formatInt(scanValue) + "/" + fmt.Sprintf("%t", scanOK) + " / Scanln " + stdinWord + "/" + formatInt(stdinValue) + "/" + fmt.Sprintf("%t", stdinOK)
 	app.infoLine = fmt.Sprintf("File: %s / size %d / attrs 0x%x / head %x", fmtProbePath, info.Size, uint32(info.Attributes), data)
 
 	expectedSprintf := "fmt/ok/42/2a/true/%"
@@ -193,6 +245,14 @@ func (app *App) refreshProbe() {
 
 	if formatErr.Error() != "fmt error 7" {
 		app.fail("Errorf mismatch", "Info: expected fmt error 7")
+		return
+	}
+	if scanned != 3 || scanWord != "scan" || scanValue != 42 || !scanOK {
+		app.fail("Fscanln mismatch", "Info: expected scan/42/true")
+		return
+	}
+	if stdinScanned != 3 || stdinWord != "stdin" || stdinValue != 7 || stdinOK {
+		app.fail("Scanln mismatch", "Info: expected stdin/7/false")
 		return
 	}
 

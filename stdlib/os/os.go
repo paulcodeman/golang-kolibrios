@@ -178,7 +178,10 @@ type File struct {
 	append   bool
 	closed   bool
 	fdBacked bool
+	pending  []byte
 }
+
+const activeConsoleReadBufferSize = 256
 
 func Getwd() (dir string, err error) {
 	dir = kos.CurrentFolder()
@@ -339,6 +342,10 @@ func (file *File) Read(buffer []byte) (int, error) {
 		return 0, nil
 	}
 	if file.fdBacked {
+		if file.usesActiveConsoleInput() && kos.HasActiveConsole() {
+			return file.readActiveConsole(buffer)
+		}
+
 		read, err := syscall.Read(file.fd, buffer)
 		if err != nil {
 			return read, &PathError{Op: "read", Path: file.name, Err: err}
@@ -419,6 +426,25 @@ func (file *File) Write(buffer []byte) (int, error) {
 	return int(written), nil
 }
 
+func (file *File) readActiveConsole(buffer []byte) (int, error) {
+	if len(file.pending) == 0 {
+		line := make([]byte, activeConsoleReadBufferSize)
+		read, err := kos.ReadActiveConsoleLine(line)
+		if err != nil {
+			return 0, io.EOF
+		}
+		file.pending = line[:read]
+	}
+
+	read := copy(buffer, file.pending)
+	file.pending = file.pending[read:]
+	if read == 0 {
+		return 0, io.EOF
+	}
+
+	return read, nil
+}
+
 func (file *File) ensureReadable(op string) error {
 	if file == nil {
 		return &PathError{Op: op, Path: "", Err: ErrInvalid}
@@ -453,6 +479,10 @@ func (file *File) usesActiveConsole() bool {
 	}
 
 	return file.fd == int(kos.StdoutFD) || file.fd == int(kos.StderrFD)
+}
+
+func (file *File) usesActiveConsoleInput() bool {
+	return file != nil && file.fdBacked && file.fd == int(kos.StdinFD)
 }
 
 func wrapPathError(op string, name string, status kos.FileSystemStatus) error {

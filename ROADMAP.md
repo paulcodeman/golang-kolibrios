@@ -240,16 +240,17 @@ Current bootstrap status:
   `import "os"`.
 - Local support for `fmt.Sprint`, `fmt.Sprintln`, `fmt.Sprintf`,
   `fmt.Fprint`, `fmt.Fprintln`, `fmt.Fprintf`, `fmt.Print`, `fmt.Printf`,
-  `fmt.Println`, narrow `%s/%d/%x/%X/%t/%v/%c/%%` formatting, and `fmt.Errorf`
-  is now in place.
+  `fmt.Println`, `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, `fmt.Scanln`,
+  narrow `%s/%d/%x/%X/%t/%v/%c/%%` formatting, and `fmt.Errorf` is now in
+  place.
 - `examples/fmt` is the seventh compatibility sample, using ordinary
   `import "fmt"`.
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
-- `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`
-  through pipe-backed `os.Stdout` capture, and the active-console stdout bridge
-  in headless QEMU.
+- `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
+  `fmt.Fscanln`, and `fmt.Scanln` through pipe-backed stdio capture, plus the
+  active-console stdout bridge in headless QEMU.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
 - `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,
@@ -258,7 +259,8 @@ Current bootstrap status:
 - `examples/console` is the first non-window SDK sample built on that console
   wrapper, and `apps/diag` headless validation now exercises the real
   `CONSOLE.OBJ` init/write/exit path plus ordinary `fmt.Print*` through the
-  active console backend instead of DLL load alone.
+  active console backend instead of DLL load alone; the sample itself now also
+  demonstrates `fmt.Scanln` against the same console-backed stdio path.
 - Broader package coverage (`time`)
   remains pending.
 
