@@ -232,9 +232,15 @@ Current bootstrap status:
   place.
 - `examples/io` is the fifth compatibility sample, using ordinary
   `import "io"`.
+- Local support for `os.Getwd`, `os.Open`, `os.Create`, `os.OpenFile`,
+  `os.ReadFile`, `os.WriteFile`, `os.Mkdir`, `os.Remove`, `os.Rename`,
+  narrow `os.Err*` sentinels, `os.PathError`, and `os.LinkError` is now in
+  place.
+- `examples/os` is the sixth compatibility sample, using ordinary
+  `import "os"`.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
-- Broader package coverage (`time`, `os`, `syscall`)
+- Broader package coverage (`fmt`, `time`, `syscall`)
   remains pending.
 
 ## Phase 6 - Port the Native Go Toolchain

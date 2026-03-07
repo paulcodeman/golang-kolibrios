@@ -157,12 +157,14 @@ main() {
     "runtime.interequal" \
     "runtime.interequal..f" \
     "runtime.memequal32..f" \
+    "runtime.memequal64..f" \
     "runtime.memequal8..f" \
     "runtime.nilinterequal" \
     "runtime.nilinterequal..f" \
     "runtime.newobject" \
     "runtime.panicdottype" \
     "runtime.goPanicIndex" \
+    "runtime.goPanicIndexU" \
     "runtime.goPanicSliceAcap" \
     "runtime.goPanicSliceAlen" \
     "runtime.goPanicSliceB" \
@@ -226,6 +228,37 @@ main() {
     "runtime.registerGCRoots" \
     "runtime.strequal..f" \
     "runtime.stringtoslicebyte" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
+  compile_package "os" "kos" "io"
+  probe_symbols=$(package_unresolved_symbols "os")
+  require_list_symbols "os package" "$probe_symbols" \
+    "go_0io.EOF" \
+    "go_0io.ErrShortWrite" \
+    "go_0kos.CreateDirectory" \
+    "go_0kos.CreateOrRewriteFile" \
+    "go_0kos.CurrentFolder" \
+    "go_0kos.DeletePath" \
+    "go_0kos.GetPathInfo" \
+    "go_0kos.ReadAllFile" \
+    "go_0kos.ReadFile" \
+    "go_0kos.RenamePath" \
+    "go_0kos.WriteFile" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicIndexU" \
+    "runtime.ifaceeq" \
+    "runtime.interequal..f" \
+    "runtime.memequal" \
+    "runtime.memequal32..f" \
+    "runtime.memequal64..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.registerGCRoots" \
+    "runtime.strequal..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 

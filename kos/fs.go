@@ -392,7 +392,12 @@ func RenameOrMove(path string, newPath string) FileSystemStatus {
 }
 
 func RenamePath(path string, newPath string) FileSystemStatus {
-	return RenameOrMove(path, newPath)
+	normalizedPath, normalizedNewPath, ok := normalizeRenamePaths(path, newPath)
+	if !ok {
+		return FileSystemUnsupported
+	}
+
+	return RenameOrMove(normalizedPath, normalizedNewPath)
 }
 
 func writeFile(path string, data []byte, offset uint64, subfunction uint32) (written uint32, status FileSystemStatus) {
@@ -492,4 +497,183 @@ func encodeFileDate(buffer []byte, offset int, value FileDate) {
 	buffer[offset+1] = value.Month
 	buffer[offset+2] = byte(value.Year)
 	buffer[offset+3] = byte(value.Year >> 8)
+}
+
+func normalizeRenamePaths(path string, newPath string) (normalizedPath string, normalizedNewPath string, ok bool) {
+	absolutePath, ok := absoluteFSPath(path)
+	if !ok {
+		return "", "", false
+	}
+
+	absoluteNewPath, ok := absoluteFSPath(newPath)
+	if !ok {
+		return "", "", false
+	}
+
+	pathRoot, ok := volumeRootPath(absolutePath)
+	if !ok {
+		return "", "", false
+	}
+
+	newPathRoot, ok := volumeRootPath(absoluteNewPath)
+	if !ok {
+		return "", "", false
+	}
+
+	if !equalFoldASCII(pathRoot, newPathRoot) {
+		return "", "", false
+	}
+
+	normalizedNewPath = absoluteNewPath[len(newPathRoot):]
+	if normalizedNewPath == "" {
+		normalizedNewPath = "/"
+	}
+
+	return absolutePath, normalizedNewPath, true
+}
+
+func absoluteFSPath(name string) (string, bool) {
+	if name == "" {
+		return "", false
+	}
+
+	if name[0] == '/' {
+		return cleanSlashPath(name), true
+	}
+
+	currentFolder := CurrentFolder()
+	if currentFolder == "" {
+		return "", false
+	}
+
+	return cleanSlashPath(currentFolder + "/" + name), true
+}
+
+func cleanSlashPath(name string) string {
+	if name == "" {
+		return "."
+	}
+
+	rooted := name[0] == '/'
+	parts := make([]string, 0, 8)
+	index := 0
+
+	for index < len(name) {
+		for index < len(name) && name[index] == '/' {
+			index++
+		}
+		if index >= len(name) {
+			break
+		}
+
+		next := index
+		for next < len(name) && name[next] != '/' {
+			next++
+		}
+
+		part := name[index:next]
+		switch part {
+		case "", ".":
+		case "..":
+			if rooted {
+				if len(parts) > 0 {
+					parts = parts[:len(parts)-1]
+				}
+			} else if len(parts) > 0 && parts[len(parts)-1] != ".." {
+				parts = parts[:len(parts)-1]
+			} else {
+				parts = append(parts, part)
+			}
+		default:
+			parts = append(parts, part)
+		}
+
+		index = next
+	}
+
+	if rooted {
+		if len(parts) == 0 {
+			return "/"
+		}
+
+		cleaned := "/" + parts[0]
+		for index = 1; index < len(parts); index++ {
+			cleaned += "/" + parts[index]
+		}
+		return cleaned
+	}
+
+	if len(parts) == 0 {
+		return "."
+	}
+
+	cleaned := parts[0]
+	for index = 1; index < len(parts); index++ {
+		cleaned += "/" + parts[index]
+	}
+	return cleaned
+}
+
+func volumeRootPath(name string) (string, bool) {
+	if len(name) < 2 || name[0] != '/' {
+		return "", false
+	}
+
+	firstEnd := indexSlash(name, 1)
+	if firstEnd < 0 {
+		return "", false
+	}
+
+	firstSegment := name[1:firstEnd]
+	if firstSegment == "" {
+		return "", false
+	}
+
+	if equalFoldASCII(firstSegment, "sys") {
+		return "/" + firstSegment, true
+	}
+
+	secondStart := firstEnd + 1
+	if secondStart >= len(name) {
+		return "/" + firstSegment, true
+	}
+
+	secondEnd := indexSlash(name, secondStart)
+	if secondEnd < 0 {
+		return name, true
+	}
+
+	return name[:secondEnd], true
+}
+
+func indexSlash(name string, start int) int {
+	for index := start; index < len(name); index++ {
+		if name[index] == '/' {
+			return index
+		}
+	}
+
+	return -1
+}
+
+func equalFoldASCII(left string, right string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	for index := 0; index < len(left); index++ {
+		if foldASCII(left[index]) != foldASCII(right[index]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func foldASCII(value byte) byte {
+	if value >= 'A' && value <= 'Z' {
+		return value + ('a' - 'A')
+	}
+
+	return value
 }

@@ -133,6 +133,53 @@ Current behavior notes:
 - `io.EOF` and `io.ErrShortWrite` are local bootstrap sentinels implemented as
   concrete package values to avoid init-time cross-package calls
 
+### `os`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `os.File`
+- `os.FileMode`
+- `os.ModeDir`
+- `os.O_RDONLY`
+- `os.O_WRONLY`
+- `os.O_RDWR`
+- `os.O_CREATE`
+- `os.O_TRUNC`
+- `os.O_APPEND`
+- `os.ErrInvalid`
+- `os.ErrPermission`
+- `os.ErrExist`
+- `os.ErrNotExist`
+- `os.ErrClosed`
+- `os.PathError`
+- `os.LinkError`
+- `os.Getwd`
+- `os.Open`
+- `os.Create`
+- `os.OpenFile`
+- `os.ReadFile`
+- `os.WriteFile`
+- `os.Mkdir`
+- `os.Remove`
+- `os.Rename`
+
+Current behavior notes:
+
+- current files are name-plus-offset wrappers over KolibriOS path-based file
+  syscalls; they are not kernel-owned live file descriptors yet
+- `OpenFile` currently supports the narrow bootstrap flag set documented above;
+  descriptor duplication, permissions, and sync semantics are not implemented
+  yet
+- `Rename` resolves ordinary Go-style relative and absolute paths into the
+  special KolibriOS `80.10` target-path contract and currently supports only
+  same-volume rename or move operations
+- `WriteFile`, `Mkdir`, and `OpenFile` ignore Unix permission bits for now and
+  keep only the narrow bootstrap behavior required by the compatibility sample
+- `Stat`, directory iteration, environment handling, process spawning, and the
+  broader `os` surface are not implemented yet
+
 ## Build Contract
 
 The shared app makefile now accepts an ordered `PACKAGE_DIRS` list.
@@ -152,6 +199,9 @@ PACKAGE_DIRS = kos io ui
 ```
 
 Order matters. Later packages may depend on earlier package export data.
+The generated linker header now derives the app memory reservation from the
+final linked image size plus `APP_STACK_RESERVE` (default `0x10000`), so larger
+bootstrap apps remain executable without hand-tuned `MENUET01` header values.
 
 ## Compatibility Sample
 
@@ -180,9 +230,14 @@ Compatibility samples using ordinary import paths:
   - chunked stream reads with `ReadAll`
   - byte transfer through `Copy`
   - string-to-writer bridge through `WriteString`
+- `examples/os`
+  - `import "os"`
+  - current-folder lookup through `Getwd`
+  - file create, append, read, and copy flow through `Create`, `OpenFile`, `ReadFile`, and `Open`
+  - file rename and cleanup flow through `Rename` and `Remove`
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
-stdlib-shaped path, string, byte-slice, io, and error logic now follows ordinary Go package structure
+stdlib-shaped path, string, byte-slice, io, os, and error logic now follows ordinary Go package structure
 instead of custom-only local helpers.
 
 ## Not Yet Supported
@@ -190,7 +245,6 @@ instead of custom-only local helpers.
 The following roadmap packages are still pending bootstrap implementations:
 
 - `time`
-- `os`
 - `syscall`
 
 Until they are explicitly documented here, they should be treated as

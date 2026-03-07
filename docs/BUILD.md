@@ -98,6 +98,7 @@ Successful build output:
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
 - `examples/io/io.kex`
+- `examples/os/os.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -153,9 +154,12 @@ successful build.
 - `examples/io` - implemented
   - bootstrap-compatible `import "io"` sample with `Reader`, `Writer`, `ReadAll`, `Copy`, and `WriteString`
   - chunked stream checks tied to a real KolibriOS file path and current-folder probe
+- `examples/os` - implemented
+  - bootstrap-compatible `import "os"` sample with `Getwd`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, and `Remove`
+  - file lifecycle checks against a real writable KolibriOS path with append, rename, and cleanup validation
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, and system probes in one reusable tool
+  - runtime, file, narrow `os`, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset
@@ -176,6 +180,10 @@ successful build.
 - The linker script is generated from `mk/static.lds.in`.
 - The linker template emits separate RX and RW load segments, so bootstrap
   builds no longer carry the old RWX `LOAD` warning.
+- The linker template now derives the `MENUET01` memory reservation and stack
+  top from the final linked image size plus `APP_STACK_RESERVE` (default
+  `0x10000`), so larger bootstrap apps remain executable without manual header
+  tuning.
 - The current bootstrap runtime subset is documented in `docs/RUNTIME.md`.
 - Focused compiler/runtime symbol checks live in `tests/runtime` and run via
   `scripts/check-runtime-probes.sh`.

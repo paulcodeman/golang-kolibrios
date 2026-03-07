@@ -2,6 +2,8 @@ package diagapp
 
 import (
 	"errors"
+	"io"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -21,6 +23,10 @@ const (
 	diagProbePath      = "/FD/1/GODIAG.TMP"
 	diagHeadlessPath   = "/FD/1/GODIAG.AUTO"
 	diagFilesProbePath = "/sys/default.skn"
+	diagOSProbeRoot    = "/FD/1"
+	diagOSProbeDir     = "GOOSCHK"
+	diagOSProbeFile    = "CHECK.TXT"
+	diagOSRenamedFile  = "RENAMED.TXT"
 	diagPreviewBytes   = 16
 	diagLineHeight     = 20
 	diagDebugPort      = 0x402
@@ -204,6 +210,7 @@ func runDiagnostics() snapshot {
 		checkAssertions(),
 		checkErrors(),
 		checkFiles(),
+		checkOS(),
 		checkSystem(version, screenWidth, screenHeight),
 		checkReportProbe(),
 	}
@@ -517,6 +524,208 @@ func checkFiles() checkResult {
 		detail: "size " + formatHex64(info.Size) +
 			" / head " + formatBytePreview(buffer[:int(read)]),
 	}
+}
+
+func checkOS() checkResult {
+	base := diagOSProbeRoot
+	if _, status := kos.GetPathInfo(base); status != kos.FileSystemOK {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return checkResult{
+				label:  "os",
+				ok:     false,
+				detail: "getwd " + err.Error(),
+			}
+		}
+		base = cwd
+	}
+
+	demoDir := diagJoinPath(base, diagOSProbeDir)
+	demoFile := diagJoinPath(demoDir, diagOSProbeFile)
+	renamedFile := diagJoinPath(demoDir, diagOSRenamedFile)
+	payloadBase := "diag os"
+	payloadExtra := " append"
+	payload := payloadBase + payloadExtra
+
+	if err := diagRemoveIfExists(renamedFile); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "cleanup renamed " + err.Error(),
+		}
+	}
+	if err := diagRemoveIfExists(demoFile); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "cleanup file " + err.Error(),
+		}
+	}
+	if err := diagRemoveIfExists(demoDir); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "cleanup dir " + err.Error(),
+		}
+	}
+
+	if err := os.Mkdir(demoDir, 0); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "mkdir " + err.Error(),
+		}
+	}
+
+	file, err := os.Create(demoFile)
+	if err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "create " + err.Error(),
+		}
+	}
+
+	if _, err = io.WriteString(file, payloadBase); err != nil {
+		closeErr := file.Close()
+		if closeErr != nil {
+			err = closeErr
+		}
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "write " + err.Error(),
+		}
+	}
+	if err = file.Close(); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "close " + err.Error(),
+		}
+	}
+
+	appendFile, err := os.OpenFile(demoFile, os.O_WRONLY|os.O_APPEND, 0)
+	if err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "append open " + err.Error(),
+		}
+	}
+	if _, err = io.WriteString(appendFile, payloadExtra); err != nil {
+		closeErr := appendFile.Close()
+		if closeErr != nil {
+			err = closeErr
+		}
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "append write " + err.Error(),
+		}
+	}
+	if err = appendFile.Close(); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "append close " + err.Error(),
+		}
+	}
+
+	reader, err := os.Open(demoFile)
+	if err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "open " + err.Error(),
+		}
+	}
+
+	data, readErr := io.ReadAll(reader)
+	closeErr := reader.Close()
+	if readErr == nil {
+		readErr = closeErr
+	}
+	if readErr != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "read " + readErr.Error(),
+		}
+	}
+
+	if string(data) != payload {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "payload mismatch",
+		}
+	}
+
+	if err := os.Rename(demoFile, renamedFile); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "rename " + err.Error(),
+		}
+	}
+
+	renamedData, err := os.ReadFile(renamedFile)
+	if err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "renamed read " + err.Error(),
+		}
+	}
+	if string(renamedData) != payload {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "renamed payload mismatch",
+		}
+	}
+
+	if err := os.Remove(renamedFile); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "remove file " + err.Error(),
+		}
+	}
+	if err := os.Remove(demoDir); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "remove dir " + err.Error(),
+		}
+	}
+
+	return checkResult{
+		label:  "os",
+		ok:     true,
+		detail: "cwd " + base + " / append rename cleanup",
+	}
+}
+
+func diagJoinPath(base string, name string) string {
+	if base == "" || base == "/" {
+		return "/" + name
+	}
+	if base[len(base)-1] == '/' {
+		return base + name
+	}
+
+	return base + "/" + name
+}
+
+func diagRemoveIfExists(name string) error {
+	err := os.Remove(name)
+	if err == nil || errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	return err
 }
 
 func checkSystem(version kos.KernelVersionInfo, screenWidth int, screenHeight int) checkResult {

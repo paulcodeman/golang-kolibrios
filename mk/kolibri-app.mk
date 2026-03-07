@@ -18,6 +18,7 @@ SED = sed
 ENTRYPOINT = go_0$(PACKAGE_NAME).Main
 LDSCRIPT_TEMPLATE = $(MK_DIR)/static.lds.in
 LDSCRIPT = $(BUILD_DIR)/$(PROGRAM).lds
+APP_STACK_RESERVE ?= 0x10000
 
 GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I. -I$(ROOT_ABS)
 GCC_COMPILER_FLAGS = -m32 -c -ffunction-sections -fdata-sections -fno-pic -fno-pie -fno-stack-protector
@@ -69,7 +70,7 @@ $(BUILD_DIR):
 	mkdir -p $@
 
 $(LDSCRIPT): $(LDSCRIPT_TEMPLATE) | $(BUILD_DIR)
-	$(SED) 's/@ENTRYPOINT@/$(ENTRYPOINT)/g' $< > $@
+	$(SED) -e 's/@ENTRYPOINT@/$(ENTRYPOINT)/g' -e 's/@STACK_RESERVE@/$(APP_STACK_RESERVE)/g' $< > $@
 
 $(PROGRAM).kex: $(OBJS) $(PACKAGE_GOXS) $(LDSCRIPT)
 	ld $(LDFLAGS) -o $(PROGRAM).kex $(OBJS)

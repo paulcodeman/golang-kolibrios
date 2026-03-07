@@ -20,10 +20,11 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, and `io` shims plus compatibility samples that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, `io`, and `os` shims plus compatibility samples that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
+- the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
-- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that prefers debug-console report capture and falls back to `/FD/1/GODIAG.TXT`
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, and the narrow bootstrap `os` flow via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
@@ -35,7 +36,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, and `bytes`
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, `bytes`, `io`, and `os`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -133,6 +134,7 @@ Output:
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
 - `examples/io/io.kex`
+- `examples/os/os.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
@@ -145,6 +147,9 @@ New applications can be scaffolded from `templates/basic-app` via
 `scripts/new-app.sh` into `examples/<name>`.
 The shared app makefile now accepts an ordered `PACKAGE_DIRS` list so bootstrap
 apps can precompile additional shared packages beyond `kos` and `ui`.
+The generated linker header now sizes the app memory reservation from the final
+linked image size plus `APP_STACK_RESERVE` (default `0x10000`), so larger
+bootstrap apps remain executable without hand-editing the linker script.
 Shim sources for ordinary stdlib imports now live under `stdlib/<name>`, while
 their compiled export data is still exposed through the repository-root include
 path so existing `import "errors"` / `import "path"` style code keeps working.
@@ -191,7 +196,8 @@ Main sources:
 - `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture
+- `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, file create/read/write flows, rename/remove, and narrow error wrappers
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `os` file lifecycle checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

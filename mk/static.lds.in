@@ -16,8 +16,8 @@ SECTIONS
         LONG(1);
         LONG(@ENTRYPOINT@);
         LONG(__end);
-        LONG(0x10000);
-        LONG(0x10000);
+        LONG(__memory_top);
+        LONG(__memory_top);
         LONG(0);
         LONG(0);
 
@@ -55,6 +55,7 @@ SECTIONS
     } :text
 
     __end = .;
+    __memory_top = ((__end + 0xFFF) & ~0xFFF) + @STACK_RESERVE@;
 
     .note.GNU-stack : { } :text :stack
 }

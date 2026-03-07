@@ -50,6 +50,7 @@ jobs:
           test -f examples/strings/strings.kex
           test -f examples/bytes/bytes.kex
           test -f examples/io/io.kex
+          test -f examples/os/os.kex
           test -f tests/smokeapp/smokeapp.kex
 
       - name: Upload example artifacts
@@ -69,4 +70,5 @@ jobs:
             examples/strings/strings.kex
             examples/bytes/bytes.kex
             examples/io/io.kex
+            examples/os/os.kex
             tests/smokeapp/smokeapp.kex
