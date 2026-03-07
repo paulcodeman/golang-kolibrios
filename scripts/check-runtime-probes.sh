@@ -327,6 +327,30 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "strconv"
+  probe_symbols=$(package_unresolved_symbols "strconv")
+  require_list_symbols "strconv package" "$probe_symbols" \
+    "memcmp" \
+    "memmove" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicIndexU" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.ifaceeq" \
+    "runtime.interequal..f" \
+    "runtime.memequal" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.registerGCRoots" \
+    "runtime.slicebytetostring" \
+    "runtime.strequal..f" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
   compile_package "syscall" "kos"
   probe_symbols=$(package_unresolved_symbols "syscall")
   require_list_symbols "syscall package" "$probe_symbols" \

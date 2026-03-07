@@ -1,8 +1,8 @@
-.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path filepath strings bytes io os fmt bufio console diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-console clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-filepath rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-fmt rebuild-bufio rebuild-console rebuild-diag rebuild-smokeapp rebuild-all
+.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-filepath rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-fmt rebuild-bufio rebuild-strconv rebuild-console rebuild-diag rebuild-smokeapp rebuild-all
 
 all: examples apps smokeapp
 
-examples: window runtime time system input ipc files path filepath strings bytes io os fmt bufio console
+examples: window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console
 
 apps: diag
 
@@ -68,6 +68,9 @@ fmt:
 bufio:
 	$(MAKE) -C examples/bufio all
 
+strconv:
+	$(MAKE) -C examples/strconv all
+
 console:
 	$(MAKE) -C examples/console all
 
@@ -79,7 +82,7 @@ smokeapp:
 
 clean: clean-examples clean-apps clean-smokeapp
 
-clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-console
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console
 
 clean-apps: clean-diag
 
@@ -127,6 +130,9 @@ clean-fmt:
 
 clean-bufio:
 	$(MAKE) -C examples/bufio clean
+
+clean-strconv:
+	$(MAKE) -C examples/strconv clean
 
 clean-console:
 	$(MAKE) -C examples/console clean
@@ -181,6 +187,9 @@ rebuild-fmt:
 
 rebuild-bufio:
 	$(MAKE) -C examples/bufio clean all
+
+rebuild-strconv:
+	$(MAKE) -C examples/strconv clean all
 
 rebuild-console:
 	$(MAKE) -C examples/console clean all

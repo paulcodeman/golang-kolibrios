@@ -54,6 +54,7 @@ jobs:
           test -f examples/os/os.kex
           test -f examples/fmt/fmt.kex
           test -f examples/bufio/bufio.kex
+          test -f examples/strconv/strconv.kex
           test -f examples/console/console.kex
           test -f tests/smokeapp/smokeapp.kex
 
@@ -78,5 +79,6 @@ jobs:
             examples/os/os.kex
             examples/fmt/fmt.kex
             examples/bufio/bufio.kex
+            examples/strconv/strconv.kex
             examples/console/console.kex
             tests/smokeapp/smokeapp.kex

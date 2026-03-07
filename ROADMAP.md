@@ -190,6 +190,7 @@ Tasks:
   - `fmt`
   - `bytes`
   - `strings`
+  - `strconv`
   - `io`
   - `time`
   - `path`
@@ -268,18 +269,26 @@ Current bootstrap status:
   now in place.
 - `examples/bufio` is the ninth compatibility sample, using ordinary
   `import "bufio"`.
+- Local support for `strconv.FormatBool`, `strconv.AppendBool`,
+  `strconv.ParseBool`, `strconv.Itoa`, `strconv.Atoi`, `strconv.FormatInt`,
+  `strconv.FormatUint`, `strconv.AppendInt`, `strconv.AppendUint`,
+  `strconv.ParseInt`, `strconv.ParseUint`, `strconv.ErrRange`,
+  `strconv.ErrSyntax`, and `strconv.NumError.Unwrap` is now in place.
+- `examples/strconv` is the tenth compatibility sample, using ordinary
+  `import "strconv"`.
 - Local support for `time.Duration`, `time.Month`, `time.Time`, `time.Now`,
   `time.Unix`, `time.Sleep`, `time.Since`, `Time.Add`, `Time.Sub`,
   `Time.Before`, `Time.After`, `Time.Equal`, and the basic wall-clock field
   accessors is now in place, with wall time assembled from syscalls `29` and
   `3` plus a monotonic `Since/Sub` path backed by `26.10`.
-- `examples/time` is now a tenth compatibility sample, using ordinary
+- `examples/time` is now an eleventh compatibility sample, using ordinary
   `import "time"`.
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
-  `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows,
+  `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows, narrow
+  `strconv` format/parse/append coverage,
   `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
   capture plus the documented clock bridge, along with the active-console
   stdout bridge in headless QEMU.

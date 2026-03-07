@@ -102,6 +102,7 @@ Successful build output:
 - `examples/os/os.kex`
 - `examples/fmt/fmt.kex`
 - `examples/bufio/bufio.kex`
+- `examples/strconv/strconv.kex`
 - `examples/console/console.kex`
 - `tests/smokeapp/smokeapp.kex`
 
@@ -170,13 +171,16 @@ successful build.
 - `examples/bufio` - implemented
   - bootstrap-compatible `import "bufio"` sample with `Reader`, `Writer`, `ReadByte`, `UnreadByte`, `ReadString`, `ReadBytes`, `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
   - buffered pipe checks for line, word, and byte tokenization without relying on a kernel fd-close path yet
+- `examples/strconv` - implemented
+  - bootstrap-compatible `import "strconv"` sample with `FormatBool`, `FormatInt`, `FormatUint`, `Itoa`, `Atoi`, `ParseBool`, `ParseInt`, `ParseUint`, `AppendBool`, `AppendInt`, and `AppendUint`
+  - wrapped `ErrRange` and `ErrSyntax` validation through ordinary `errors.Is`, plus real file and cwd probes through `os.Stat` and `os.Getwd`
 - `examples/console` - implemented
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
   - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `fmt.Scanln` on the same active console-backed `os.Stdin`
   - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `time`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, `os.Stat`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, `os.Stat`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

@@ -319,6 +319,47 @@ Current behavior notes:
   `Scanner.Bytes()` lifetime guarantees beyond the next scan are not
   implemented yet
 
+### `strconv`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `strconv.IntSize`
+- `strconv.ErrRange`
+- `strconv.ErrSyntax`
+- `strconv.NumError`
+- `(*strconv.NumError).Error`
+- `(*strconv.NumError).Unwrap`
+- `strconv.FormatBool`
+- `strconv.AppendBool`
+- `strconv.ParseBool`
+- `strconv.Itoa`
+- `strconv.Atoi`
+- `strconv.FormatInt`
+- `strconv.FormatUint`
+- `strconv.AppendInt`
+- `strconv.AppendUint`
+- `strconv.ParseInt`
+- `strconv.ParseUint`
+
+Current behavior notes:
+
+- integer formatting and parsing currently support bases `2` through `36`,
+  plus the usual `base == 0` auto-prefix handling for `ParseInt` and
+  `ParseUint` with `0x`, `0b`, `0o`, and legacy leading-zero octal input
+- `ParseBool` accepts the narrow standard tokens `1`, `0`, `t`, `f`, `T`,
+  `F`, `true`, and `false` with ASCII case-folding for the full-word forms
+- `Atoi` and `ParseInt` follow the local bootstrap `IntSize == 32` contract
+- `NumError.Unwrap` exposes the underlying `ErrRange` or `ErrSyntax` sentinel,
+  so ordinary `errors.Is` matching works
+- because the current bootstrap runtime still lacks a general `panic` path and
+  64-bit division helpers, invalid formatting bases for `FormatInt`,
+  `FormatUint`, `AppendInt`, and `AppendUint` currently coerce to base `10`
+  instead of panicking like the full standard library
+- floating-point, quoting, rune-classification, and the broader `strconv`
+  surface are not implemented yet
+
 ### `os`
 
 Implemented locally in the repository as a bootstrap shim.
@@ -549,13 +590,21 @@ Compatibility samples using ordinary import paths:
   - buffered reads through `Reader`, `ReadByte`, `UnreadByte`, `ReadString`, and `ReadBytes`
   - token scanning through `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
   - ordinary `os.Pipe`, `os.Getwd`, and `os.Stat` for the runtime probe
+- `examples/strconv`
+  - `import "strconv"`
+  - bool and integer formatting through `FormatBool`, `FormatInt`, `FormatUint`, and `Itoa`
+  - narrow parsing through `ParseBool`, `ParseInt`, `ParseUint`, and `Atoi`
+  - append helpers through `AppendBool`, `AppendInt`, and `AppendUint`
+  - wrapped `ErrRange` and `ErrSyntax` classification through ordinary `errors.Is`
+  - ordinary `os.Getwd` and `os.Stat` for the cwd and file probe
 - `apps/diag`
   - headless `bufio` regression coverage for reader, writer, and scanner behavior on pipe-backed stdio
+  - headless `strconv` regression coverage for bool/int format, parse, append, and `NumError` sentinel matching
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
-stdlib-shaped path, filepath, string, byte-slice, io, os, fmt, time, and error
-logic now follows ordinary Go package structure instead of custom-only local
-helpers.
+stdlib-shaped path, filepath, string, byte-slice, io, os, fmt, strconv, time,
+and error logic now follows ordinary Go package structure instead of
+custom-only local helpers.
 
 ## Not Yet Supported
 

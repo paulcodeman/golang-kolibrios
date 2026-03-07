@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -203,6 +204,7 @@ func runDiagnostics() snapshot {
 		checkSyscall(),
 		checkFmt(),
 		checkBufio(),
+		checkStrconv(),
 		checkFilepath(),
 		checkFiles(),
 		checkOS(),
@@ -1097,6 +1099,92 @@ func checkBufio() checkResult {
 		label:  "bufio",
 		ok:     true,
 		detail: "reader writer scanner / line one line two / one two three / A Z",
+	}
+}
+
+func checkStrconv() checkResult {
+	info, err := os.Stat(diagFilesProbePath)
+	if err != nil {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "stat failed: " + err.Error(),
+		}
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "stat sys payload mismatch",
+		}
+	}
+	currentFolder, err := os.Getwd()
+	if err != nil {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "getwd failed: " + err.Error(),
+		}
+	}
+
+	formatBool := strconv.FormatBool(true)
+	formatInt := strconv.Itoa(-42)
+	formatHex := strconv.FormatInt(-42, 16)
+	formatUint := strconv.FormatUint(uint64(info.Size()), 16)
+
+	parseBool, parseBoolErr := strconv.ParseBool("TRUE")
+	parseInt, parseIntErr := strconv.Atoi("214")
+	parseHex, parseHexErr := strconv.ParseInt("-0x2a", 0, 32)
+	parseBin, parseBinErr := strconv.ParseUint("0b1010", 0, 32)
+
+	appendInt := string(strconv.AppendInt([]byte("n="), -42, 10))
+	appendUint := string(strconv.AppendUint([]byte("h="), uint64(info.Size()), 16))
+	appendBool := string(strconv.AppendBool([]byte("ok="), true))
+
+	_, rangeErr := strconv.ParseUint("999", 10, 8)
+	_, syntaxErr := strconv.ParseBool("maybe")
+
+	if formatBool != "true" || formatInt != "-42" || formatHex != "-2a" || formatUint == "" {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "format mismatch",
+		}
+	}
+	if parseBoolErr != nil || !parseBool || parseIntErr != nil || parseInt != 214 {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "parse bool/int mismatch",
+		}
+	}
+	if parseHexErr != nil || parseHex != -42 || parseBinErr != nil || parseBin != 10 {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "parse base mismatch",
+		}
+	}
+	if appendInt != "n=-42" || appendUint != "h="+formatUint || appendBool != "ok=true" {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "append mismatch",
+		}
+	}
+	if !errors.Is(rangeErr, strconv.ErrRange) || !errors.Is(syntaxErr, strconv.ErrSyntax) {
+		return checkResult{
+			label:  "strconv",
+			ok:     false,
+			detail: "error mismatch",
+		}
+	}
+
+	return checkResult{
+		label:  "strconv",
+		ok:     true,
+		detail: "format parse append / cwd " + currentFolder + " / attrs 0x" + strconv.FormatUint(uint64(rawInfo.Attributes), 16),
 	}
 }
 
