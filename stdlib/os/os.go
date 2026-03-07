@@ -229,9 +229,16 @@ type File struct {
 	closed   bool
 	fdBacked bool
 	pending  []byte
+	pipe     *pipeState
 }
 
 const activeConsoleReadBufferSize = 256
+
+type pipeState struct {
+	pending uint64
+	readers uint32
+	writers uint32
+}
 
 type envEntry struct {
 	key   string
@@ -415,8 +422,12 @@ func Pipe() (reader *File, writer *File, err error) {
 		return nil, nil, err
 	}
 
-	reader = newDescriptorFile("pipe[0]", pipefd[0], true, false)
-	writer = newDescriptorFile("pipe[1]", pipefd[1], false, true)
+	pipe := &pipeState{
+		readers: 1,
+		writers: 1,
+	}
+	reader = newPipeFile("pipe[0]", pipefd[0], true, false, pipe)
+	writer = newPipeFile("pipe[1]", pipefd[1], false, true, pipe)
 	return reader, writer, nil
 }
 
@@ -499,6 +510,7 @@ func (file *File) Close() error {
 		return &PathError{Op: "close", Path: file.name, Err: ErrClosed}
 	}
 
+	file.releasePipeEndpoint()
 	file.closed = true
 	return nil
 }
@@ -514,10 +526,16 @@ func (file *File) Read(buffer []byte) (int, error) {
 		if file.usesActiveConsoleInput() && kos.HasActiveConsole() {
 			return file.readActiveConsole(buffer)
 		}
+		if file.pipe != nil && file.pipe.pending == 0 && file.pipe.writers == 0 {
+			return 0, io.EOF
+		}
 
 		read, err := syscall.Read(file.fd, buffer)
 		if err != nil {
 			return read, &PathError{Op: "read", Path: file.name, Err: err}
+		}
+		if file.pipe != nil && read > 0 {
+			file.pipe.consume(uint64(read))
 		}
 		if read == 0 {
 			return 0, io.EOF
@@ -563,10 +581,16 @@ func (file *File) Write(buffer []byte) (int, error) {
 
 			return written, nil
 		}
+		if file.pipe != nil && file.pipe.readers == 0 {
+			return 0, &PathError{Op: "write", Path: file.name, Err: syscall.EPIPE}
+		}
 
 		written, err := syscall.Write(file.fd, buffer)
 		if err != nil {
 			return written, &PathError{Op: "write", Path: file.name, Err: err}
+		}
+		if file.pipe != nil && written > 0 {
+			file.pipe.pending += uint64(written)
 		}
 		if written != len(buffer) {
 			return written, io.ErrShortWrite
@@ -712,6 +736,37 @@ func newDescriptorFile(name string, fd int, readable bool, writable bool) *File 
 		writable: writable,
 		fdBacked: true,
 	}
+}
+
+func newPipeFile(name string, fd int, readable bool, writable bool, pipe *pipeState) *File {
+	file := newDescriptorFile(name, fd, readable, writable)
+	file.pipe = pipe
+	return file
+}
+
+func (file *File) releasePipeEndpoint() {
+	if file == nil || file.pipe == nil {
+		return
+	}
+
+	if file.readable && file.pipe.readers > 0 {
+		file.pipe.readers--
+	}
+	if file.writable && file.pipe.writers > 0 {
+		file.pipe.writers--
+	}
+}
+
+func (pipe *pipeState) consume(count uint64) {
+	if pipe == nil {
+		return
+	}
+	if count >= pipe.pending {
+		pipe.pending = 0
+		return
+	}
+
+	pipe.pending -= count
 }
 
 func errorMatches(err error, target error) bool {

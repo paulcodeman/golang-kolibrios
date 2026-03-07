@@ -965,7 +965,20 @@ func checkBufio() checkResult {
 			detail: "ReadBytes failed: " + err.Error(),
 		}
 	}
+	_, eofErr := bufferedReader.ReadByte()
 	_ = readerPipe.Close()
+
+	brokenReader, brokenWriter, err := os.Pipe()
+	if err != nil {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "broken pipe unavailable: " + err.Error(),
+		}
+	}
+	_ = brokenReader.Close()
+	_, brokenErr := brokenWriter.Write([]byte("x"))
+	_ = brokenWriter.Close()
 
 	linesReader, linesWriter, err := os.Pipe()
 	if err != nil {
@@ -1073,6 +1086,20 @@ func checkBufio() checkResult {
 			detail: "reader path mismatch",
 		}
 	}
+	if !errors.Is(eofErr, io.EOF) {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "EOF mismatch",
+		}
+	}
+	if !errors.Is(brokenErr, syscall.EPIPE) {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "EPIPE mismatch",
+		}
+	}
 	if lineScanErr != nil || lineA != "line one" || lineB != "line two" {
 		return checkResult{
 			label:  "bufio",
@@ -1098,7 +1125,7 @@ func checkBufio() checkResult {
 	return checkResult{
 		label:  "bufio",
 		ok:     true,
-		detail: "reader writer scanner / line one line two / one two three / A Z",
+		detail: "reader eof epipe scanner / line one line two / one two three / A Z",
 	}
 }
 

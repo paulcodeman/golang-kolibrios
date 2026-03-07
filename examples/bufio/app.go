@@ -2,7 +2,10 @@ package bufiodemo
 
 import (
 	"bufio"
+	"errors"
+	"io"
 	"os"
+	"syscall"
 
 	"../../kos"
 	"../../ui"
@@ -160,7 +163,17 @@ func (app *App) refreshProbe() {
 		app.fail("ReadBytes failed", "Info: "+err.Error())
 		return
 	}
+	_, eofErr := bufferedReader.ReadByte()
 	_ = readerPipe.Close()
+
+	brokenReader, brokenWriter, err := os.Pipe()
+	if err != nil {
+		app.fail("broken pipe unavailable", "Info: "+err.Error())
+		return
+	}
+	_ = brokenReader.Close()
+	_, brokenErr := brokenWriter.Write([]byte("x"))
+	_ = brokenWriter.Close()
 
 	linesReader, linesWriter, err := os.Pipe()
 	if err != nil {
@@ -244,7 +257,7 @@ func (app *App) refreshProbe() {
 	_ = bytesReader.Close()
 
 	app.readerLine = "Reader: byte " + string([]byte{firstByte}) + " / line " + trimTrailingNewline(firstLine) + " / bytes " + trimTrailingNewline(string(secondLine))
-	app.writerLine = "Writer: flush true / cwd " + currentFolder
+	app.writerLine = "Writer: flush true / eof " + formatBool(errors.Is(eofErr, io.EOF)) + " / epipe " + formatBool(errors.Is(brokenErr, syscall.EPIPE)) + " / cwd " + currentFolder
 	app.scannerLine = "Scanner: lines " + lineA + " | " + lineB + " / words " + wordA + "," + wordB + "," + wordC
 	app.bytesLine = "ScanBytes: " + byteA + "," + byteB + " / unread true"
 	app.infoLine = "File: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
@@ -259,6 +272,14 @@ func (app *App) refreshProbe() {
 	}
 	if string(secondLine) != "gamma\n" {
 		app.fail("ReadBytes mismatch", "Info: expected gamma")
+		return
+	}
+	if !errors.Is(eofErr, io.EOF) {
+		app.fail("EOF mismatch", "Info: expected EOF after writer close")
+		return
+	}
+	if !errors.Is(brokenErr, syscall.EPIPE) {
+		app.fail("EPIPE mismatch", "Info: expected broken pipe after reader close")
 		return
 	}
 	if lineScanErr != nil || lineA != "line one" || lineB != "line two" {

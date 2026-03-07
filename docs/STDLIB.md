@@ -307,10 +307,12 @@ Current behavior notes:
   intentionally ASCII-focused
 - `bufio.Reader` currently supports sequential buffered reads plus
   single-byte unread through `UnreadByte`
-- `bufio.Writer` provides buffered writes and explicit `Flush`; because the
-  bootstrap `os.File.Close` path does not yet invoke a documented kernel
-  close-handle syscall, pipe-backed callers should not rely on `Close()` alone
-  to signal EOF to a peer
+- `bufio.Writer` provides buffered writes and explicit `Flush`; although the
+  kernel still has no documented close-handle syscall for `77` pipe handles,
+  the bootstrap `os.Pipe` wrappers now emulate in-process close semantics, so
+  closing the writer end produces `io.EOF` on the peer after buffered data is
+  drained and closing the reader end makes subsequent writer calls fail with
+  `syscall.EPIPE`
 - `bufio.Scanner` currently supports `ScanLines`, `ScanWords`, and `ScanBytes`
   with a configurable maximum token size via `Buffer`
 - split functions are expected to follow the normal scanner contract, but the
@@ -454,8 +456,13 @@ Current behavior notes:
 - `os.IsNotExist` currently follows the unwrap chain for bootstrap `os.PathError`
   and `os.LinkError` values and checks against the local `os.ErrNotExist`
   sentinel
-- `(*os.File).Close` currently marks bootstrap fd-backed files closed locally,
-  but it does not yet invoke a documented kernel close-handle syscall
+- `(*os.File).Close` still does not invoke a documented kernel close-handle
+  syscall, because the current `sysfuncs.txt` contract for function `77`
+  exposes `Read`, `Write`, and `Pipe`, but no close operation; for
+  `os.Pipe`-created wrapper pairs the bootstrap layer now emulates in-process
+  close semantics so the reader sees `io.EOF` after the last local writer is
+  closed and the writer sees `syscall.EPIPE` after the last local reader is
+  closed
 - `(*os.File).Stat` currently works only for path-backed files; fd-backed files
   such as pipes and stdio handles still return `ErrInvalid`
 - `Rename` resolves ordinary Go-style relative and absolute paths into the
@@ -589,7 +596,8 @@ Compatibility samples using ordinary import paths:
   - buffered pipe writes through `Writer`, `WriteString`, `WriteByte`, and `Flush`
   - buffered reads through `Reader`, `ReadByte`, `UnreadByte`, `ReadString`, and `ReadBytes`
   - token scanning through `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
-  - ordinary `os.Pipe`, `os.Getwd`, and `os.Stat` for the runtime probe
+  - ordinary `os.Pipe`, `os.Getwd`, and `os.Stat` for the runtime probe, plus
+    EOF-after-close and broken-pipe validation through `io.EOF` and `syscall.EPIPE`
 - `examples/strconv`
   - `import "strconv"`
   - bool and integer formatting through `FormatBool`, `FormatInt`, `FormatUint`, and `Itoa`
@@ -598,7 +606,8 @@ Compatibility samples using ordinary import paths:
   - wrapped `ErrRange` and `ErrSyntax` classification through ordinary `errors.Is`
   - ordinary `os.Getwd` and `os.Stat` for the cwd and file probe
 - `apps/diag`
-  - headless `bufio` regression coverage for reader, writer, and scanner behavior on pipe-backed stdio
+  - headless `bufio` regression coverage for reader, writer, scanner,
+    EOF-after-close, and broken-pipe behavior on pipe-backed stdio
   - headless `strconv` regression coverage for bool/int format, parse, append, and `NumError` sentinel matching
 
 The samples still use the KolibriOS SDK for actual system interaction, but the

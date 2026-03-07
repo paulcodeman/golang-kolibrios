@@ -269,6 +269,11 @@ Current bootstrap status:
   now in place.
 - `examples/bufio` is the ninth compatibility sample, using ordinary
   `import "bufio"`.
+- `os.Pipe` wrapper pairs now emulate local reader/writer close semantics on
+  top of the documented `77.10/77.11/77.13` kernel contract, so ordinary
+  Go-style EOF-after-writer-close and `EPIPE`-after-reader-close flows are
+  validated even though `sysfuncs.txt` still documents no raw close syscall
+  for those handles.
 - Local support for `strconv.FormatBool`, `strconv.AppendBool`,
   `strconv.ParseBool`, `strconv.Itoa`, `strconv.Atoi`, `strconv.FormatInt`,
   `strconv.FormatUint`, `strconv.AppendInt`, `strconv.AppendUint`,
@@ -288,7 +293,7 @@ Current bootstrap status:
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
   `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows, narrow
-  `strconv` format/parse/append coverage,
+  `strconv` format/parse/append coverage, local pipe EOF/EPIPE semantics,
   `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
   capture plus the documented clock bridge, along with the active-console
   stdout bridge in headless QEMU.

@@ -206,10 +206,10 @@ Main sources:
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`, with file/cwd probes now routed through `os.ReadFile`, `os.Getwd`, and `os.Stat`
 - `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, `FileInfo.ModTime`, file create/read/write flows, rename/remove, `Getpid`/`Getppid`, and process-local environment handling
 - `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture plus ordinary `os` cwd/file probes
-- `examples/bufio` - ordinary `import "bufio"` compatibility sample for `Reader`, `Writer`, `ReadByte`, `UnreadByte`, `ReadString`, `ReadBytes`, `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
+- `examples/bufio` - ordinary `import "bufio"` compatibility sample for `Reader`, `Writer`, `ReadByte`, `UnreadByte`, `ReadString`, `ReadBytes`, `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`, plus `os.Pipe` EOF-after-close and broken-pipe validation through `io.EOF` and `syscall.EPIPE`
 - `examples/strconv` - ordinary `import "strconv"` compatibility sample for `FormatBool`, `FormatInt`, `FormatUint`, `Itoa`, `Atoi`, `ParseBool`, `ParseInt`, `ParseUint`, `AppendBool`, `AppendInt`, and `AppendUint`, with error classification through `errors.Is`
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning plus local EOF/EPIPE checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes
