@@ -19,7 +19,6 @@ func Main() {
 
 	if _, err := fmt.Fprintf(console, "KolibriOS console demo\r\n"); err != nil {
 		kos.DebugString("console demo: fmt write failed")
-		console.Exit(true)
 		kos.Exit()
 		return
 	}
@@ -38,7 +37,6 @@ func Main() {
 		kos.SleepSeconds(3)
 	}
 
-	console.Exit(true)
 	kos.Exit()
 }
 

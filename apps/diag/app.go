@@ -1000,7 +1000,7 @@ func checkConsole() checkResult {
 	titleState := "title skipped"
 	if console.SupportsTitle() {
 		if !console.SetTitle("KolibriOS Go Diagnostics Console / live") {
-			console.Exit(true)
+			_ = console.Close()
 			return checkResult{
 				label:  "console",
 				ok:     false,
@@ -1011,7 +1011,7 @@ func checkConsole() checkResult {
 	}
 
 	if _, err := fmt.Fprintf(console, "golang-kolibrios console probe\r\n"); err != nil {
-		console.Exit(true)
+		_ = console.Close()
 		return checkResult{
 			label:  "console",
 			ok:     false,
@@ -1019,7 +1019,7 @@ func checkConsole() checkResult {
 		}
 	}
 	if _, err := fmt.Fprintf(console, "fmt writer path active / table 0x%x / ver 0x%x\r\n", uint32(console.ExportTable()), console.Version()); err != nil {
-		console.Exit(true)
+		_ = console.Close()
 		return checkResult{
 			label:  "console",
 			ok:     false,
@@ -1027,7 +1027,7 @@ func checkConsole() checkResult {
 		}
 	}
 
-	console.Exit(true)
+	_ = console.Close()
 	return checkResult{
 		label:  "console",
 		ok:     true,

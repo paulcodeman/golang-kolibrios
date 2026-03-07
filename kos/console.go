@@ -15,6 +15,9 @@ type Console struct {
 	version         uint32
 }
 
+var activeConsoleTable DLLExportTable
+var activeConsoleExitProc DLLProc
+
 func LoadConsole() (Console, bool) {
 	return LoadConsoleFromDLL(LoadConsoleDLL())
 }
@@ -88,6 +91,7 @@ func (console Console) Init(windowWidth uint32, windowHeight uint32, scrollWidth
 
 	CallStdcall5VoidRaw(uint32(console.initProc), windowWidth, windowHeight, scrollWidth, scrollHeight, titleAddr)
 	freeCString(titlePtr)
+	registerActiveConsole(console)
 	return true
 }
 
@@ -146,12 +150,22 @@ func (console Console) Getch() int {
 	return int(int32(CallStdcall0Raw(uint32(console.getchProc))))
 }
 
+func (console Console) Close() error {
+	if !console.Valid() {
+		return &consoleError{text: "console close failed"}
+	}
+
+	console.Exit(true)
+	return nil
+}
+
 func (console Console) Exit(closeWindow bool) {
 	if !console.exitProc.Valid() {
 		return
 	}
 
 	CallStdcall1VoidRaw(uint32(console.exitProc), boolToUint32(closeWindow))
+	unregisterActiveConsole(console)
 }
 
 func boolToUint32(value bool) uint32 {
@@ -168,4 +182,26 @@ type consoleError struct {
 
 func (err *consoleError) Error() string {
 	return err.text
+}
+
+func registerActiveConsole(console Console) {
+	activeConsoleTable = console.table
+	activeConsoleExitProc = console.exitProc
+}
+
+func unregisterActiveConsole(console Console) {
+	if activeConsoleTable == console.table {
+		activeConsoleTable = 0
+		activeConsoleExitProc = 0
+	}
+}
+
+func closeActiveConsole(closeWindow bool) {
+	if activeConsoleTable == 0 || !activeConsoleExitProc.Valid() {
+		return
+	}
+
+	CallStdcall1VoidRaw(uint32(activeConsoleExitProc), boolToUint32(closeWindow))
+	activeConsoleTable = 0
+	activeConsoleExitProc = 0
 }

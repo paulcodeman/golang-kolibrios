@@ -147,7 +147,7 @@ func GetButtonID() int
 func CreateButton(x int, y int, width int, height int, id int, color uint32)
 
 // Function -1 - terminate thread/process.
-func Exit()
+func ExitRaw()
 
 // Function 12 - begin/end window redraw.
 func Redraw(mode int)

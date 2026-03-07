@@ -16,7 +16,7 @@ global go_0kos.CheckEvent
 global go_0kos.GetThreadInfo
 global go_0kos.GetButtonID
 global go_0kos.CreateButton
-global go_0kos.Exit
+global go_0kos.ExitRaw
 global go_0kos.Redraw
 global go_0kos.Window
 global go_0kos.WriteText
@@ -185,7 +185,7 @@ go_0kos.GetButtonID:
     dec eax
     ret
 
-go_0kos.Exit:
+go_0kos.ExitRaw:
     mov eax, -1
     int 0x40
     ret
