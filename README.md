@@ -24,7 +24,7 @@ The project is still in prototype stage. Right now the practical path is
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
-- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, `time`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, and `time.Since` bootstrap paths, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, `time`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, `time.Since`, `os.Stat`, `FileInfo.ModTime`, and process-local `os` env/process helpers, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
 - `kos` now includes a bootstrap `CONSOLE.OBJ` wrapper built on top of the `68.18/68.19` DLL loader path and export-table lookup
 - a longer-term plan is tracked in `ROADMAP.md`
 
@@ -199,10 +199,10 @@ Main sources:
 - `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
-- `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, file create/read/write flows, rename/remove, and narrow `IsNotExist` handling
+- `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, `FileInfo.ModTime`, file create/read/write flows, rename/remove, `Getpid`/`Getppid`, and process-local environment handling
 - `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and pipe-backed scanning checks
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

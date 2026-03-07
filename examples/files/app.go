@@ -99,7 +99,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case filesButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

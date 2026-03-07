@@ -283,7 +283,7 @@ main() {
     "runtime.registerGCRoots" \
     "runtime.strequal..f"
 
-  compile_package "os" "kos" "io" "syscall"
+  compile_package "os" "kos" "io" "syscall" "time"
   probe_symbols=$(package_unresolved_symbols "os")
   require_list_symbols "os package" "$probe_symbols" \
     "go_0io.EOF" \
@@ -293,34 +293,51 @@ main() {
     "go_0kos.CreateDirectory" \
     "go_0kos.CreateOrRewriteFile" \
     "go_0kos.CurrentFolder" \
+    "go_0kos.CurrentThreadID" \
     "go_0kos.DeletePath" \
+    "go_0kos.Exit" \
+    "go_0kos.FileInfo..d" \
     "go_0kos.FileSystemStatus..d" \
     "go_0kos.GetPathInfo" \
+    "go_0kos.HasActiveConsole" \
+    "go_0kos.ReadActiveConsoleLine" \
     "go_0kos.ReadAllFile" \
     "go_0kos.ReadFile" \
     "go_0kos.RenamePath" \
+    "go_0kos.WriteActiveConsole" \
     "go_0kos.WriteFile" \
     "go_0syscall.Pipe" \
     "go_0syscall.Read" \
     "go_0syscall.Write" \
+    "go_0time.Time..d" \
+    "go_0time.Unix" \
     "memcmp" \
+    "memmove" \
     "runtime.concatstrings" \
     "runtime.gcWriteBarrier" \
     "runtime.goPanicIndex" \
     "runtime.goPanicIndexU" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.ifaceE2I2" \
     "runtime.ifaceeq" \
     "runtime.interequal..f" \
+    "runtime.makeslice" \
     "runtime.memequal" \
     "runtime.memequal32..f" \
     "runtime.memequal64..f" \
     "runtime.memequal8..f" \
     "runtime.newobject" \
+    "runtime.nilinterequal..f" \
+    "runtime.panicmem" \
     "runtime.registerGCRoots" \
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
-  compile_package "fmt" "errors" "io" "kos" "syscall" "os"
+  compile_package "fmt" "errors" "io" "kos" "syscall" "time" "os"
   probe_symbols=$(package_unresolved_symbols "fmt")
   require_list_symbols "fmt package" "$probe_symbols" \
     "go_0errors.New" \

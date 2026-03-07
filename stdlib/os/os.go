@@ -4,6 +4,7 @@ import (
 	"io"
 	"kos"
 	"syscall"
+	"time"
 )
 
 type FileMode uint32
@@ -177,6 +178,7 @@ type FileInfo interface {
 	Name() string
 	Size() int64
 	Mode() FileMode
+	ModTime() time.Time
 	IsDir() bool
 	Sys() interface{}
 }
@@ -203,6 +205,10 @@ func (info fileInfo) Mode() FileMode {
 	return mode
 }
 
+func (info fileInfo) ModTime() time.Time {
+	return fileStampTime(info.raw.ModifiedDate, info.raw.ModifiedTime)
+}
+
 func (info fileInfo) IsDir() bool {
 	return info.Mode().IsDir()
 }
@@ -225,6 +231,16 @@ type File struct {
 
 const activeConsoleReadBufferSize = 256
 
+type envEntry struct {
+	key   string
+	value string
+}
+
+var Args = []string{""}
+
+var envEntries []envEntry
+var errInvalidEnv = &osError{text: "invalid environment variable"}
+
 func Getwd() (dir string, err error) {
 	dir = kos.CurrentFolder()
 	if dir == "" {
@@ -232,6 +248,85 @@ func Getwd() (dir string, err error) {
 	}
 
 	return dir, nil
+}
+
+func Getpid() int {
+	id, ok := kos.CurrentThreadID()
+	if !ok {
+		return 0
+	}
+
+	return int(id)
+}
+
+func Getppid() int {
+	return 0
+}
+
+func Exit(code int) {
+	kos.Exit()
+}
+
+func Getenv(key string) string {
+	value, _ := LookupEnv(key)
+	return value
+}
+
+func LookupEnv(key string) (string, bool) {
+	index := findEnvEntry(key)
+	if index < 0 {
+		return "", false
+	}
+
+	return envEntries[index].value, true
+}
+
+func Setenv(key string, value string) error {
+	if !validEnvKey(key) || containsNUL(value) {
+		return errInvalidEnv
+	}
+
+	index := findEnvEntry(key)
+	if index >= 0 {
+		envEntries[index].value = value
+		return nil
+	}
+
+	envEntries = append(envEntries, envEntry{
+		key:   key,
+		value: value,
+	})
+	return nil
+}
+
+func Unsetenv(key string) error {
+	if !validEnvKey(key) {
+		return errInvalidEnv
+	}
+
+	index := findEnvEntry(key)
+	if index < 0 {
+		return nil
+	}
+
+	for current := index; current+1 < len(envEntries); current++ {
+		envEntries[current] = envEntries[current+1]
+	}
+	envEntries = envEntries[:len(envEntries)-1]
+	return nil
+}
+
+func Clearenv() {
+	envEntries = nil
+}
+
+func Environ() []string {
+	values := make([]string, len(envEntries))
+	for index := 0; index < len(envEntries); index++ {
+		values[index] = envEntries[index].key + "=" + envEntries[index].value
+	}
+
+	return values
 }
 
 func Stat(name string) (FileInfo, error) {
@@ -634,6 +729,40 @@ func errorMatches(err error, target error) bool {
 	return target == nil
 }
 
+func validEnvKey(key string) bool {
+	if key == "" {
+		return false
+	}
+
+	for index := 0; index < len(key); index++ {
+		if key[index] == '=' || key[index] == 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func containsNUL(value string) bool {
+	for index := 0; index < len(value); index++ {
+		if value[index] == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func findEnvEntry(key string) int {
+	for index := 0; index < len(envEntries); index++ {
+		if envEntries[index].key == key {
+			return index
+		}
+	}
+
+	return -1
+}
+
 func baseName(name string) string {
 	if name == "" {
 		return "."
@@ -664,4 +793,49 @@ func baseName(name string) string {
 	}
 
 	return name[lastSlash+1:]
+}
+
+const (
+	secondsPerMinute = 60
+	secondsPerHour   = 60 * secondsPerMinute
+	secondsPerDay    = 24 * secondsPerHour
+	daysPer400Years  = 146097
+	unixEpochDays    = 719468
+)
+
+func fileStampTime(date kos.FileDate, clock kos.FileTime) time.Time {
+	if date.Year == 0 || date.Month == 0 || date.Day == 0 {
+		return time.Time{}
+	}
+
+	days := daysFromCivil(int(date.Year), int(date.Month), int(date.Day))
+	seconds := int64(days*secondsPerDay +
+		int(clock.Hour)*secondsPerHour +
+		int(clock.Minute)*secondsPerMinute +
+		int(clock.Second))
+
+	return time.Unix(seconds, 0)
+}
+
+func daysFromCivil(year int, month int, day int) int {
+	if month <= 2 {
+		year--
+	}
+
+	era := year / 400
+	if year < 0 && year%400 != 0 {
+		era--
+	}
+	yearOfEra := year - era*400
+	monthPrime := month
+	if monthPrime > 2 {
+		monthPrime -= 3
+	} else {
+		monthPrime += 9
+	}
+
+	dayOfYear := ((153 * monthPrime) + 2) / 5
+	dayOfYear += day - 1
+	dayOfEra := yearOfEra*365 + yearOfEra/4 - yearOfEra/100 + dayOfYear
+	return era*daysPer400Years + dayOfEra - unixEpochDays
 }

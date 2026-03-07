@@ -117,7 +117,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refresh()
 		app.Redraw()
 	case diagButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -1055,6 +1055,75 @@ func checkOS() checkResult {
 		}
 	}
 
+	info, err := os.Stat(demoFile)
+	if err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "stat " + err.Error(),
+		}
+	}
+	modTime := info.ModTime()
+	if modTime.IsZero() || modTime.Year() < 2000 {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "modtime unavailable",
+		}
+	}
+	if os.Getpid() <= 0 {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "getpid failed",
+		}
+	}
+	os.Clearenv()
+	if len(os.Environ()) != 0 {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "clearenv mismatch",
+		}
+	}
+	if err := os.Setenv("GODIAG_ENV", "ok"); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "setenv " + err.Error(),
+		}
+	}
+	envValue, envOK := os.LookupEnv("GODIAG_ENV")
+	envList := os.Environ()
+	if !envOK || envValue != "ok" || len(envList) != 1 || envList[0] != "GODIAG_ENV=ok" {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "environment mismatch",
+		}
+	}
+	if err := os.Unsetenv("GODIAG_ENV"); err != nil {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "unsetenv " + err.Error(),
+		}
+	}
+	if value, ok := os.LookupEnv("GODIAG_ENV"); ok || value != "" || os.Getenv("GODIAG_ENV") != "" {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "unsetenv mismatch",
+		}
+	}
+	if len(os.Args) < 1 {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "args bootstrap mismatch",
+		}
+	}
+
 	if err := os.Rename(demoFile, renamedFile); err != nil {
 		return checkResult{
 			label:  "os",
@@ -1097,7 +1166,7 @@ func checkOS() checkResult {
 	return checkResult{
 		label:  "os",
 		ok:     true,
-		detail: "cwd " + base + " / append rename cleanup",
+		detail: "cwd " + base + " / pid " + formatInt(os.Getpid()) + " / mod " + formatTimeStamp(modTime) + " / env append rename cleanup",
 	}
 }
 

@@ -1,12 +1,11 @@
 package osdemo
 
 import (
+	"../../kos"
+	"../../ui"
 	"io"
 	"os"
 	"path"
-
-	"../../kos"
-	"../../ui"
 )
 
 const (
@@ -77,7 +76,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case osButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -204,6 +203,7 @@ func (app *App) refreshProbe() {
 		app.fail("stat sys payload mismatch")
 		return
 	}
+	modTime := info.ModTime()
 
 	if err := os.Rename(demoFile, renamedFile); err != nil {
 		app.fail("rename failed")
@@ -250,10 +250,34 @@ func (app *App) refreshProbe() {
 		app.fail("file size mismatch")
 		return
 	}
+	if modTime.IsZero() || modTime.Year() < 2000 {
+		app.fail("modtime unavailable")
+		return
+	}
+	if os.Getpid() <= 0 {
+		app.fail("getpid failed")
+		return
+	}
+	os.Clearenv()
+	if err := os.Setenv("GOOS_DEMO", "kolibri"); err != nil {
+		app.fail("setenv failed")
+		return
+	}
+	envValue, envOK := os.LookupEnv("GOOS_DEMO")
+	envList := os.Environ()
+	if err := os.Unsetenv("GOOS_DEMO"); err != nil {
+		app.fail("unsetenv failed")
+		return
+	}
+	if !envOK || envValue != "kolibri" || len(envList) != 1 || envList[0] != "GOOS_DEMO=kolibri" {
+		app.fail("environment mismatch")
+		return
+	}
 
 	app.ok = true
 	app.summary = "os probe ok / ordinary import os package resolved"
-	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
+	app.cwdLine = "Getwd/Getpid/Getppid/Args: " + cwd + " / pid " + formatInt(os.Getpid()) + " / ppid " + formatInt(os.Getppid()) + " / args " + formatInt(len(os.Args))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes)) + " / mod " + formatTimeStamp(modTime) + " / env " + envValue
 }
 
 func (app *App) fail(detail string) {

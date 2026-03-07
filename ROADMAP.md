@@ -234,14 +234,18 @@ Current bootstrap status:
   `import "io"`.
 - Local support for `os.Getwd`, `os.Open`, `os.Create`, `os.OpenFile`,
   `os.ReadFile`, `os.WriteFile`, `os.Mkdir`, `os.Remove`, `os.Rename`,
-  `os.Stat`, `(*os.File).Stat`, `os.IsNotExist`, `os.Pipe`, narrow
-  `os.Err*` sentinels, `os.PathError`, `os.LinkError`, and fd-backed
-  `os.Stdin`/`os.Stdout`/`os.Stderr` are now in place.
+  `os.Stat`, `(*os.File).Stat`, `os.IsNotExist`, `os.Pipe`,
+  `os.FileInfo.ModTime`, `os.Args`, `os.Getpid`, `os.Getppid`, `os.Exit`,
+  process-local `os.Getenv`/`LookupEnv`/`Setenv`/`Unsetenv`/`Clearenv`/
+  `Environ`, narrow `os.Err*` sentinels, `os.PathError`, `os.LinkError`, and
+  fd-backed `os.Stdin`/`os.Stdout`/`os.Stderr` are now in place.
 - `examples/os` is the sixth compatibility sample, using ordinary
   `import "os"`.
 - `examples/files`, `examples/os`, and `apps/diag` now use `os.Stat` plus
   `FileInfo.Sys()` instead of direct `kos.GetPathInfo(...)` calls for their
-  main metadata path.
+  main metadata path, and `examples/os` / `apps/diag` also validate
+  `FileInfo.ModTime`, `Getpid`, `Getppid`, `Args`, and the current
+  process-local environment contract.
 - Local support for `fmt.Sprint`, `fmt.Sprintln`, `fmt.Sprintf`,
   `fmt.Fprint`, `fmt.Fprintln`, `fmt.Fprintf`, `fmt.Print`, `fmt.Printf`,
   `fmt.Println`, `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, `fmt.Scanln`,
@@ -273,6 +277,10 @@ Current bootstrap status:
   `CONSOLE.OBJ` init/write/exit path plus ordinary `fmt.Print*` through the
   active console backend instead of DLL load alone; the sample itself now also
   demonstrates `fmt.Scanln` against the same console-backed stdio path.
+- At this point the original Phase 5 package list is in place, and the current
+  bootstrap contract now documents the KolibriOS mappings for paths,
+  pipe-backed stdio, active-console-backed stdin/stdout, file metadata time,
+  wall clock, current process id, and a process-local environment store.
 - Broader package coverage beyond the current bootstrap subset still remains
   pending.
 

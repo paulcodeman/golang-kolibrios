@@ -1,6 +1,10 @@
 package osdemo
 
-import "../../kos"
+import (
+	"time"
+
+	"../../kos"
+)
 
 var decimalDigits = [...]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 var hexDigits = [...]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"}
@@ -98,6 +102,23 @@ func formatFileSystemStatus(status kos.FileSystemStatus) string {
 	}
 
 	return "status " + formatUint32(uint32(status))
+}
+
+func formatTwoDigits(value int) string {
+	return decimalDigits[value/10] + decimalDigits[value%10]
+}
+
+func formatFourDigits(value int) string {
+	return formatTwoDigits(value/100) + formatTwoDigits(value%100)
+}
+
+func formatTimeStamp(value time.Time) string {
+	return formatFourDigits(value.Year()) + "-" +
+		formatTwoDigits(int(value.Month())) + "-" +
+		formatTwoDigits(value.Day()) + " " +
+		formatTwoDigits(value.Hour()) + ":" +
+		formatTwoDigits(value.Minute()) + ":" +
+		formatTwoDigits(value.Second())
 }
 
 func equalBytes(left []byte, right []byte) bool {
