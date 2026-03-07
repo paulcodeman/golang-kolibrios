@@ -50,13 +50,13 @@ const (
 type FileSystemRequest [32]byte
 
 type EncodedFileSystemRequest struct {
-	Subfunction        uint32
-	Offset             uint32
-	OffsetHighOrFlags  uint32
-	Size               uint32
-	Data               uint32
-	Encoding           StringEncoding
-	Path               uint32
+	Subfunction       uint32
+	Offset            uint32
+	OffsetHighOrFlags uint32
+	Size              uint32
+	Data              uint32
+	Encoding          StringEncoding
+	Path              uint32
 }
 
 type FileTime struct {
@@ -188,6 +188,33 @@ func ReadFolder(path string, start uint32, count uint32) (result FolderReadResul
 
 func ReadDirectory(path string, start uint32, count uint32) (FolderReadResult, FileSystemStatus) {
 	return ReadFolder(path, start, count)
+}
+
+func CurrentFolder() string {
+	return CurrentFolderWithEncoding(EncodingUTF8)
+}
+
+func CurrentFolderWithEncoding(encoding StringEncoding) string {
+	var stack [256]byte
+
+	size := GetCurrentFolderRaw(&stack[0], uint32(len(stack)), encoding)
+	if size <= 0 {
+		return ""
+	}
+	if size <= len(stack) {
+		return zeroTerminatedString(stack[:size])
+	}
+
+	buffer := make([]byte, size)
+	size = GetCurrentFolderRaw(&buffer[0], uint32(len(buffer)), encoding)
+	if size <= 0 {
+		return ""
+	}
+	if size > len(buffer) {
+		size = len(buffer)
+	}
+
+	return zeroTerminatedString(buffer[:size])
 }
 
 func CreateOrRewriteFile(path string, data []byte) (written uint32, status FileSystemStatus) {

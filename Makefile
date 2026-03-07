@@ -1,8 +1,10 @@
-.PHONY: all examples check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke window runtime time system input ipc files smokeapp clean clean-examples clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-smokeapp rebuild-all
+.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-diag rebuild-smokeapp rebuild-all
 
-all: examples smokeapp
+all: examples apps smokeapp
 
 examples: window runtime time system input ipc files
+
+apps: diag
 
 check-runtime: check-runtime-probes check-runtime-behavior
 
@@ -17,6 +19,9 @@ check-app-template:
 
 check-emulator-smoke:
 	bash ./scripts/check-emulator-smoke.sh
+
+check-diagnostics:
+	bash ./scripts/check-diagnostics.sh
 
 window:
 	$(MAKE) -C examples/window all
@@ -39,12 +44,17 @@ ipc:
 files:
 	$(MAKE) -C examples/files all
 
+diag:
+	$(MAKE) -C apps/diag all
+
 smokeapp:
 	$(MAKE) -C tests/smokeapp all
 
-clean: clean-examples clean-smokeapp
+clean: clean-examples clean-apps clean-smokeapp
 
 clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files
+
+clean-apps: clean-diag
 
 clean-window:
 	$(MAKE) -C examples/window clean
@@ -66,6 +76,9 @@ clean-ipc:
 
 clean-files:
 	$(MAKE) -C examples/files clean
+
+clean-diag:
+	$(MAKE) -C apps/diag clean
 
 clean-smokeapp:
 	$(MAKE) -C tests/smokeapp clean
@@ -90,6 +103,9 @@ rebuild-ipc:
 
 rebuild-files:
 	$(MAKE) -C examples/files clean all
+
+rebuild-diag:
+	$(MAKE) -C apps/diag clean all
 
 rebuild-smokeapp:
 	$(MAKE) -C tests/smokeapp clean all

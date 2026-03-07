@@ -33,8 +33,12 @@ jobs:
       - name: Check emulator smoke path
         run: make check-emulator-smoke
 
+      - name: Check diagnostics utility path
+        run: make check-diagnostics
+
       - name: Verify build outputs
         run: |
+          test -f apps/diag/diag.kex
           test -f examples/window/window.kex
           test -f examples/runtime/runtime.kex
           test -f examples/time/time.kex
@@ -49,6 +53,7 @@ jobs:
         with:
           name: example-kex
           path: |
+            apps/diag/diag.kex
             examples/window/window.kex
             examples/runtime/runtime.kex
             examples/time/time.kex

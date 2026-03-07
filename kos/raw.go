@@ -51,6 +51,9 @@ func WaitEventTimeout(uint32) int
 // Function 40 - set the mask for expected events.
 func SetEventMask(uint32) uint32
 
+// Function 46 - reserve/free a group of I/O ports.
+func SetPortsRaw(mode int, start uint32, end uint32) int
+
 // Function 60, subfunction 1 - register the IPC receive area.
 func SetIPCArea(buffer *byte, size uint32) uint32
 
@@ -95,6 +98,9 @@ func FileSystem(request *FileSystemRequest, secondary *uint32) int
 
 // Function 80 - file system interface with parameter of encoding.
 func FileSystemEncoded(request *EncodedFileSystemRequest, secondary *uint32) int
+
+// Function 30, subfunction 5 - get current folder with explicit encoding.
+func GetCurrentFolderRaw(buffer *byte, size uint32, encoding StringEncoding) int
 
 // Function 17 - get the identifier of the pressed button.
 func GetButtonID() int
@@ -167,5 +173,8 @@ func DebugOutChar(byte)
 
 // Function 63 - work with the debug board, write string helper.
 func DebugOutStr(string)
+
+// Direct OUT instruction helper for previously reserved ports.
+func PortWriteByteRaw(port uint32, value byte)
 
 func Pointer2byteSlice(ptr uint32) *[]byte __asm__("__unsafe_get_addr")

@@ -64,6 +64,12 @@ Run the emulator-backed smoke test:
 make check-emulator-smoke
 ```
 
+Run the headless diagnostics utility:
+
+```sh
+make check-diagnostics
+```
+
 Clean the example builds:
 
 ```sh
@@ -80,6 +86,7 @@ make rebuild-all
 
 Successful build output:
 
+- `apps/diag/diag.kex`
 - `examples/window/window.kex`
 - `examples/runtime/runtime.kex`
 - `examples/time/time.kex`
@@ -130,6 +137,10 @@ successful build.
   - path info probe via function `80.5`
   - file head read via function `80.0`
   - bootstrap-compatible `import "errors"` sample with wrapped sentinel checks
+- `apps/diag` - implemented
+  - fuller GUI diagnostics utility outside the public examples tree
+  - runtime, file, and system probes in one reusable tool
+  - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset
   - runtime checks for strings, slices, interfaces, assertions, and timed wait
@@ -165,3 +176,6 @@ successful build.
   temporary copy to free space, replaces the existing `@HA` autorun slot with
   `tests/smokeapp`, boots QEMU headless, and waits for the smoke app to power
   the guest off after runtime plus system self-checks pass.
+- Diagnostics verification lives in `scripts/check-diagnostics.sh`; it boots
+  `apps/diag` headless, captures the emitted report from the QEMU debug console,
+  and falls back to `/FD/1/GODIAG.TXT` only if debug-console capture is absent.

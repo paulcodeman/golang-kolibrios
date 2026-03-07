@@ -213,6 +213,8 @@ Current bootstrap status:
   support for `errors.New`, `errors.Unwrap`, and `errors.Is`.
 - `examples/files` is the first compatibility sample that imports `errors`
   through the ordinary Go import path.
+- `apps/diag` is the first fuller utility outside `examples/`, giving the
+  project a reusable diagnostics app plus a headless emulator validation path.
 - Broader package coverage (`bytes`, `strings`, `io`, `time`, `path`, `os`,
   `syscall`) remains pending.
 

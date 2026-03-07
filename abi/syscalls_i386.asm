@@ -29,6 +29,7 @@ global go_0kos.GetSkinHeight
 global go_0kos.GetSkinMarginsRaw
 global go_0kos.WaitEventTimeout
 global go_0kos.SetEventMask
+global go_0kos.SetPortsRaw
 global go_0kos.SetIPCArea
 global go_0kos.SendIPCMessage
 global go_0kos.FocusWindowBySlot
@@ -37,6 +38,7 @@ global go_0kos.GetKernelVersion
 global go_0kos.SystemShutdown
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
+global go_0kos.GetCurrentFolderRaw
 global go_0kos.SetCaption
 global go_0kos.SetCaptionWithPrefix
 global go_0kos.SendMessage
@@ -58,6 +60,7 @@ global go_0kos.SetSkinWithEncoding
 global go_0kos.DebugOutHex
 global go_0kos.DebugOutChar
 global go_0kos.DebugOutStr
+global go_0kos.PortWriteByteRaw
 
 go_0kos.Sleep:
     push ebp
@@ -397,6 +400,19 @@ go_0kos.SetEventMask:
     pop ebp
     ret
 
+go_0kos.SetPortsRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 46
+    mov ebx, [ebp+8]
+    mov ecx, [ebp+12]
+    mov edx, [ebp+16]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
 go_0kos.SetIPCArea:
     push ebp
     mov ebp, esp
@@ -484,6 +500,22 @@ go_0kos.GetTotalRAM:
     mov ebx, 17
     int 0x40
     pop ebx
+    ret
+
+go_0kos.GetCurrentFolderRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    mov eax, 30
+    mov ebx, 5
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    mov esi, [ebp+16]
+    int 0x40
+    pop esi
+    pop ebx
+    pop ebp
     ret
 
 go_0kos.SetCaption:
@@ -707,6 +739,12 @@ go_0kos.DebugOutStr:
 .done:
     pop esi
     pop ebx
+    ret
+
+go_0kos.PortWriteByteRaw:
+    mov edx, [esp+4]
+    mov eax, [esp+8]
+    out dx, al
     ret
 
 go_0kos.CreateButton:

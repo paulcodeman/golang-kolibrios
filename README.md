@@ -10,6 +10,7 @@ This repository currently provides:
 - Go declarations and small typed wrappers for those syscalls
 - a minimal `gccgo`-based runtime glue layer
 - working example applications that build into `.kex` binaries
+- a separate `apps/` area for fuller utilities beyond the public examples
 
 The project is still in prototype stage. Right now the practical path is
 `gccgo` + custom ABI/runtime glue, not native `go build`.
@@ -21,12 +22,14 @@ The project is still in prototype stage. Right now the practical path is
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
 - Phase 5 bootstrap work has started with a local `errors` package shim plus an `examples/files` compatibility sample that imports `errors` through the ordinary Go import path
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
-- public demos now live under `examples/`, while internal smoke/test programs live under `tests/`
+- public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that prefers debug-console report capture and falls back to `/FD/1/GODIAG.TXT`
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
+- `apps/` - fuller KolibriOS utilities built on the same bootstrap SDK
 - `docs/` - bootstrap and build documentation
 - `errors/` - bootstrap-compatible `errors` package shim for ordinary Go imports
 - `examples/` - curated public KolibriOS demo applications
@@ -110,8 +113,15 @@ Run the headless emulator smoke check:
 make check-emulator-smoke
 ```
 
+Run the headless diagnostics utility check:
+
+```sh
+make check-diagnostics
+```
+
 Output:
 
+- `apps/diag/diag.kex`
 - `examples/window/window.kex`
 - `examples/runtime/runtime.kex`
 - `examples/time/time.kex`
@@ -136,6 +146,10 @@ The first emulator-backed smoke path is available through
 official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with
 `tests/smokeapp`, and expects the smoke app to power the guest off after runtime
 and system self-checks pass.
+The diagnostics runner is available through `scripts/check-diagnostics.sh`; it
+boots the same pruned image with `apps/diag`, requests headless mode through a
+small marker file, captures the report primarily from the QEMU debug console,
+and only falls back to `/FD/1/GODIAG.TXT` if debug-console capture is unavailable.
 
 For full bootstrap instructions, see `docs/BUILD.md`.
 For the current raw syscall coverage map, see `docs/SYSCALLS.md`.
@@ -166,6 +180,7 @@ Main sources:
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
 - `examples/files` - file info/read probe plus ordinary `import "errors"` compatibility sample
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes
