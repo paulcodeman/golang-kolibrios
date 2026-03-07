@@ -1,8 +1,8 @@
-.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-diag rebuild-smokeapp rebuild-all
+.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path strings bytes diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-strings rebuild-bytes rebuild-diag rebuild-smokeapp rebuild-all
 
 all: examples apps smokeapp
 
-examples: window runtime time system input ipc files
+examples: window runtime time system input ipc files path strings bytes
 
 apps: diag
 
@@ -44,6 +44,15 @@ ipc:
 files:
 	$(MAKE) -C examples/files all
 
+path:
+	$(MAKE) -C examples/path all
+
+strings:
+	$(MAKE) -C examples/strings all
+
+bytes:
+	$(MAKE) -C examples/bytes all
+
 diag:
 	$(MAKE) -C apps/diag all
 
@@ -52,7 +61,7 @@ smokeapp:
 
 clean: clean-examples clean-apps clean-smokeapp
 
-clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes
 
 clean-apps: clean-diag
 
@@ -76,6 +85,15 @@ clean-ipc:
 
 clean-files:
 	$(MAKE) -C examples/files clean
+
+clean-path:
+	$(MAKE) -C examples/path clean
+
+clean-strings:
+	$(MAKE) -C examples/strings clean
+
+clean-bytes:
+	$(MAKE) -C examples/bytes clean
 
 clean-diag:
 	$(MAKE) -C apps/diag clean
@@ -103,6 +121,15 @@ rebuild-ipc:
 
 rebuild-files:
 	$(MAKE) -C examples/files clean all
+
+rebuild-path:
+	$(MAKE) -C examples/path clean all
+
+rebuild-strings:
+	$(MAKE) -C examples/strings clean all
+
+rebuild-bytes:
+	$(MAKE) -C examples/bytes clean all
 
 rebuild-diag:
 	$(MAKE) -C apps/diag clean all

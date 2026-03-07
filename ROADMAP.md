@@ -213,10 +213,23 @@ Current bootstrap status:
   support for `errors.New`, `errors.Unwrap`, and `errors.Is`.
 - `examples/files` is the first compatibility sample that imports `errors`
   through the ordinary Go import path.
+- Local support for `path.Clean`, `path.Join`, `path.Dir`, `path.Base`,
+  `path.Ext`, `path.Split`, and `path.IsAbs` is now in place.
+- `examples/path` is the second compatibility sample, using ordinary `import "path"`.
+- Local support for `strings.Contains`, `strings.Cut`, `strings.HasPrefix`,
+  `strings.HasSuffix`, `strings.Index`, `strings.Join`, `strings.LastIndex`,
+  `strings.TrimPrefix`, and `strings.TrimSuffix` is now in place.
+- `examples/strings` is the third compatibility sample, using ordinary
+  `import "strings"`.
+- Local support for `bytes.Contains`, `bytes.Cut`, `bytes.Equal`,
+  `bytes.HasPrefix`, `bytes.HasSuffix`, `bytes.Index`, `bytes.IndexByte`,
+  `bytes.Join`, `bytes.TrimPrefix`, and `bytes.TrimSuffix` is now in place.
+- `examples/bytes` is the fourth compatibility sample, using ordinary
+  `import "bytes"`.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
-- Broader package coverage (`bytes`, `strings`, `io`, `time`, `path`, `os`,
-  `syscall`) remains pending.
+- Broader package coverage (`io`, `time`, `os`, `syscall`)
+  remains pending.
 
 ## Phase 6 - Port the Native Go Toolchain
 

@@ -20,7 +20,7 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work has started with a local `errors` package shim plus an `examples/files` compatibility sample that imports `errors` through the ordinary Go import path
+- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, and `bytes` shims plus compatibility samples that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
 - `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that prefers debug-console report capture and falls back to `/FD/1/GODIAG.TXT`
@@ -30,12 +30,15 @@ The project is still in prototype stage. Right now the practical path is
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
 - `apps/` - fuller KolibriOS utilities built on the same bootstrap SDK
+- `bytes/` - bootstrap-compatible `bytes` package shim for common byte-slice helpers
 - `docs/` - bootstrap and build documentation
 - `errors/` - bootstrap-compatible `errors` package shim for ordinary Go imports
 - `examples/` - curated public KolibriOS demo applications
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
+- `path/` - bootstrap-compatible `path` package shim for slash-based path logic
 - `scripts/` - helper scripts for supported host environments
+- `strings/` - bootstrap-compatible `strings` package shim for common string helpers
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -129,6 +132,9 @@ Output:
 - `examples/input/input.kex`
 - `examples/ipc/ipc.kex`
 - `examples/files/files.kex`
+- `examples/path/path.kex`
+- `examples/strings/strings.kex`
+- `examples/bytes/bytes.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
@@ -180,6 +186,9 @@ Main sources:
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
 - `examples/files` - file info/read probe plus ordinary `import "errors"` compatibility sample
+- `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample
+- `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
+- `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
 - `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 

@@ -94,6 +94,9 @@ Successful build output:
 - `examples/input/input.kex`
 - `examples/ipc/ipc.kex`
 - `examples/files/files.kex`
+- `examples/path/path.kex`
+- `examples/strings/strings.kex`
+- `examples/bytes/bytes.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -137,6 +140,15 @@ successful build.
   - path info probe via function `80.5`
   - file head read via function `80.0`
   - bootstrap-compatible `import "errors"` sample with wrapped sentinel checks
+- `examples/path` - implemented
+  - bootstrap-compatible `import "path"` sample with `Clean`, `Join`, `Dir`, `Base`, `Ext`, and `IsAbs`
+  - slash-based path normalization against a real KolibriOS file probe
+- `examples/strings` - implemented
+  - bootstrap-compatible `import "strings"` sample with `Join`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `LastIndex`, `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - string helper checks tied to a real KolibriOS file path and current-folder probe
+- `examples/bytes` - implemented
+  - bootstrap-compatible `import "bytes"` sample with `Join`, `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `IndexByte`, `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - byte-slice helper checks tied to a real KolibriOS file path and current-folder probe
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
   - runtime, file, and system probes in one reusable tool

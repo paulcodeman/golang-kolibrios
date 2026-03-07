@@ -28,6 +28,80 @@ Current behavior notes:
 - `errors.As`, `errors.Join`, and formatted error construction are not
   implemented yet.
 
+### `path`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `path.Base`
+- `path.Clean`
+- `path.Dir`
+- `path.Ext`
+- `path.IsAbs`
+- `path.Join`
+- `path.Split`
+
+Current behavior notes:
+
+- semantics are slash-based, matching KolibriOS path conventions
+- repeated `/`, `.` segments, and `..` collapse are handled by `path.Clean`
+- rooted paths clamp parent traversal at `/`
+- relative paths preserve leading `..` segments
+- globbing helpers such as `Match` are not implemented yet
+
+### `strings`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `strings.Contains`
+- `strings.Cut`
+- `strings.HasPrefix`
+- `strings.HasSuffix`
+- `strings.Index`
+- `strings.Join`
+- `strings.LastIndex`
+- `strings.TrimPrefix`
+- `strings.TrimSuffix`
+
+Current behavior notes:
+
+- matching and indexing are byte-oriented
+- `strings.Cut` follows first-separator semantics and treats an empty separator
+  as found at byte index `0`
+- helpers are intentionally ASCII/byte-focused for the current bootstrap stage
+- higher-level Unicode-aware helpers and replacer/builder APIs are not
+  implemented yet
+
+### `bytes`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `bytes.Contains`
+- `bytes.Cut`
+- `bytes.Equal`
+- `bytes.HasPrefix`
+- `bytes.HasSuffix`
+- `bytes.Index`
+- `bytes.IndexByte`
+- `bytes.Join`
+- `bytes.TrimPrefix`
+- `bytes.TrimSuffix`
+
+Current behavior notes:
+
+- matching and indexing are byte-oriented
+- `bytes.Cut` returns slices into the original input on success and
+  `(s, nil, false)` when the separator is absent
+- `bytes.Join` always allocates a new output slice and returns an empty
+  non-nil slice for empty input
+- higher-level buffer, reader, and Unicode-aware helpers are not implemented
+  yet
+
 ## Build Contract
 
 The shared app makefile now accepts an ordered `PACKAGE_DIRS` list.
@@ -49,25 +123,37 @@ Order matters. Later packages may depend on earlier package export data.
 
 ## Compatibility Sample
 
-`examples/files` is the first compatibility sample using an ordinary import path:
+Compatibility samples using ordinary import paths:
 
-- `import "errors"`
-- wrapped file-probe failures with `Unwrap`
-- sentinel classification with `errors.Is`
+- `examples/files`
+  - `import "errors"`
+  - wrapped file-probe failures with `Unwrap`
+  - sentinel classification with `errors.Is`
+- `examples/path`
+  - `import "path"`
+  - slash normalization with `Clean` and `Join`
+  - component extraction with `Split`, `Base`, `Dir`, and `Ext`
+- `examples/strings`
+  - `import "strings"`
+  - path assembly with `Join`
+  - byte-oriented matching via `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `LastIndex`
+  - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
+- `examples/bytes`
+  - `import "bytes"`
+  - byte-slice path assembly with `Join`
+  - byte-oriented matching via `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `IndexByte`
+  - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
 
-The sample still uses the KolibriOS SDK for actual system interaction, but the
-error-handling path now follows normal Go package structure instead of a
-custom-only local helper.
+The samples still use the KolibriOS SDK for actual system interaction, but the
+stdlib-shaped path, string, byte-slice, and error logic now follows ordinary Go package structure
+instead of custom-only local helpers.
 
 ## Not Yet Supported
 
 The following roadmap packages are still pending bootstrap implementations:
 
-- `bytes`
-- `strings`
 - `io`
 - `time`
-- `path`
 - `os`
 - `syscall`
 

@@ -54,10 +54,25 @@ compile_probe() {
     "$repo_root/tests/runtime/$probe_name.go"
 }
 
+compile_package() {
+  local package_name=$1
+
+  gccgo "${gccgo_flags[@]}" \
+    -I"$repo_root" \
+    -o "$tmp_dir/$package_name.gccgo.o" \
+    "$repo_root/$package_name"/*.go
+}
+
 probe_unresolved_symbols() {
   local probe_name=$1
 
   nm -u "$tmp_dir/$probe_name.o" | awk '{print $2}' | sort -u
+}
+
+package_unresolved_symbols() {
+  local package_name=$1
+
+  nm -u "$tmp_dir/$package_name.gccgo.o" | awk '{print $2}' | sort -u
 }
 
 require_list_symbols() {
@@ -105,11 +120,51 @@ main() {
     "runtime.nilinterequal..f" \
     "runtime.newobject" \
     "runtime.panicdottype" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
     "runtime.panicmem" \
     "runtime.registerGCRoots" \
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
+
+  compile_package "path"
+  probe_symbols=$(package_unresolved_symbols "path")
+  require_list_symbols "path package" "$probe_symbols" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.memequal32..f" \
+    "runtime.strequal..f" \
+    "runtime.writeBarrier"
+
+  compile_package "strings"
+  probe_symbols=$(package_unresolved_symbols "strings")
+  require_list_symbols "strings package" "$probe_symbols" \
+    "runtime.concatstrings" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB"
+
+  compile_package "bytes"
+  probe_symbols=$(package_unresolved_symbols "bytes")
+  require_list_symbols "bytes package" "$probe_symbols" \
+    "memmove" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.makeslice" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject"
 
   compile_probe "arrays"
   probe_symbols=$(probe_unresolved_symbols "arrays")
