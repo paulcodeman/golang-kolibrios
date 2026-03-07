@@ -599,6 +599,140 @@ Current behavior notes:
 - close, dup, poll/select, signals, and the broader syscall surface are not
   implemented yet
 
+### `net`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `net.AddrError`
+- `(*net.AddrError).Error`
+- `net.DNSError`
+- `(*net.DNSError).Error`
+- `net.LookupHost`
+- `net.JoinHostPort`
+- `net.SplitHostPort`
+
+Current behavior notes:
+
+- `net.LookupHost` is currently backed by the bootstrap `NETWORK.OBJ` wrapper
+  in `kos`, using `getaddrinfo` and returning de-duplicated textual addresses
+- the current bootstrap path is validated through numeric and loopback lookups;
+  broader resolver semantics still depend on the active KolibriOS network stack
+- `JoinHostPort` and `SplitHostPort` provide the ordinary Go host/port string
+  helpers for IPv4, hostnames, and bracketed IPv6 literals
+- listeners, dialers, sockets, IP types, interfaces, and the broader `net`
+  surface are not implemented yet
+
+### `net/url`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `url.Error`
+- `(*url.Error).Error`
+- `(*url.Error).Unwrap`
+- `url.EscapeError`
+- `(url.EscapeError).Error`
+- `url.URL`
+- `(*url.URL).String`
+- `(*url.URL).EscapedPath`
+- `(*url.URL).Query`
+- `url.Values`
+- `(url.Values).Get`
+- `(url.Values).Has`
+- `(url.Values).Set`
+- `(url.Values).Add`
+- `(url.Values).Del`
+- `(url.Values).Encode`
+- `url.Parse`
+- `url.ParseQuery`
+- `url.QueryEscape`
+- `url.QueryUnescape`
+- `url.PathEscape`
+- `url.PathUnescape`
+
+Current behavior notes:
+
+- `url.Parse` currently covers the narrow bootstrap URL contract needed by the
+  compatibility sample: scheme, authority/host, path, raw query, fragment,
+  and simple opaque URLs such as `mailto:...`
+- `QueryEscape` / `QueryUnescape` and `PathEscape` / `PathUnescape` are
+  implemented locally with ASCII percent-encoding semantics; query escaping
+  maps spaces to `+`, while path escaping keeps spaces as `%20`
+- `Values.Encode` is deterministic and sorts keys lexically before encoding;
+  values keep slice order within each key
+- `URL.Query()` follows the usual best-effort path and drops parse errors
+  returned by `ParseQuery`
+- user-info helpers, relative-reference resolution, path joining, and the
+  broader `net/url` surface are not implemented yet
+
+### `net/http`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `http.Header`
+- `(http.Header).Add`
+- `(http.Header).Set`
+- `(http.Header).Get`
+- `(http.Header).Values`
+- `(http.Header).Del`
+- `http.Request`
+- `http.Response`
+- `http.Client`
+- `http.DefaultClient`
+- `http.NoBody`
+- `http.MethodGet`
+- `http.MethodHead`
+- `http.MethodPost`
+- `http.StatusOK`
+- `http.StatusMovedPermanently`
+- `http.StatusFound`
+- `http.StatusSeeOther`
+- `http.StatusTemporaryRedirect`
+- `http.StatusPermanentRedirect`
+- `http.StatusBadRequest`
+- `http.StatusUnauthorized`
+- `http.StatusForbidden`
+- `http.StatusNotFound`
+- `http.StatusInternalServerError`
+- `http.StatusBadGateway`
+- `http.StatusServiceUnavailable`
+- `http.NewRequest`
+- `http.Get`
+- `http.Head`
+- `http.Post`
+- `(*http.Client).Do`
+- `(*http.Client).Get`
+- `(*http.Client).Head`
+- `(*http.Client).Post`
+- `http.StatusText`
+
+Current behavior notes:
+
+- the current bootstrap client surface is built on top of `HTTP.OBJ` through
+  the local `kos.HTTP` wrapper
+- `NewRequest` supports request construction for GET, HEAD, and POST, keeps a
+  local buffered request body, and initializes `Header` plus `Body`/`NoBody`
+- `Get`, `Head`, `Post`, and `Client.Do` currently support only the `http`
+  scheme; redirects, cookies, trailers, chunk streaming, proxies, TLS/HTTPS,
+  and the broader transport stack are not implemented yet
+- request `Header` handling is case-insensitive, but the bootstrap path does
+  not canonicalize MIME header names
+- `Client.Do` currently routes only GET, HEAD, and POST; unsupported methods
+  fail early with a wrapped `url.Error`
+- `Response` currently exposes `Status`, `StatusCode`, `Proto`,
+  `ProtoMajor`, `ProtoMinor`, `Header`, `Body`, `ContentLength`, and
+  `Request`, with `Body` backed by an in-memory copy of the completed transfer
+- on KolibriOS images where `HTTP.OBJ` export loading succeeds but
+  `lib_init` still fails, `Get`/`Head`/`Post` return a wrapped
+  `url.Error` noting that HTTP transfer support is unavailable on that image
+- servers, listeners, hijacking, transports, contexts, multipart helpers, and
+  the broader `net/http` surface are not implemented yet
+
 ## Build Contract
 
 The shared app makefile now accepts an ordered `PACKAGE_DIRS` list.
@@ -607,11 +741,12 @@ This lets the bootstrap build precompile additional shared packages before the
 app object itself, instead of hardcoding only `kos` and `ui`.
 
 For ordinary import paths such as `import "errors"` or
-`import "path/filepath"`, the current bootstrap shim sources live under
-`stdlib/<package>`. Top-level compiled export data is still exposed through the
-shared `-I$(ROOT)` include path, while nested import paths are emitted under the
-shared `-I$(ROOT)/.pkg` include root so apps keep the ordinary Go import path
-even though the repository layout is now cleaner.
+`import "path/filepath"` or `import "net/url"` or `import "net/http"`, the
+current bootstrap shim sources live under `stdlib/<package>`. Top-level
+compiled export data is still exposed through the shared `-I$(ROOT)` include
+path, while nested import paths are emitted under the shared `-I$(ROOT)/.pkg`
+include root so apps keep the ordinary Go import path even though the
+repository layout is now cleaner.
 
 Current example:
 
@@ -704,16 +839,33 @@ Compatibility samples using ordinary import paths:
   - append helpers through `AppendBool`, `AppendInt`, and `AppendUint`
   - wrapped `ErrRange` and `ErrSyntax` classification through ordinary `errors.Is`
   - ordinary `os.Getwd` and `os.Stat` for the cwd and file probe
+- `examples/network`
+  - `import "net"`
+  - resolver coverage through `LookupHost`
+  - host/port helper coverage through `JoinHostPort` and `SplitHostPort`
+  - bootstrap `NETWORK.OBJ` version and loopback probe
+- `examples/url`
+  - `import "net/url"`
+  - URL parsing through `Parse`, `URL.String`, and `URL.Query`
+  - query and path escaping through `QueryEscape`, `QueryUnescape`, `PathEscape`, and `PathUnescape`
+  - deterministic query-string assembly through `Values.Encode`
+- `examples/http`
+  - `import "net/http"`
+  - request construction through `NewRequest`, `Header`, `StatusText`, and the ordinary GET/HEAD/POST method constants
+  - offline-safe transport reporting through `HTTP.OBJ` readiness while keeping the main sample logic on ordinary `net/http`
 - `apps/diag`
   - headless regression coverage for `strings.Builder` and `bytes.Buffer`
   - headless `bufio` regression coverage for reader, writer, scanner,
     EOF-after-close, and broken-pipe behavior on pipe-backed stdio
   - headless `strconv` regression coverage for bool/int format, parse, append, and `NumError` sentinel matching
+  - headless `net` regression coverage for `LookupHost`, `JoinHostPort`, and `SplitHostPort`
+  - headless `net/url` regression coverage for parse, escape, query, and deterministic `Values.Encode`
+  - headless `net/http` regression coverage for `NewRequest`, `Header`, `StatusText`, wrapped unsupported-scheme errors, and `HTTP.OBJ` transfer readiness reporting
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
 stdlib-shaped path, filepath, string, byte-slice, io, os, fmt, strconv, time,
-and error logic now follows ordinary Go package structure instead of
-custom-only local helpers.
+net, net/url, net/http, and error logic now follows ordinary Go package
+structure instead of custom-only local helpers.
 
 ## Not Yet Supported
 

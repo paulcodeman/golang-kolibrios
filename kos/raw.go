@@ -96,11 +96,26 @@ func GetFreeRAM() uint32
 // Function 18, subfunction 17 - get total RAM in kilobytes.
 func GetTotalRAM() uint32
 
+// Function 68, subfunction 11 - initialize the process heap.
+func InitHeapRaw() uint32
+
+// Function 68, subfunction 12 - allocate a heap block.
+func HeapAllocRaw(size uint32) uint32
+
+// Function 68, subfunction 13 - free a heap block.
+func HeapFreeRaw(ptr uint32) uint32
+
+// Function 68, subfunction 20 - reallocate a heap block.
+func HeapReallocRaw(size uint32, ptr uint32) uint32
+
 // Function 68, subfunction 18 - load DLL with explicit path encoding.
 func LoadDLLWithEncoding(encoding StringEncoding, path string) uint32
 
 // Function 68, subfunction 19 - load DLL using the legacy/default path contract.
 func LoadDLL(path string) uint32
+
+// Runtime helper - load DLL using a zero-terminated path and the legacy/default path contract.
+func LoadDLLFromCStringRaw(path *byte) uint32 __asm__("runtime_kos_load_dll_cstring_raw")
 
 // Runtime helper - resolve a function pointer from a DLL export table.
 func LookupDLLExportRaw(table uint32, name *byte) uint32 __asm__("runtime_kos_lookup_dll_export")
@@ -113,6 +128,15 @@ func CallStdcall1Raw(proc uint32, arg0 uint32) uint32 __asm__("runtime_kos_call_
 
 // Runtime helper - invoke a stdcall function pointer with 2 arguments.
 func CallStdcall2Raw(proc uint32, arg0 uint32, arg1 uint32) uint32 __asm__("runtime_kos_call_stdcall2")
+
+// Runtime helper - invoke a stdcall function pointer with 3 arguments.
+func CallStdcall3Raw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32) uint32 __asm__("runtime_kos_call_stdcall3")
+
+// Runtime helper - invoke a stdcall function pointer with 4 arguments.
+func CallStdcall4Raw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32, arg3 uint32) uint32 __asm__("runtime_kos_call_stdcall4")
+
+// Runtime helper - invoke a stdcall function pointer with 6 arguments.
+func CallStdcall6Raw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32, arg3 uint32, arg4 uint32, arg5 uint32) uint32 __asm__("runtime_kos_call_stdcall6")
 
 // Runtime helper - invoke a stdcall function pointer with 1 argument and no return value.
 func CallStdcall1VoidRaw(proc uint32, arg0 uint32) __asm__("runtime_kos_call_stdcall1_void")
@@ -140,6 +164,18 @@ func ConsoleBridgeReadLineRaw(data uint32, size uint32) uint32 __asm__("runtime_
 
 // Runtime helper - close the shared active console bridge and clear it.
 func ConsoleBridgeCloseRaw(closeWindow uint32) __asm__("runtime_console_bridge_close")
+
+// Runtime helper - call a DLL lib_init entry with runtime alloc/free/realloc/load callbacks.
+func InitDLLLibraryRaw(proc uint32) uint32 __asm__("runtime_kos_init_dll_library")
+
+// Runtime helper - copy a zero-terminated C string into a Go string.
+func CStringToStringRaw(ptr uint32) string __asm__("runtime_cstring_to_gostring")
+
+// Runtime helper - copy bytes from an arbitrary memory address into a Go slice.
+func CopyBytesRaw(ptr uint32, size uint32) []byte __asm__("runtime_copy_bytes")
+
+// Runtime helper - read one dword from an arbitrary memory address plus offset.
+func ReadUint32Raw(base uint32, offset uint32) uint32 __asm__("runtime_read_u32")
 
 // Function 70 - file system interface with long names support.
 func FileSystem(request *FileSystemRequest, secondary *uint32) int

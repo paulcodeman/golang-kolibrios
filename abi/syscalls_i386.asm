@@ -39,8 +39,17 @@ global go_0kos.GetKernelVersion
 global go_0kos.SystemShutdown
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
+global go_0kos.InitHeapRaw
+global go_0kos.HeapAllocRaw
+global go_0kos.HeapFreeRaw
+global go_0kos.HeapReallocRaw
+global runtime_kos_heap_init_raw
+global runtime_kos_heap_alloc_raw
+global runtime_kos_heap_free_raw
+global runtime_kos_heap_realloc_raw
 global go_0kos.LoadDLLWithEncoding
 global go_0kos.LoadDLL
+global runtime_kos_load_dll_cstring_raw
 global go_0kos.GetCurrentFolderRaw
 global go_0kos.SetCaption
 global go_0kos.SetCaptionWithPrefix
@@ -513,6 +522,55 @@ go_0kos.GetTotalRAM:
     pop ebx
     ret
 
+runtime_kos_heap_init_raw:
+go_0kos.InitHeapRaw:
+    push ebx
+    mov eax, 68
+    mov ebx, 11
+    int 0x40
+    pop ebx
+    ret
+
+runtime_kos_heap_alloc_raw:
+go_0kos.HeapAllocRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 68
+    mov ebx, 12
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+runtime_kos_heap_free_raw:
+go_0kos.HeapFreeRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 68
+    mov ebx, 13
+    mov ecx, [ebp+8]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+runtime_kos_heap_realloc_raw:
+go_0kos.HeapReallocRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 68
+    mov ebx, 20
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
 go_0kos.LoadDLLWithEncoding:
     push ebp
     mov ebp, esp
@@ -539,6 +597,18 @@ go_0kos.LoadDLL:
     call runtime_prepare_window_title
     add esp, 8
     mov ecx, eax
+    mov eax, 68
+    mov ebx, 19
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+runtime_kos_load_dll_cstring_raw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov ecx, [ebp+8]
     mov eax, 68
     mov ebx, 19
     int 0x40

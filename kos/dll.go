@@ -21,6 +21,31 @@ func LoadConsoleDLL() DLLExportTable {
 	return LoadDLLFile(ConsoleDLLPath)
 }
 
+func LoadDLLInitialized(path string) (DLLExportTable, bool) {
+	table := LoadDLLFile(path)
+	if table == 0 {
+		return 0, false
+	}
+	if !InitDLLLibrary(table) {
+		return 0, false
+	}
+
+	return table, true
+}
+
+func InitDLLLibrary(table DLLExportTable) bool {
+	if table == 0 {
+		return false
+	}
+
+	initProc := table.Lookup("lib_init")
+	if !initProc.Valid() {
+		return true
+	}
+
+	return InitDLLLibraryRaw(uint32(initProc)) == 0
+}
+
 func LookupDLLExport(table DLLExportTable, name string) DLLProc {
 	namePtr, _ := stringAddress(name)
 	if table == 0 || namePtr == nil {
@@ -34,6 +59,17 @@ func LookupDLLExport(table DLLExportTable, name string) DLLProc {
 
 func (table DLLExportTable) Lookup(name string) DLLProc {
 	return LookupDLLExport(table, name)
+}
+
+func LookupDLLExportAny(table DLLExportTable, names ...string) DLLProc {
+	for index := 0; index < len(names); index++ {
+		proc := LookupDLLExport(table, names[index])
+		if proc.Valid() {
+			return proc
+		}
+	}
+
+	return 0
 }
 
 func (proc DLLProc) Valid() bool {

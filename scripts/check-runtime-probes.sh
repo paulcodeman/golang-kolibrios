@@ -474,6 +474,60 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "net" "kos" "strings"
+  probe_symbols=$(package_unresolved_symbols "net")
+  require_list_symbols "net package" "$probe_symbols" \
+    "go_0kos.LoadNetwork" \
+    "go_0kos.Network.LookupHost" \
+    "go_0strings.HasPrefix" \
+    "go_0strings.HasSuffix" \
+    "go_0strings.Index" \
+    "go_0strings.LastIndex" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.memequal" \
+    "runtime.memequal32..f" \
+    "runtime.newobject" \
+    "runtime.strequal..f" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
+  compile_package "net/url" "strings"
+  probe_symbols=$(package_unresolved_symbols "net/url")
+  require_list_symbols "net/url package" "$probe_symbols" \
+    "go_0strings.Builder.String" \
+    "go_0strings.Builder.WriteByte" \
+    "go_0strings.Builder.WriteString" \
+    "go_0strings.HasPrefix" \
+    "go_0strings.Index" \
+    "go_0strings.Split" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.makemap__small" \
+    "runtime.mapaccess2__faststr" \
+    "runtime.mapaccess1__faststr" \
+    "runtime.mapassign__faststr" \
+    "runtime.mapdelete__faststr" \
+    "runtime.mapiterinit" \
+    "runtime.mapiternext" \
+    "runtime.growslice" \
+    "runtime.ifaceeq" \
+    "runtime.interequal..f" \
+    "runtime.makeslice" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.panicmem" \
+    "runtime.strequal..f" \
+    "runtime.strhash..f" \
+    "runtime.typedmemmove" \
+    "unsafe.Pointer..d" \
+    "runtime.writeBarrier"
+
   compile_package "time" "kos"
   probe_symbols=$(package_unresolved_symbols "time")
   require_list_symbols "time package" "$probe_symbols" \
@@ -517,6 +571,82 @@ main() {
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
+
+  compile_package "net/http" "bytes" "errors" "io" "kos" "net/url" "strconv" "strings"
+  probe_symbols=$(package_unresolved_symbols "net/http")
+  require_list_symbols "net/http package" "$probe_symbols" \
+    "go_0bytes.NewReader" \
+    "go_0bytes.Reader..p" \
+    "go_0bytes.Reader.Read" \
+    "go_0errors.New" \
+    "go_0io.EOF" \
+    "go_0io.ReadAll" \
+    "go_0io.ReadCloser..d" \
+    "go_0io.Reader..d" \
+    "go_0io.ioError..p" \
+    "go_0io.ioError.Error" \
+    "go_0kos.HTTP.Free" \
+    "go_0kos.HTTP.Get" \
+    "go_0kos.HTTP.Head" \
+    "go_0kos.HTTP.Post" \
+    "go_0kos.HTTP.Ready" \
+    "go_0kos.HTTP.Receive" \
+    "go_0kos.HTTP.Send" \
+    "go_0kos.HTTPFlags.Has" \
+    "go_0kos.HTTPTransfer.ContentBytes" \
+    "go_0kos.HTTPTransfer.ContentLength" \
+    "go_0kos.HTTPTransfer.Flags" \
+    "go_0kos.HTTPTransfer.HeaderString" \
+    "go_0kos.HTTPTransfer.Status" \
+    "go_0kos.LoadHTTP" \
+    "go_0strconv.Atoi" \
+    "go_0strconv.Itoa" \
+    "go_0strings.Builder.String" \
+    "go_0strings.Builder.WriteString" \
+    "go_0strings.Cut" \
+    "go_0strings.Fields" \
+    "go_0strings.HasPrefix" \
+    "go_0strings.HasSuffix" \
+    "go_0strings.Index" \
+    "go_0strings.Split" \
+    "go_0strings.TrimSpace" \
+    "go_0url.Error..d" \
+    "go_0url.Error..p" \
+    "go_0url.Error.Error" \
+    "go_0url.Parse" \
+    "go_0url.URL..p" \
+    "go_0url.URL.String" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.interequal..f" \
+    "runtime.makemap__small" \
+    "runtime.makeslice" \
+    "runtime.mapaccess1__faststr" \
+    "runtime.mapaccess2__faststr" \
+    "runtime.mapassign__faststr" \
+    "runtime.mapdelete__faststr" \
+    "runtime.mapiterinit" \
+    "runtime.mapiternext" \
+    "runtime.memequal" \
+    "runtime.memequal0..f" \
+    "runtime.memequal32..f" \
+    "runtime.memequal64..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.panicmem" \
+    "runtime.registerGCRoots" \
+    "runtime.slicebytetostring" \
+    "runtime.strequal..f" \
+    "runtime.strhash..f" \
+    "runtime.stringtoslicebyte" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier" \
+    "unsafe.Pointer..d"
 
   compile_probe "emptyiface"
   probe_symbols=$(probe_unresolved_symbols "emptyiface")

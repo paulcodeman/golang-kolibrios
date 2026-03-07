@@ -152,6 +152,30 @@ extern void runtime_kos_call_stdcall5_void(uint32_t proc, uint32_t arg0, uint32_
 
 static int failures = 0;
 
+uint32_t runtime_kos_heap_init_raw(void) {
+    return 1;
+}
+
+uint32_t runtime_kos_heap_alloc_raw(uint32_t size) {
+    void* ptr = malloc(size == 0 ? 1u : (size_t)size);
+    return (uint32_t)(uintptr_t)ptr;
+}
+
+uint32_t runtime_kos_heap_free_raw(uint32_t ptr) {
+    free((void*)(uintptr_t)ptr);
+    return 1;
+}
+
+uint32_t runtime_kos_heap_realloc_raw(uint32_t size, uint32_t ptr) {
+    void* resized = realloc((void*)(uintptr_t)ptr, size == 0 ? 1u : (size_t)size);
+    return (uint32_t)(uintptr_t)resized;
+}
+
+uint32_t runtime_kos_load_dll_cstring_raw(const char* path) {
+    (void)path;
+    return 0;
+}
+
 static bool bytes_equal(const unsigned char* left, const unsigned char* right, size_t size) {
     size_t index;
 

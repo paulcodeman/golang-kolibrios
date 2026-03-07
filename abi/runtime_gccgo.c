@@ -5,6 +5,11 @@
 extern void* malloc(size_t size);
 extern void* realloc(void* ptr, size_t size);
 extern void free(void* ptr);
+extern uint32_t runtime_kos_heap_init_raw(void);
+extern uint32_t runtime_kos_heap_alloc_raw(uint32_t size);
+extern uint32_t runtime_kos_heap_free_raw(uint32_t ptr);
+extern uint32_t runtime_kos_heap_realloc_raw(uint32_t size, uint32_t ptr);
+extern uint32_t runtime_kos_load_dll_cstring_raw(const char* path);
 
 typedef struct {
     const char* str;
@@ -496,6 +501,67 @@ uint32_t runtime_pointer_value(void* ptr) {
     return (uint32_t)(uintptr_t)ptr;
 }
 
+go_string runtime_cstring_to_gostring(uint32_t ptr_addr) {
+    const char* src;
+    intptr_t len;
+    char* out;
+    go_string result;
+
+    src = (const char*)(uintptr_t)ptr_addr;
+    if (src == NULL) {
+        result.str = NULL;
+        result.len = 0;
+        return result;
+    }
+
+    len = (intptr_t)kos_strlen(src);
+    out = (char*)malloc((size_t)len + 1);
+    if (out == NULL) {
+        result.str = NULL;
+        result.len = 0;
+        return result;
+    }
+
+    if (len > 0) {
+        kos_memcpy(out, src, (size_t)len);
+    }
+    out[len] = '\0';
+    result.str = out;
+    result.len = len;
+    return result;
+}
+
+go_slice runtime_copy_bytes(uint32_t ptr_addr, uint32_t size) {
+    go_slice result;
+    unsigned char* out;
+
+    result.values = NULL;
+    result.len = 0;
+    result.cap = 0;
+    if (ptr_addr == 0 || size == 0) {
+        return result;
+    }
+
+    out = (unsigned char*)malloc((size_t)size);
+    if (out == NULL) {
+        return result;
+    }
+
+    kos_memcpy(out, (const void*)(uintptr_t)ptr_addr, (size_t)size);
+    result.values = out;
+    result.len = (intptr_t)size;
+    result.cap = (intptr_t)size;
+    return result;
+}
+
+uint32_t runtime_read_u32(uint32_t base, uint32_t offset) {
+    if (base == 0) {
+        return 0;
+    }
+
+    return *(const uint32_t*)(uintptr_t)(base + offset);
+}
+
 typedef struct {
     const char* name;
     void* data;
@@ -510,14 +576,25 @@ typedef struct {
 typedef uint32_t (KOS_STDCALL *kos_stdcall0_fn)(void);
 typedef uint32_t (KOS_STDCALL *kos_stdcall1_fn)(uint32_t arg0);
 typedef uint32_t (KOS_STDCALL *kos_stdcall2_fn)(uint32_t arg0, uint32_t arg1);
+typedef uint32_t (KOS_STDCALL *kos_stdcall3_fn)(uint32_t arg0, uint32_t arg1, uint32_t arg2);
+typedef uint32_t (KOS_STDCALL *kos_stdcall4_fn)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+typedef uint32_t (KOS_STDCALL *kos_stdcall6_fn)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5);
 typedef void (KOS_STDCALL *kos_stdcall1_void_fn)(uint32_t arg0);
 typedef void (KOS_STDCALL *kos_stdcall2_void_fn)(uint32_t arg0, uint32_t arg1);
 typedef void (KOS_STDCALL *kos_stdcall5_void_fn)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4);
+
+typedef struct {
+    uint32_t imports;
+    const char* library_name;
+} kos_dll_import_library;
 
 static uint32_t runtime_console_bridge_table = 0;
 static uint32_t runtime_console_bridge_write_proc = 0;
 static uint32_t runtime_console_bridge_exit_proc = 0;
 static uint32_t runtime_console_bridge_gets_proc = 0;
+static uint32_t runtime_kos_heap_initialized = 0;
+
+uint32_t KOS_STDCALL runtime_kos_dll_load_imports(uint32_t import_table_addr);
 
 uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name) {
     const kos_dll_export* cursor;
@@ -535,6 +612,136 @@ uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name) {
     }
 
     return 0;
+}
+
+static int runtime_kos_ensure_heap(void) {
+    if (runtime_kos_heap_initialized != 0) {
+        return 1;
+    }
+
+    if (runtime_kos_heap_init_raw() == 0) {
+        return 0;
+    }
+
+    runtime_kos_heap_initialized = 1;
+    return 1;
+}
+
+static uint32_t KOS_STDCALL runtime_kos_dll_mem_alloc(uint32_t size) {
+    if (!runtime_kos_ensure_heap()) {
+        return 0;
+    }
+
+    return runtime_kos_heap_alloc_raw(size);
+}
+
+static uint32_t KOS_STDCALL runtime_kos_dll_mem_free(uint32_t ptr) {
+    if (ptr == 0) {
+        return 1;
+    }
+    if (!runtime_kos_ensure_heap()) {
+        return 0;
+    }
+
+    return runtime_kos_heap_free_raw(ptr);
+}
+
+static uint32_t KOS_STDCALL runtime_kos_dll_mem_realloc(uint32_t ptr, uint32_t size) {
+    if (!runtime_kos_ensure_heap()) {
+        return 0;
+    }
+
+    return runtime_kos_heap_realloc_raw(size, ptr);
+}
+
+static uint32_t runtime_kos_load_named_dll(const char* name) {
+    static const char prefix[] = "/sys/lib/";
+    char path[256];
+    size_t prefix_len;
+    size_t name_len;
+
+    if (name == NULL || name[0] == 0) {
+        return 0;
+    }
+
+    if (name[0] == '/') {
+        return runtime_kos_load_dll_cstring_raw(name);
+    }
+
+    prefix_len = sizeof(prefix) - 1;
+    name_len = kos_strlen(name);
+    if (prefix_len + name_len + 1 > sizeof(path)) {
+        return 0;
+    }
+
+    kos_memcpy(path, prefix, prefix_len);
+    kos_memcpy(path + prefix_len, name, name_len + 1);
+    return runtime_kos_load_dll_cstring_raw(path);
+}
+
+static int runtime_kos_link_dll_imports(uint32_t table_addr, uint32_t imports_addr) {
+    uint32_t* cursor;
+
+    if (table_addr == 0 || imports_addr == 0) {
+        return 0;
+    }
+
+    cursor = (uint32_t*)(uintptr_t)imports_addr;
+    while (*cursor != 0) {
+        uint32_t proc = runtime_kos_lookup_dll_export(table_addr, (const char*)(uintptr_t)(*cursor));
+        if (proc == 0) {
+            return 0;
+        }
+        *cursor = proc;
+        cursor++;
+    }
+
+    return 1;
+}
+
+static uint32_t runtime_kos_dll_lib_init_proc(uint32_t table_addr) {
+    const kos_dll_export* exports;
+
+    if (table_addr == 0) {
+        return 0;
+    }
+
+    exports = (const kos_dll_export*)(uintptr_t)table_addr;
+    if (exports->name == NULL) {
+        return 0;
+    }
+    if (exports->name[0] == 'l' &&
+        exports->name[1] == 'i' &&
+        exports->name[2] == 'b' &&
+        exports->name[3] == '_') {
+        return (uint32_t)(uintptr_t)exports->data;
+    }
+
+    return 0;
+}
+
+uint32_t runtime_kos_call_stdcall3(uint32_t proc, uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall3_fn)(uintptr_t)proc)(arg0, arg1, arg2);
+}
+
+uint32_t runtime_kos_call_stdcall4(uint32_t proc, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall4_fn)(uintptr_t)proc)(arg0, arg1, arg2, arg3);
+}
+
+uint32_t runtime_kos_call_stdcall6(uint32_t proc, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    if (proc == 0) {
+        return 0;
+    }
+
+    return ((kos_stdcall6_fn)(uintptr_t)proc)(arg0, arg1, arg2, arg3, arg4, arg5);
 }
 
 uint32_t runtime_kos_call_stdcall0(uint32_t proc) {
@@ -583,6 +790,51 @@ void runtime_kos_call_stdcall5_void(uint32_t proc, uint32_t arg0, uint32_t arg1,
     }
 
     ((kos_stdcall5_void_fn)(uintptr_t)proc)(arg0, arg1, arg2, arg3, arg4);
+}
+
+uint32_t runtime_kos_init_dll_library(uint32_t proc) {
+    if (proc == 0) {
+        return 1;
+    }
+
+    return runtime_kos_call_stdcall4(
+        proc,
+        (uint32_t)(uintptr_t)runtime_kos_dll_mem_alloc,
+        (uint32_t)(uintptr_t)runtime_kos_dll_mem_free,
+        (uint32_t)(uintptr_t)runtime_kos_dll_mem_realloc,
+        (uint32_t)(uintptr_t)runtime_kos_dll_load_imports
+    );
+}
+
+uint32_t KOS_STDCALL runtime_kos_dll_load_imports(uint32_t import_table_addr) {
+    const kos_dll_import_library* cursor;
+
+    cursor = (const kos_dll_import_library*)(uintptr_t)import_table_addr;
+    if (cursor == NULL) {
+        return 1;
+    }
+
+    while (cursor->imports != 0) {
+        uint32_t table_addr;
+        uint32_t init_proc;
+
+        table_addr = runtime_kos_load_named_dll(cursor->library_name);
+        if (table_addr == 0) {
+            return 1;
+        }
+        if (!runtime_kos_link_dll_imports(table_addr, cursor->imports)) {
+            return 1;
+        }
+
+        init_proc = runtime_kos_dll_lib_init_proc(table_addr);
+        if (init_proc != 0 && runtime_kos_init_dll_library(init_proc) != 0) {
+            return 1;
+        }
+
+        cursor++;
+    }
+
+    return 0;
 }
 
 int runtime_console_bridge_ready(void) {

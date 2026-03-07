@@ -20,12 +20,12 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, `strconv`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `net`, `net/url`, and `net/http` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
-- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings`, `bytes`, validated `map[string]T` / `map[int]T` runtime paths, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, `time.Since`, `os.Stat`, `FileInfo.ModTime`, `strings.Builder`, `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`, `Split`/`Fields`/`TrimSpace`/`ReplaceAll`, and process-local `os` env/process helpers, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
-- `kos` now includes a bootstrap `CONSOLE.OBJ` wrapper built on top of the `68.18/68.19` DLL loader path and export-table lookup
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings`, `bytes`, `net`, `net/url`, `net/http`, validated `map[string]T` / `map[int]T` runtime paths, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, `time.Since`, `os.Stat`, `FileInfo.ModTime`, `strings.Builder`, `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`, `Split`/`Fields`/`TrimSpace`/`ReplaceAll`, `net.LookupHost`, `url.Parse`, `url.QueryEscape`, `http.NewRequest`, `http.StatusText`, and process-local `os` env/process helpers, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
+- `kos` now includes bootstrap wrappers for `CONSOLE.OBJ`, `NETWORK.OBJ`, and `HTTP.OBJ` on top of the `68.18/68.19` DLL loader path and export-table lookup
 - a longer-term plan is tracked in `ROADMAP.md`
 
 ## Repository Layout
@@ -37,7 +37,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, `strconv`, and `time`
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `net`, `net/url`, and `net/http`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -141,6 +141,9 @@ Output:
 - `examples/bufio/bufio.kex`
 - `examples/strconv/strconv.kex`
 - `examples/console/console.kex`
+- `examples/network/network.kex`
+- `examples/http/http.kex`
+- `examples/url/url.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
@@ -209,7 +212,10 @@ Main sources:
 - `examples/bufio` - ordinary `import "bufio"` compatibility sample for `Reader`, `Writer`, `ReadByte`, `UnreadByte`, `ReadString`, `ReadBytes`, `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`, plus `os.Pipe` EOF-after-close and broken-pipe validation through `io.EOF` and `syscall.EPIPE`
 - `examples/strconv` - ordinary `import "strconv"` compatibility sample for `FormatBool`, `FormatInt`, `FormatUint`, `Itoa`, `Atoi`, `ParseBool`, `ParseInt`, `ParseUint`, `AppendBool`, `AppendInt`, and `AppendUint`, with error classification through `errors.Is`
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `bytes.Buffer`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning plus local EOF/EPIPE checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
+- `examples/network` - ordinary `import "net"` compatibility sample for `LookupHost`, `JoinHostPort`, and `SplitHostPort` on top of the bootstrap `NETWORK.OBJ` wrapper
+- `examples/http` - ordinary `import "net/http"` compatibility sample for `NewRequest`, `Header`, `StatusText`, and bootstrap GET/HEAD/POST request wiring, with `kos.HTTP` used only to report whether `HTTP.OBJ` transfer init is ready on the current image
+- `examples/url` - ordinary `import "net/url"` compatibility sample for `Parse`, `URL.String`, `URL.Query`, `QueryEscape`, `QueryUnescape`, `PathEscape`, `PathUnescape`, `ParseQuery`, and deterministic `Values.Encode`
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `bytes.Buffer`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning plus local EOF/EPIPE checks, `os.Stat`, `FileInfo.ModTime`, ordinary `net`/`net/url`/`net/http` coverage, and process-local environment checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

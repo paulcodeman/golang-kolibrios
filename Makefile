@@ -1,8 +1,8 @@
-.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-filepath rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-fmt rebuild-bufio rebuild-strconv rebuild-console rebuild-diag rebuild-smokeapp rebuild-all
+.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console network http url diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console clean-network clean-http clean-url clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-filepath rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-fmt rebuild-bufio rebuild-strconv rebuild-console rebuild-network rebuild-http rebuild-url rebuild-diag rebuild-smokeapp rebuild-all
 
 all: examples apps smokeapp
 
-examples: window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console
+examples: window runtime time system input ipc files path filepath strings bytes io os fmt bufio strconv console network http url
 
 apps: diag
 
@@ -74,6 +74,15 @@ strconv:
 console:
 	$(MAKE) -C examples/console all
 
+network:
+	$(MAKE) -C examples/network all
+
+http:
+	$(MAKE) -C examples/http all
+
+url:
+	$(MAKE) -C examples/url all
+
 diag:
 	$(MAKE) -C apps/diag all
 
@@ -82,7 +91,7 @@ smokeapp:
 
 clean: clean-examples clean-apps clean-smokeapp
 
-clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-filepath clean-strings clean-bytes clean-io clean-os clean-fmt clean-bufio clean-strconv clean-console clean-network clean-http clean-url
 
 clean-apps: clean-diag
 
@@ -136,6 +145,15 @@ clean-strconv:
 
 clean-console:
 	$(MAKE) -C examples/console clean
+
+clean-network:
+	$(MAKE) -C examples/network clean
+
+clean-http:
+	$(MAKE) -C examples/http clean
+
+clean-url:
+	$(MAKE) -C examples/url clean
 
 clean-diag:
 	$(MAKE) -C apps/diag clean
@@ -193,6 +211,15 @@ rebuild-strconv:
 
 rebuild-console:
 	$(MAKE) -C examples/console clean all
+
+rebuild-network:
+	$(MAKE) -C examples/network clean all
+
+rebuild-http:
+	$(MAKE) -C examples/http clean all
+
+rebuild-url:
+	$(MAKE) -C examples/url clean all
 
 rebuild-diag:
 	$(MAKE) -C apps/diag clean all

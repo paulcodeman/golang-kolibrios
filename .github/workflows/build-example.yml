@@ -56,6 +56,9 @@ jobs:
           test -f examples/bufio/bufio.kex
           test -f examples/strconv/strconv.kex
           test -f examples/console/console.kex
+          test -f examples/network/network.kex
+          test -f examples/http/http.kex
+          test -f examples/url/url.kex
           test -f tests/smokeapp/smokeapp.kex
 
       - name: Upload example artifacts
@@ -81,4 +84,7 @@ jobs:
             examples/bufio/bufio.kex
             examples/strconv/strconv.kex
             examples/console/console.kex
+            examples/network/network.kex
+            examples/http/http.kex
+            examples/url/url.kex
             tests/smokeapp/smokeapp.kex

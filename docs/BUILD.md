@@ -104,6 +104,9 @@ Successful build output:
 - `examples/bufio/bufio.kex`
 - `examples/strconv/strconv.kex`
 - `examples/console/console.kex`
+- `examples/network/network.kex`
+- `examples/http/http.kex`
+- `examples/url/url.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -178,9 +181,18 @@ successful build.
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
   - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus ordinary `bufio.NewReader(os.Stdin).ReadString('\n')` on the same active console-backed `os.Stdin`
   - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
+- `examples/network` - implemented
+  - bootstrap-compatible `import "net"` sample with `LookupHost`, `JoinHostPort`, and `SplitHostPort`
+  - validates the `NETWORK.OBJ` wrapper through `inet_addr`, `inet_ntoa`, and ordinary `net` import paths without requiring external connectivity
+- `examples/http` - implemented
+  - bootstrap-compatible `import "net/http"` sample with `NewRequest`, `Header`, `StatusText`, and ordinary request construction for GET/HEAD/POST paths
+  - keeps the actual transport path offline-safe while still reporting whether `HTTP.OBJ` transfer initialization is ready on the current KolibriOS image
+- `examples/url` - implemented
+  - bootstrap-compatible `import "net/url"` sample with `Parse`, `URL.String`, `URL.Query`, `QueryEscape`, `QueryUnescape`, `PathEscape`, `PathUnescape`, `ParseQuery`, and deterministic `Values.Encode`
+  - validates standard URL-style parsing and escaping on top of the current bootstrap network layer
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`, `Split`/`Fields`/`TrimSpace`/`ReplaceAll`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan plus local EOF/EPIPE checks, `os.Stat`, `(*os.File).ReadAt`, `(*os.File).Seek`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`, `Split`/`Fields`/`TrimSpace`/`ReplaceAll`, `net.LookupHost`, `url.Parse`, `http.NewRequest`, `http.StatusText`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan plus local EOF/EPIPE checks, `os.Stat`, `(*os.File).ReadAt`, `(*os.File).Seek`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset
@@ -196,7 +208,7 @@ successful build.
 - Bootstrap stdlib shim sources now live under `stdlib/`, while the compiled
   `.gox` export data remains available through the repository-root include path
   for top-level imports and through `.pkg/` for nested imports such as
-  `import "path/filepath"`.
+  `import "path/filepath"` and `import "net/url"`.
 - New applications can be scaffolded from `templates/basic-app` via
   `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.

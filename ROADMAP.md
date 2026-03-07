@@ -197,6 +197,9 @@ Tasks:
   - `time`
   - `path`
   - `path/filepath`
+  - `net`
+  - `net/url`
+  - `net/http`
   - `os`
   - `syscall`
 - Specify where KolibriOS semantics differ from Unix-like systems.
@@ -306,6 +309,28 @@ Current bootstrap status:
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
+- Local support for `net.LookupHost`, `net.JoinHostPort`, and
+  `net.SplitHostPort` is now in place through the bootstrap `NETWORK.OBJ`
+  wrapper and ordinary `import "net"`.
+- `examples/network` is now a twelfth compatibility sample, using ordinary
+  `import "net"`.
+- Local support for `url.Parse`, `URL.String`, `URL.Query`, `QueryEscape`,
+  `QueryUnescape`, `PathEscape`, `PathUnescape`, `ParseQuery`, and `Values`
+  (`Get`, `Has`, `Set`, `Add`, `Del`, `Encode`) is now in place through
+  ordinary `import "net/url"`.
+- `examples/url` is now a thirteenth compatibility sample, using ordinary
+  `import "net/url"`.
+- Local support for `http.Header`, `Request`, `Response`, `Client`,
+  `DefaultClient`, `NoBody`, `NewRequest`, `Get`, `Head`, `Post`,
+  `StatusText`, and narrow GET/HEAD/POST request execution is now in place
+  through ordinary `import "net/http"` on top of the bootstrap `HTTP.OBJ`
+  wrapper.
+- `examples/http` is now a fourteenth compatibility sample, using ordinary
+  `import "net/http"`.
+- `kos` now also has bootstrap wrappers for `/sys/lib/network.obj` and
+  `/sys/lib/http.obj`; `apps/diag` validates `NETWORK.OBJ` plus the currently
+  documented `HTTP.OBJ` degraded mode where export loading succeeds but
+  transfer initialization may still remain unavailable on the base image.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
   `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows, narrow
   `strconv` format/parse/append coverage, `strings.Builder`,
@@ -313,9 +338,11 @@ Current bootstrap status:
   `strings.Split`/`SplitN`/`Fields`/`TrimSpace`/`ReplaceAll`,
   `bytes.Split`/`SplitN`/`Fields`/`TrimSpace`/`ReplaceAll`,
   `(*os.File).ReadAt`, `(*os.File).Seek`, local pipe EOF/EPIPE semantics,
-  `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
-  capture plus the documented clock bridge, along with the active-console
-  stdout bridge in headless QEMU.
+  `time.Now`, `time.Sleep`, `time.Since`, ordinary `net` host/port helpers,
+  ordinary `net/url` parse/escape/query helpers, ordinary `net/http`
+  request/header/status helpers, and the `NETWORK.OBJ` / `HTTP.OBJ` wrapper
+  state through pipe-backed stdio capture plus the documented clock bridge,
+  along with the active-console stdout bridge in headless QEMU.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
 - `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,

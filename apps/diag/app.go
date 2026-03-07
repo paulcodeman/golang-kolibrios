@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -209,6 +212,9 @@ func runDiagnostics() snapshot {
 		checkBufio(),
 		checkBuilders(),
 		checkStrconv(),
+		checkNetwork(),
+		checkURL(),
+		checkHTTP(),
 		checkFilepath(),
 		checkFiles(),
 		checkOS(),
@@ -1924,6 +1930,275 @@ func checkDLL() checkResult {
 			" / init " + formatHex64(uint64(initProc)) +
 			" / write " + formatHex64(uint64(writeProc)),
 	}
+}
+
+func checkNetwork() checkResult {
+	network, ok := kos.LoadNetwork()
+	if !ok {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "load " + kos.NetworkDLLPath + " failed",
+		}
+	}
+
+	loopback := network.InetAddr("127.0.0.1")
+	loopbackText := network.InetNtoa(loopback)
+	if loopbackText != "127.0.0.1" {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "inet_addr / inet_ntoa mismatch",
+		}
+	}
+
+	hosts, err := net.LookupHost("127.0.0.1")
+	if err != nil {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "LookupHost " + err.Error(),
+		}
+	}
+	if len(hosts) != 1 || hosts[0] != "127.0.0.1" {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "lookup mismatch",
+		}
+	}
+
+	joinedIPv4 := net.JoinHostPort("127.0.0.1", "80")
+	hostIPv4, portIPv4, splitIPv4Err := net.SplitHostPort(joinedIPv4)
+	joinedIPv6 := net.JoinHostPort("2001:db8::1", "443")
+	hostIPv6, portIPv6, splitIPv6Err := net.SplitHostPort(joinedIPv6)
+	if splitIPv4Err != nil || splitIPv6Err != nil {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "split hostport failed",
+		}
+	}
+	if hostIPv4 != "127.0.0.1" || portIPv4 != "80" || joinedIPv6 != "[2001:db8::1]:443" || hostIPv6 != "2001:db8::1" || portIPv6 != "443" {
+		return checkResult{
+			label:  "network",
+			ok:     false,
+			detail: "join/split hostport mismatch",
+		}
+	}
+
+	return checkResult{
+		label: "network",
+		ok:    true,
+		detail: kos.NetworkDLLPath +
+			" / lookup 127.0.0.1 -> " + hosts[0] +
+			" / join " + joinedIPv6 +
+			" / ver " + formatHex64(uint64(network.Version())),
+	}
+}
+
+func checkURL() checkResult {
+	const rawURL = "https://127.0.0.1:8080/sys/default.skn?name=go+demo&ok=1#frag"
+	const queryRaw = "hello world?x=1&y=2"
+	const queryEscaped = "hello+world%3Fx%3D1%26y%3D2"
+	const pathRaw = "/sys/default skin"
+	const pathEscaped = "%2Fsys%2Fdefault%20skin"
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return checkResult{
+			label:  "url",
+			ok:     false,
+			detail: "parse " + err.Error(),
+		}
+	}
+
+	mailto, err := url.Parse("mailto:go@example.com")
+	if err != nil {
+		return checkResult{
+			label:  "url",
+			ok:     false,
+			detail: "opaque parse " + err.Error(),
+		}
+	}
+
+	escapedQuery := url.QueryEscape(queryRaw)
+	unescapedQuery, err := url.QueryUnescape(escapedQuery)
+	if err != nil {
+		return checkResult{
+			label:  "url",
+			ok:     false,
+			detail: "query unescape " + err.Error(),
+		}
+	}
+
+	escapedPath := url.PathEscape(pathRaw)
+	unescapedPath, err := url.PathUnescape(escapedPath)
+	if err != nil {
+		return checkResult{
+			label:  "url",
+			ok:     false,
+			detail: "path unescape " + err.Error(),
+		}
+	}
+
+	values := make(url.Values)
+	values.Set("mode", "demo")
+	values.Add("mode", "mirror")
+	values.Set("file", "/sys/default.skn")
+	encoded := values.Encode()
+
+	query := parsed.Query()
+	if parsed.Scheme != "https" ||
+		parsed.Host != "127.0.0.1:8080" ||
+		parsed.Path != "/sys/default.skn" ||
+		parsed.RawQuery != "name=go+demo&ok=1" ||
+		parsed.Fragment != "frag" ||
+		parsed.String() != rawURL ||
+		mailto.Opaque != "go@example.com" ||
+		escapedQuery != queryEscaped ||
+		unescapedQuery != queryRaw ||
+		escapedPath != pathEscaped ||
+		unescapedPath != pathRaw ||
+		query.Get("name") != "go demo" ||
+		query.Get("ok") != "1" ||
+		!query.Has("ok") ||
+		encoded != "file=%2Fsys%2Fdefault.skn&mode=demo&mode=mirror" {
+		return checkResult{
+			label:  "url",
+			ok:     false,
+			detail: "parse or escape contract mismatch",
+		}
+	}
+
+	return checkResult{
+		label: "url",
+		ok:    true,
+		detail: rawURL +
+			" / query " + escapedQuery +
+			" / path " + escapedPath +
+			" / opaque " + mailto.Opaque,
+	}
+}
+
+func checkHTTP() checkResult {
+	request, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/sys/default.skn?name=go+diag", strings.NewReader("hello=diag"))
+	if err != nil {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "new request " + err.Error(),
+		}
+	}
+	request.Header.Set("Content-Type", "text/plain")
+	request.Header.Add("X-Diag", "one")
+	request.Header.Add("x-diag", "two")
+
+	if request.Method != http.MethodPost ||
+		request.URL == nil ||
+		request.URL.Host != "127.0.0.1:8080" ||
+		request.URL.Path != "/sys/default.skn" ||
+		request.URL.RawQuery != "name=go+diag" ||
+		request.ContentLength != int64(len("hello=diag")) ||
+		request.Body == nil {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "request mismatch",
+		}
+	}
+
+	values := request.Header.Values("X-DIAG")
+	if request.Header.Get("content-type") != "text/plain" ||
+		request.Header.Get("x-diag") != "one" ||
+		len(values) != 2 ||
+		values[1] != "two" {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "header mismatch",
+		}
+	}
+	request.Header.Del("X-Diag")
+	if request.Header.Get("x-diag") != "" || len(request.Header.Values("x-diag")) != 0 {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "header delete mismatch",
+		}
+	}
+	if http.StatusText(http.StatusOK) != "OK" || http.StatusText(http.StatusNotFound) != "Not Found" {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "status text mismatch",
+		}
+	}
+
+	ftpErr := ""
+	if _, err = http.Get("ftp://127.0.0.1/"); err == nil {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "unsupported scheme mismatch",
+		}
+	} else {
+		ftpErr = err.Error()
+	}
+	if strings.Index(ftpErr, `unsupported protocol scheme "ftp"`) < 0 {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "scheme detail mismatch",
+		}
+	}
+
+	transport, ok := kos.LoadHTTP()
+	if !ok {
+		return checkResult{
+			label:  "http",
+			ok:     false,
+			detail: "load " + kos.HTTPDLLPath + " failed",
+		}
+	}
+	if !transport.Ready() {
+		return checkResult{
+			label: "http",
+			ok:    true,
+			detail: kos.HTTPDLLPath +
+				" / request header status ok" +
+				" / table " + formatHex64(uint64(transport.ExportTable())) +
+				" / ver " + formatHex64(uint64(transport.Version())) +
+				" / transfer not-ready on this image",
+		}
+	}
+
+	return checkResult{
+		label: "http",
+		ok:    true,
+		detail: kos.HTTPDLLPath +
+			" / request header status ok" +
+			" / ftp " + httpShortDetail(ftpErr) +
+			" / ver " + formatHex64(uint64(transport.Version())) +
+			" / transfer " + httpTransferState(transport.Ready()),
+	}
+}
+
+func httpTransferState(ready bool) string {
+	if ready {
+		return "ready"
+	}
+
+	return "not-ready"
+}
+
+func httpShortDetail(value string) string {
+	cut := strings.Index(value, ": ")
+	if cut >= 0 && cut+2 < len(value) {
+		return value[cut+2:]
+	}
+
+	return value
 }
 
 func checkConsole() checkResult {
