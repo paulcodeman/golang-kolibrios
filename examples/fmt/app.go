@@ -2,6 +2,7 @@ package fmtdemo
 
 import (
 	"fmt"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -15,7 +16,7 @@ const (
 	fmtWindowX      = 228
 	fmtWindowY      = 140
 	fmtWindowWidth  = 852
-	fmtWindowHeight = 334
+	fmtWindowHeight = 356
 
 	fmtProbePath    = "/sys/default.skn"
 	fmtPreviewBytes = 12
@@ -43,6 +44,7 @@ type App struct {
 	sprintfLine  string
 	sprintlnLine string
 	fprintfLine  string
+	printLine    string
 	errorLine    string
 	infoLine     string
 	ok           bool
@@ -50,7 +52,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(fmtButtonRefresh, "Refresh", 28, 282)
+	refresh := ui.NewButton(fmtButtonRefresh, "Refresh", 28, 304)
 	refresh.Width = 116
 
 	app := App{
@@ -87,7 +89,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(fmtButtonExit, "Exit", 170, 282)
+	exit := ui.NewButton(fmtButtonExit, "Exit", 170, 304)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -97,8 +99,9 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 92, ui.Aqua, app.sprintfLine)
 	kos.DrawText(28, 114, ui.Lime, app.sprintlnLine)
 	kos.DrawText(28, 136, ui.Navy, app.fprintfLine)
-	kos.DrawText(28, 158, ui.Maroon, app.errorLine)
-	kos.DrawText(28, 180, ui.Black, app.infoLine)
+	kos.DrawText(28, 158, ui.Maroon, app.printLine)
+	kos.DrawText(28, 180, ui.Yellow, app.errorLine)
+	kos.DrawText(28, 202, ui.Black, app.infoLine)
 	app.refreshBtn.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -127,11 +130,29 @@ func (app *App) refreshProbe() {
 	printlnText := fmt.Sprintln(label, "line", true, 7)
 	writer := &bufferWriter{}
 	written, writeErr := fmt.Fprintf(writer, "cwd=%s / head=%x / size=%d", currentFolder, data, len(data))
+	stdoutReader, stdoutWriter, pipeErr := os.Pipe()
+	if pipeErr != nil {
+		app.fail("stdout pipe unavailable", "Info: "+pipeErr.Error())
+		return
+	}
+	previousStdout := os.Stdout
+	os.Stdout = stdoutWriter
+	printWritten, printErr := fmt.Print(label, " print ", 7, "\n")
+	printfWritten, printfErr := fmt.Printf("cwd=%s / size=%d", currentFolder, len(data))
+	printlnWritten, printlnErr := fmt.Println(" / tail", true)
+	os.Stdout = previousStdout
+	_ = stdoutWriter.Close()
 	formatErr := fmt.Errorf("%v error %d", label, 7)
+
+	expectedPrint := "fmt print 7\ncwd=" + currentFolder + " / size=" + formatInt(len(data)) + " / tail true\n"
+	stdoutData := make([]byte, len(expectedPrint))
+	stdoutRead, stdoutReadErr := stdoutReader.Read(stdoutData)
+	_ = stdoutReader.Close()
 
 	app.sprintfLine = "Sprintf: " + sprintfText
 	app.sprintlnLine = "Sprintln: " + trimTrailingNewline(printlnText) + " / newline " + fmt.Sprintf("%t", hasTrailingNewline(printlnText))
 	app.fprintfLine = "Fprintf: wrote " + formatInt(written) + " / " + string(writer.data)
+	app.printLine = "Print*: wrote " + formatInt(printWritten+printfWritten+printlnWritten) + " / stdout match " + fmt.Sprintf("%t", stdoutRead == len(expectedPrint) && string(stdoutData[:stdoutRead]) == expectedPrint)
 	app.errorLine = "Errorf: " + formatErr.Error()
 	app.infoLine = fmt.Sprintf("File: %s / size %d / attrs 0x%x / head %x", fmtProbePath, info.Size, uint32(info.Attributes), data)
 
@@ -154,6 +175,19 @@ func (app *App) refreshProbe() {
 	}
 	if written != len(expectedFprintf) || string(writer.data) != expectedFprintf {
 		app.fail("Fprintf mismatch", "Info: expected "+expectedFprintf)
+		return
+	}
+
+	if printErr != nil || printfErr != nil || printlnErr != nil {
+		app.fail("Print returned error", "Info: stdout write failed")
+		return
+	}
+	if stdoutReadErr != nil {
+		app.fail("stdout read failed", "Info: "+stdoutReadErr.Error())
+		return
+	}
+	if stdoutRead != len(expectedPrint) || string(stdoutData[:stdoutRead]) != expectedPrint {
+		app.fail("Print mismatch", "Info: expected "+trimTrailingNewline(expectedPrint))
 		return
 	}
 

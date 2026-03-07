@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"../../kos"
 	"../../ui"
@@ -18,7 +19,7 @@ const (
 	diagWindowX      = 210
 	diagWindowY      = 90
 	diagWindowWidth  = 820
-	diagWindowHeight = 392
+	diagWindowHeight = 420
 
 	diagReportPath     = "/FD/1/GODIAG.TXT"
 	diagProbePath      = "/FD/1/GODIAG.TMP"
@@ -99,7 +100,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 336)
+	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 364)
 	refresh.Width = 116
 
 	app := App{
@@ -140,7 +141,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(diagButtonExit, "Exit", 170, 336)
+	exit := ui.NewButton(diagButtonExit, "Exit", 170, 364)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -211,6 +212,7 @@ func runDiagnostics() snapshot {
 		checkInterfaces(),
 		checkAssertions(),
 		checkErrors(),
+		checkSyscall(),
 		checkFmt(),
 		checkFiles(),
 		checkOS(),
@@ -603,6 +605,57 @@ func checkFmt() checkResult {
 		}
 	}
 
+	stdoutReader, stdoutWriter, pipeErr := os.Pipe()
+	if pipeErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "stdout pipe " + pipeErr.Error(),
+		}
+	}
+
+	previousStdout := os.Stdout
+	os.Stdout = stdoutWriter
+	printCount, printErr := fmt.Print(label, " print ", 7, "\n")
+	printfCount, printfErr := fmt.Printf("cwd=%s", kos.CurrentFolder())
+	printlnCount, printlnErr := fmt.Println(" / tail", true)
+	os.Stdout = previousStdout
+	_ = stdoutWriter.Close()
+
+	expectedPrint := "fmt print 7\ncwd=" + kos.CurrentFolder() + " / tail true\n"
+	stdoutBuffer := make([]byte, len(expectedPrint))
+	stdoutRead, stdoutReadErr := stdoutReader.Read(stdoutBuffer)
+	_ = stdoutReader.Close()
+
+	if printErr != nil || printfErr != nil || printlnErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Print returned error",
+		}
+	}
+	if stdoutReadErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "stdout read " + stdoutReadErr.Error(),
+		}
+	}
+	if stdoutRead != len(expectedPrint) || string(stdoutBuffer[:stdoutRead]) != expectedPrint {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Print mismatch",
+		}
+	}
+	if printCount+printfCount+printlnCount != len(expectedPrint) {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Print count mismatch",
+		}
+	}
+
 	if fmt.Errorf("%v error %d", label, 7).Error() != "fmt error 7" {
 		return checkResult{
 			label:  "fmt",
@@ -613,7 +666,59 @@ func checkFmt() checkResult {
 	return checkResult{
 		label:  "fmt",
 		ok:     true,
-		detail: "sprintf fprintf errorf",
+		detail: "sprintf fprintf print stdout",
+	}
+}
+
+func checkSyscall() checkResult {
+	var pipefd [2]int
+
+	if err := syscall.Pipe(pipefd[:]); err != nil {
+		return checkResult{
+			label:  "syscall",
+			ok:     false,
+			detail: "pipe " + err.Error(),
+		}
+	}
+
+	payload := []byte("diag syscall pipe")
+	written, err := syscall.Write(pipefd[1], payload)
+	if err != nil {
+		return checkResult{
+			label:  "syscall",
+			ok:     false,
+			detail: "write " + err.Error(),
+		}
+	}
+	if written != len(payload) {
+		return checkResult{
+			label:  "syscall",
+			ok:     false,
+			detail: "short write",
+		}
+	}
+
+	buffer := make([]byte, len(payload))
+	read, err := syscall.Read(pipefd[0], buffer)
+	if err != nil {
+		return checkResult{
+			label:  "syscall",
+			ok:     false,
+			detail: "read " + err.Error(),
+		}
+	}
+	if read != len(payload) || string(buffer[:read]) != string(payload) {
+		return checkResult{
+			label:  "syscall",
+			ok:     false,
+			detail: "pipe payload mismatch",
+		}
+	}
+
+	return checkResult{
+		label:  "syscall",
+		ok:     true,
+		detail: "pipe read write " + formatInt(read) + " bytes",
 	}
 }
 
@@ -905,20 +1010,20 @@ func checkConsole() checkResult {
 		titleState = "title ok"
 	}
 
-	if !console.WriteString("golang-kolibrios console probe\r\n") {
+	if _, err := fmt.Fprintf(console, "golang-kolibrios console probe\r\n"); err != nil {
 		console.Exit(true)
 		return checkResult{
 			label:  "console",
 			ok:     false,
-			detail: "write header failed",
+			detail: "fmt header failed",
 		}
 	}
-	if !console.WriteString("write_string and exit path active\r\n") {
+	if _, err := fmt.Fprintf(console, "fmt writer path active / table 0x%x / ver 0x%x\r\n", uint32(console.ExportTable()), console.Version()); err != nil {
 		console.Exit(true)
 		return checkResult{
 			label:  "console",
 			ok:     false,
-			detail: "write body failed",
+			detail: "fmt body failed",
 		}
 	}
 
@@ -926,7 +1031,7 @@ func checkConsole() checkResult {
 	return checkResult{
 		label:  "console",
 		ok:     true,
-		detail: "init write exit / " + titleState,
+		detail: "init fmt exit / " + titleState,
 	}
 }
 

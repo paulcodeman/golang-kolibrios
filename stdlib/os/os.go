@@ -3,6 +3,7 @@ package os
 import (
 	"io"
 	"kos"
+	"syscall"
 )
 
 type FileMode uint32
@@ -34,6 +35,10 @@ var ErrPermission = &osError{text: "permission denied"}
 var ErrExist = &osError{text: "file already exists"}
 var ErrNotExist = &osError{text: "file does not exist"}
 var ErrClosed = &osError{text: "file already closed"}
+
+var Stdin = newDescriptorFile("stdin", int(kos.StdinFD), true, false)
+var Stdout = newDescriptorFile("stdout", int(kos.StdoutFD), false, true)
+var Stderr = newDescriptorFile("stderr", int(kos.StderrFD), false, true)
 
 type PathError struct {
 	Op   string
@@ -97,11 +102,13 @@ func (err *statusError) Error() string {
 
 type File struct {
 	name     string
+	fd       int
 	offset   uint64
 	readable bool
 	writable bool
 	append   bool
 	closed   bool
+	fdBacked bool
 }
 
 func Getwd() (dir string, err error) {
@@ -172,6 +179,18 @@ func Open(name string) (*File, error) {
 
 func Create(name string) (*File, error) {
 	return OpenFile(name, O_RDWR|O_CREATE|O_TRUNC, 0)
+}
+
+func Pipe() (reader *File, writer *File, err error) {
+	var pipefd [2]int
+
+	if err = syscall.Pipe(pipefd[:]); err != nil {
+		return nil, nil, err
+	}
+
+	reader = newDescriptorFile("pipe[0]", pipefd[0], true, false)
+	writer = newDescriptorFile("pipe[1]", pipefd[1], false, true)
+	return reader, writer, nil
 }
 
 func OpenFile(name string, flag int, perm FileMode) (*File, error) {
@@ -250,6 +269,16 @@ func (file *File) Read(buffer []byte) (int, error) {
 	if len(buffer) == 0 {
 		return 0, nil
 	}
+	if file.fdBacked {
+		read, err := syscall.Read(file.fd, buffer)
+		if err != nil {
+			return read, &PathError{Op: "read", Path: file.name, Err: err}
+		}
+		if read == 0 {
+			return 0, io.EOF
+		}
+		return read, nil
+	}
 
 	read, status := kos.ReadFile(file.name, buffer, file.offset)
 	file.offset += uint64(read)
@@ -276,6 +305,16 @@ func (file *File) Write(buffer []byte) (int, error) {
 	}
 	if len(buffer) == 0 {
 		return 0, nil
+	}
+	if file.fdBacked {
+		written, err := syscall.Write(file.fd, buffer)
+		if err != nil {
+			return written, &PathError{Op: "write", Path: file.name, Err: err}
+		}
+		if written != len(buffer) {
+			return written, io.ErrShortWrite
+		}
+		return written, nil
 	}
 
 	if file.append {
@@ -375,4 +414,14 @@ func formatUint32(value uint32) string {
 	}
 
 	return formatUint32(value/10) + decimalDigits[value%10]
+}
+
+func newDescriptorFile(name string, fd int, readable bool, writable bool) *File {
+	return &File{
+		name:     name,
+		fd:       fd,
+		readable: readable,
+		writable: writable,
+		fdBacked: true,
+	}
 }

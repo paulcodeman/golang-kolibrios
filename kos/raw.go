@@ -126,6 +126,17 @@ func FileSystem(request *FileSystemRequest, secondary *uint32) int
 // Function 80 - file system interface with parameter of encoding.
 func FileSystemEncoded(request *EncodedFileSystemRequest, secondary *uint32) int
 
+// Function 77, subfunction 10 - read from a file handle.
+// The current kernel contract documents pipe descriptors on this path.
+func PosixReadRaw(fd uint32, buffer *byte, size uint32) int
+
+// Function 77, subfunction 11 - write to a file handle.
+// The current kernel contract documents pipe descriptors on this path.
+func PosixWriteRaw(fd uint32, buffer *byte, size uint32) int
+
+// Function 77, subfunction 13 - create a pipe and return two file handles.
+func PosixPipe2Raw(pipefd *uint32, flags uint32) int
+
 // Function 30, subfunction 5 - get current folder with explicit encoding.
 func GetCurrentFolderRaw(buffer *byte, size uint32, encoding StringEncoding) int
 

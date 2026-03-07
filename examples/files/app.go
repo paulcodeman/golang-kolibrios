@@ -2,6 +2,8 @@ package filesdemo
 
 import (
 	"errors"
+	"io"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -38,10 +40,15 @@ type probeError struct {
 	op     string
 	path   string
 	status kos.FileSystemStatus
+	detail string
 	cause  error
 }
 
 func (err probeError) Error() string {
+	if err.detail != "" {
+		return err.op + " " + err.path + " / " + err.detail
+	}
+
 	return err.op + " " + err.path + " / " + formatFileSystemStatus(err.status)
 }
 
@@ -106,7 +113,7 @@ func (app *App) Redraw() {
 	kos.BeginRedraw()
 	kos.OpenWindow(filesWindowX, filesWindowY, filesWindowWidth, filesWindowHeight, filesWindowTitle)
 	kos.DrawText(28, 44, app.summaryColor(), app.summary)
-	kos.DrawText(28, 66, ui.Silver, "This sample imports errors with the ordinary import path: import \"errors\"")
+	kos.DrawText(28, 66, ui.Silver, "This sample imports errors/io/os with ordinary Go import paths")
 	kos.DrawText(28, 88, ui.Black, "Path: "+app.path)
 	kos.DrawText(28, 112, ui.Aqua, app.infoLine)
 	kos.DrawText(28, 134, ui.Lime, app.readLine)
@@ -142,19 +149,33 @@ func (app *App) refreshProbe() {
 		previewSize = filesPreviewBytes
 	}
 
+	file, err := os.Open(app.path)
+	if err != nil {
+		app.fail(&probeError{
+			op:     "open",
+			path:   app.path,
+			detail: err.Error(),
+			cause:  errPathRead,
+		})
+		return
+	}
 	buffer := make([]byte, previewSize)
-	read, status := kos.ReadFile(app.path, buffer, 0)
-	if status != kos.FileSystemOK && status != kos.FileSystemEOF {
+	read, err := file.Read(buffer)
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil && !errors.Is(err, io.EOF) {
 		app.fail(&probeError{
 			op:     "read",
 			path:   app.path,
-			status: status,
+			detail: err.Error(),
 			cause:  errPathRead,
 		})
 		return
 	}
 
-	app.readLine = "Read: " + formatUint32(read) + " bytes / head " + formatBytePreview(buffer[:int(read)])
+	app.readLine = "Read: " + formatUint32(uint32(read)) + " bytes / head " + formatBytePreview(buffer[:read])
 	if app.errorsOK {
 		app.classLine = "errors: sentinel and unwrap chain ok"
 		app.errorLine = "Error: none"

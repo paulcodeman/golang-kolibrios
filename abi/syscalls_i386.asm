@@ -46,6 +46,9 @@ global go_0kos.SetCaptionWithPrefix
 global go_0kos.SendMessage
 global go_0kos.FileSystem
 global go_0kos.FileSystemEncoded
+global go_0kos.PosixReadRaw
+global go_0kos.PosixWriteRaw
+global go_0kos.PosixPipe2Raw
 global go_0kos.GetMouseScreenPosition
 global go_0kos.GetMouseWindowPosition
 global go_0kos.GetMouseButtonState
@@ -629,6 +632,51 @@ go_0kos.FileSystemEncoded:
     jz .done_file_system_encoded
     mov [edx], ebx
 .done_file_system_encoded:
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.PosixReadRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    mov eax, 77
+    mov ebx, 10
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    mov esi, [ebp+16]
+    int 0x40
+    pop esi
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.PosixWriteRaw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    mov eax, 77
+    mov ebx, 11
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    mov esi, [ebp+16]
+    int 0x40
+    pop esi
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.PosixPipe2Raw:
+    push ebp
+    mov ebp, esp
+    push ebx
+    mov eax, 77
+    mov ebx, 13
+    mov ecx, [ebp+8]
+    mov edx, [ebp+12]
+    int 0x40
     pop ebx
     pop ebp
     ret

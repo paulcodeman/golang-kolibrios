@@ -82,6 +82,7 @@ compile_package_export() {
 
   gccgo "${gccgo_flags[@]}" \
     -I"$repo_root" \
+    -I"$tmp_dir" \
     -o "$tmp_dir/$package_name.export.o" \
     "$source_dir"/*.go
 
@@ -265,20 +266,43 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
-  compile_package "os" "kos" "io"
+  compile_package "syscall" "kos"
+  probe_symbols=$(package_unresolved_symbols "syscall")
+  require_list_symbols "syscall package" "$probe_symbols" \
+    "go_0kos.CreatePipe" \
+    "go_0kos.FDRead" \
+    "go_0kos.FDWrite" \
+    "memcmp" \
+    "runtime.concatstrings" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicIndexU" \
+    "runtime.memequal" \
+    "runtime.memequal32..f" \
+    "runtime.newobject" \
+    "runtime.panicmem" \
+    "runtime.registerGCRoots" \
+    "runtime.strequal..f"
+
+  compile_package "os" "kos" "io" "syscall"
   probe_symbols=$(package_unresolved_symbols "os")
   require_list_symbols "os package" "$probe_symbols" \
     "go_0io.EOF" \
     "go_0io.ErrShortWrite" \
+    "go_0io.ioError..p" \
+    "go_0io.ioError.Error" \
     "go_0kos.CreateDirectory" \
     "go_0kos.CreateOrRewriteFile" \
     "go_0kos.CurrentFolder" \
     "go_0kos.DeletePath" \
+    "go_0kos.FileSystemStatus..d" \
     "go_0kos.GetPathInfo" \
     "go_0kos.ReadAllFile" \
     "go_0kos.ReadFile" \
     "go_0kos.RenamePath" \
     "go_0kos.WriteFile" \
+    "go_0syscall.Pipe" \
+    "go_0syscall.Read" \
+    "go_0syscall.Write" \
     "memcmp" \
     "runtime.concatstrings" \
     "runtime.gcWriteBarrier" \
@@ -296,7 +320,7 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
-  compile_package "fmt" "errors" "io"
+  compile_package "fmt" "errors" "io" "kos" "syscall" "os"
   probe_symbols=$(package_unresolved_symbols "fmt")
   require_list_symbols "fmt package" "$probe_symbols" \
     "go_0errors.New" \
@@ -305,6 +329,9 @@ main() {
     "go_0io.Writer..d" \
     "go_0io.ioError..p" \
     "go_0io.ioError.Error" \
+    "go_0os.File..p" \
+    "go_0os.File.Write" \
+    "go_0os.Stdout" \
     "memcmp" \
     "memmove" \
     "runtime.concatstrings" \

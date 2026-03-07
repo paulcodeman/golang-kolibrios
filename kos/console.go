@@ -123,6 +123,17 @@ func (console Console) WriteString(text string) bool {
 	return true
 }
 
+func (console Console) Write(data []byte) (int, error) {
+	if len(data) == 0 {
+		return 0, nil
+	}
+	if console.WriteString(string(data)) {
+		return len(data), nil
+	}
+
+	return 0, &consoleError{text: "console write failed"}
+}
+
 func (console Console) KeyHit() bool {
 	return console.keyHitProc.Valid() && CallStdcall0Raw(uint32(console.keyHitProc)) != 0
 }
@@ -149,4 +160,12 @@ func boolToUint32(value bool) uint32 {
 	}
 
 	return 0
+}
+
+type consoleError struct {
+	text string
+}
+
+func (err *consoleError) Error() string {
+	return err.text
 }

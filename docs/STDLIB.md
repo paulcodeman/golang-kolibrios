@@ -146,6 +146,9 @@ Supported API:
 - `fmt.Fprint`
 - `fmt.Fprintln`
 - `fmt.Fprintf`
+- `fmt.Print`
+- `fmt.Println`
+- `fmt.Printf`
 - `fmt.Errorf`
 
 Current behavior notes:
@@ -157,6 +160,9 @@ Current behavior notes:
 - `fmt.Errorf` currently formats through the local bootstrap formatter and then
   returns `errors.New(...)`; `%w` is rendered like `%v` and does not yet create
   an unwrap chain
+- `fmt.Print`, `fmt.Printf`, and `fmt.Println` now route through `os.Stdout`,
+  so ordinary stdout-style Go code can be exercised by redirecting `os.Stdout`
+  to a pipe-backed `*os.File`
 - width, precision, padding, floating-point formatting, maps, structs, and the
   broader printing/scanning surface are not implemented yet
 
@@ -180,12 +186,16 @@ Supported API:
 - `os.ErrExist`
 - `os.ErrNotExist`
 - `os.ErrClosed`
+- `os.Stdin`
+- `os.Stdout`
+- `os.Stderr`
 - `os.PathError`
 - `os.LinkError`
 - `os.Getwd`
 - `os.Open`
 - `os.Create`
 - `os.OpenFile`
+- `os.Pipe`
 - `os.ReadFile`
 - `os.WriteFile`
 - `os.Mkdir`
@@ -195,10 +205,17 @@ Supported API:
 Current behavior notes:
 
 - current files are name-plus-offset wrappers over KolibriOS path-based file
-  syscalls; they are not kernel-owned live file descriptors yet
+  syscalls, but the package now also has a narrow fd-backed mode for
+  `os.Stdin`, `os.Stdout`, `os.Stderr`, and `os.Pipe`
 - `OpenFile` currently supports the narrow bootstrap flag set documented above;
   descriptor duplication, permissions, and sync semantics are not implemented
   yet
+- the fd-backed path currently follows the documented `77.10/77.11/77.13`
+  contracts, which are currently specified for pipe descriptors; ordinary
+  stdout-style code is therefore validated primarily through pipe redirection
+  rather than launcher-provided console streams
+- `(*os.File).Close` currently marks bootstrap fd-backed files closed locally,
+  but it does not yet invoke a documented kernel close-handle syscall
 - `Rename` resolves ordinary Go-style relative and absolute paths into the
   special KolibriOS `80.10` target-path contract and currently supports only
   same-volume rename or move operations
@@ -206,6 +223,38 @@ Current behavior notes:
   keep only the narrow bootstrap behavior required by the compatibility sample
 - `Stat`, directory iteration, environment handling, process spawning, and the
   broader `os` surface are not implemented yet
+
+### `syscall`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `syscall.Errno`
+- `syscall.EBADF`
+- `syscall.EINVAL`
+- `syscall.EFAULT`
+- `syscall.ENFILE`
+- `syscall.EMFILE`
+- `syscall.EPIPE`
+- `syscall.O_CLOEXEC`
+- `syscall.Read`
+- `syscall.Write`
+- `syscall.Pipe`
+- `syscall.Pipe2`
+
+Current behavior notes:
+
+- `syscall.Read`, `syscall.Write`, `syscall.Pipe`, and `syscall.Pipe2` are
+  backed directly by the documented `77.10`, `77.11`, and `77.13` contracts in
+  `sysfuncs.txt`
+- the current kernel documentation marks `77.10` and `77.11` as pipe-descriptor
+  paths, so the bootstrap fd compatibility layer is currently validated through
+  pipes rather than full Unix-style file descriptor coverage
+- `syscall.Errno.Error()` currently formats only a narrow set of known bootstrap
+  errno values
+- close, dup, poll/select, signals, and the broader syscall surface are not
+  implemented yet
 
 ## Build Contract
 
@@ -235,7 +284,8 @@ bootstrap apps remain executable without hand-tuned `MENUET01` header values.
 Compatibility samples using ordinary import paths:
 
 - `examples/files`
-  - `import "errors"`
+  - `import "errors"`, `import "io"`, `import "os"`
+  - ordinary `os.Open` / `Read` / `Close` for the preview read path
   - wrapped file-probe failures with `Unwrap`
   - sentinel classification with `errors.Is`
 - `examples/path`
@@ -266,7 +316,10 @@ Compatibility samples using ordinary import paths:
   - `import "fmt"`
   - formatted strings via `Sprintf` and `Sprintln`
   - writer formatting via `Fprintf`
+  - stdout-style formatting via `Print`, `Printf`, and `Println` redirected
+    through a temporary `os.Pipe`
   - formatted error construction via `Errorf`
+  - ordinary `os.Stdout` reassignment for bootstrap stdout capture
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
 stdlib-shaped path, string, byte-slice, io, os, and error logic now follows ordinary Go package structure
@@ -277,7 +330,6 @@ instead of custom-only local helpers.
 The following roadmap packages are still pending bootstrap implementations:
 
 - `time`
-- `syscall`
 
 Until they are explicitly documented here, they should be treated as
 unsupported for the KolibriOS bootstrap target.

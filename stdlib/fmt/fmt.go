@@ -3,6 +3,7 @@ package fmt
 import (
 	"errors"
 	"io"
+	"os"
 )
 
 type Stringer interface {
@@ -145,6 +146,18 @@ func Fprintf(writer io.Writer, format string, values ...interface{}) (n int, err
 	}
 
 	return count.written, count.err
+}
+
+func Print(values ...interface{}) (n int, err error) {
+	return Fprint(os.Stdout, values...)
+}
+
+func Println(values ...interface{}) (n int, err error) {
+	return Fprintln(os.Stdout, values...)
+}
+
+func Printf(format string, values ...interface{}) (n int, err error) {
+	return Fprintf(os.Stdout, format, values...)
 }
 
 func Errorf(format string, values ...interface{}) error {
