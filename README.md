@@ -20,7 +20,7 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
@@ -37,7 +37,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time`
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, `bufio`, and `time`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -138,6 +138,7 @@ Output:
 - `examples/io/io.kex`
 - `examples/os/os.kex`
 - `examples/fmt/fmt.kex`
+- `examples/bufio/bufio.kex`
 - `examples/console/console.kex`
 - `tests/smokeapp/smokeapp.kex`
 
@@ -204,8 +205,9 @@ Main sources:
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`, with file/cwd probes now routed through `os.ReadFile`, `os.Getwd`, and `os.Stat`
 - `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, `FileInfo.ModTime`, file create/read/write flows, rename/remove, `Getpid`/`Getppid`, and process-local environment handling
 - `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture plus ordinary `os` cwd/file probes
+- `examples/bufio` - ordinary `import "bufio"` compatibility sample for `Reader`, `Writer`, `ReadByte`, `UnreadByte`, `ReadString`, `ReadBytes`, `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `bufio`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

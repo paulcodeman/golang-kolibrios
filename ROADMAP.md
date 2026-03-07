@@ -261,20 +261,28 @@ Current bootstrap status:
   place.
 - `examples/fmt` is the eighth compatibility sample, using ordinary
   `import "fmt"`.
+- Local support for `bufio.Reader`, `bufio.Writer`, `bufio.Scanner`,
+  `bufio.NewReader`, `bufio.NewWriter`, `bufio.NewScanner`, `ReadByte`,
+  `UnreadByte`, `ReadString`, `ReadBytes`, `WriteByte`, `WriteString`,
+  `Flush`, `ScanLines`, `ScanWords`, `ScanBytes`, `Split`, and `Buffer` is
+  now in place.
+- `examples/bufio` is the ninth compatibility sample, using ordinary
+  `import "bufio"`.
 - Local support for `time.Duration`, `time.Month`, `time.Time`, `time.Now`,
   `time.Unix`, `time.Sleep`, `time.Since`, `Time.Add`, `Time.Sub`,
   `Time.Before`, `Time.After`, `Time.Equal`, and the basic wall-clock field
   accessors is now in place, with wall time assembled from syscalls `29` and
   `3` plus a monotonic `Since/Sub` path backed by `26.10`.
-- `examples/time` is now a ninth compatibility sample, using ordinary
+- `examples/time` is now a tenth compatibility sample, using ordinary
   `import "time"`.
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
-  `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, and `time.Since`
-  through pipe-backed stdio capture plus the documented clock bridge, along
-  with the active-console stdout bridge in headless QEMU.
+  `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows,
+  `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
+  capture plus the documented clock bridge, along with the active-console
+  stdout bridge in headless QEMU.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
 - `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,

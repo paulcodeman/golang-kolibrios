@@ -266,6 +266,59 @@ Current behavior notes:
   maps, structs, custom scanner interfaces, and the broader printing/scanning
   surface are not implemented yet
 
+### `bufio`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `bufio.Reader`
+- `bufio.NewReader`
+- `(*bufio.Reader).Read`
+- `(*bufio.Reader).ReadByte`
+- `(*bufio.Reader).UnreadByte`
+- `(*bufio.Reader).ReadBytes`
+- `(*bufio.Reader).ReadString`
+- `bufio.Writer`
+- `bufio.NewWriter`
+- `(*bufio.Writer).Write`
+- `(*bufio.Writer).WriteByte`
+- `(*bufio.Writer).WriteString`
+- `(*bufio.Writer).Flush`
+- `bufio.Scanner`
+- `bufio.NewScanner`
+- `(*bufio.Scanner).Scan`
+- `(*bufio.Scanner).Text`
+- `(*bufio.Scanner).Bytes`
+- `(*bufio.Scanner).Err`
+- `(*bufio.Scanner).Buffer`
+- `(*bufio.Scanner).Split`
+- `bufio.SplitFunc`
+- `bufio.ScanLines`
+- `bufio.ScanWords`
+- `bufio.ScanBytes`
+- `bufio.ErrInvalidUnreadByte`
+- `bufio.ErrTooLong`
+- `bufio.MaxScanTokenSize`
+
+Current behavior notes:
+
+- the current bootstrap reader and scanner surfaces are byte-oriented and
+  intentionally ASCII-focused
+- `bufio.Reader` currently supports sequential buffered reads plus
+  single-byte unread through `UnreadByte`
+- `bufio.Writer` provides buffered writes and explicit `Flush`; because the
+  bootstrap `os.File.Close` path does not yet invoke a documented kernel
+  close-handle syscall, pipe-backed callers should not rely on `Close()` alone
+  to signal EOF to a peer
+- `bufio.Scanner` currently supports `ScanLines`, `ScanWords`, and `ScanBytes`
+  with a configurable maximum token size via `Buffer`
+- split functions are expected to follow the normal scanner contract, but the
+  broader standard package surface such as `ReadSlice`, `Peek`, `Discard`,
+  `ReadRune`, `ReadLine`, `NewReadWriter`, `NewWriterSize`, and
+  `Scanner.Bytes()` lifetime guarantees beyond the next scan are not
+  implemented yet
+
 ### `os`
 
 Implemented locally in the repository as a bootstrap shim.
@@ -490,6 +543,14 @@ Compatibility samples using ordinary import paths:
   - formatted error construction via `Errorf`
   - ordinary `os.Stdout` reassignment for bootstrap stdout capture
   - ordinary `os.Getwd`, `os.Stat`, and `os.ReadFile` for the file/cwd probe
+- `examples/bufio`
+  - `import "bufio"`
+  - buffered pipe writes through `Writer`, `WriteString`, `WriteByte`, and `Flush`
+  - buffered reads through `Reader`, `ReadByte`, `UnreadByte`, `ReadString`, and `ReadBytes`
+  - token scanning through `Scanner`, `ScanLines`, `ScanWords`, and `ScanBytes`
+  - ordinary `os.Pipe`, `os.Getwd`, and `os.Stat` for the runtime probe
+- `apps/diag`
+  - headless `bufio` regression coverage for reader, writer, and scanner behavior on pipe-backed stdio
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
 stdlib-shaped path, filepath, string, byte-slice, io, os, fmt, time, and error

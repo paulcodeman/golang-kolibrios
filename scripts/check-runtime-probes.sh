@@ -300,6 +300,33 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "bufio" "errors" "bytes" "io"
+  probe_symbols=$(package_unresolved_symbols "bufio")
+  require_list_symbols "bufio package" "$probe_symbols" \
+    "go_0bytes.IndexByte" \
+    "go_0errors.New" \
+    "go_0io.EOF" \
+    "go_0io.ErrShortWrite" \
+    "go_0io.Reader..d" \
+    "go_0io.Writer..d" \
+    "memmove" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.makeslice" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.registerGCRoots" \
+    "runtime.slicebytetostring" \
+    "runtime.strequal..f" \
+    "runtime.stringtoslicebyte" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
   compile_package "syscall" "kos"
   probe_symbols=$(package_unresolved_symbols "syscall")
   require_list_symbols "syscall package" "$probe_symbols" \

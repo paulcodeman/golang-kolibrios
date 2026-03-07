@@ -1,6 +1,7 @@
 package diagapp
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -201,6 +202,7 @@ func runDiagnostics() snapshot {
 		checkTime(),
 		checkSyscall(),
 		checkFmt(),
+		checkBufio(),
 		checkFilepath(),
 		checkFiles(),
 		checkOS(),
@@ -873,6 +875,228 @@ func checkFilepath() checkResult {
 		label:  "filepath",
 		ok:     true,
 		detail: "clean join split abs volume / size " + formatHex64(uint64(info.Size())),
+	}
+}
+
+func checkBufio() checkResult {
+	readerPipe, writerPipe, err := os.Pipe()
+	if err != nil {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "pipe unavailable: " + err.Error(),
+		}
+	}
+
+	bufferedWriter := bufio.NewWriter(writerPipe)
+	if _, err = bufferedWriter.WriteString("alpha beta\n"); err != nil {
+		_ = readerPipe.Close()
+		_ = writerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "WriteString failed: " + err.Error(),
+		}
+	}
+	if err = bufferedWriter.WriteByte('g'); err != nil {
+		_ = readerPipe.Close()
+		_ = writerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "WriteByte failed: " + err.Error(),
+		}
+	}
+	if _, err = bufferedWriter.WriteString("amma\n"); err != nil {
+		_ = readerPipe.Close()
+		_ = writerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "WriteString tail failed: " + err.Error(),
+		}
+	}
+	if err = bufferedWriter.Flush(); err != nil {
+		_ = readerPipe.Close()
+		_ = writerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "Flush failed: " + err.Error(),
+		}
+	}
+	_ = writerPipe.Close()
+
+	bufferedReader := bufio.NewReader(readerPipe)
+	firstByte, err := bufferedReader.ReadByte()
+	if err != nil {
+		_ = readerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ReadByte failed: " + err.Error(),
+		}
+	}
+	if err = bufferedReader.UnreadByte(); err != nil {
+		_ = readerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "UnreadByte failed: " + err.Error(),
+		}
+	}
+	firstLine, err := bufferedReader.ReadString('\n')
+	if err != nil {
+		_ = readerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ReadString failed: " + err.Error(),
+		}
+	}
+	secondLine, err := bufferedReader.ReadBytes('\n')
+	if err != nil {
+		_ = readerPipe.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ReadBytes failed: " + err.Error(),
+		}
+	}
+	_ = readerPipe.Close()
+
+	linesReader, linesWriter, err := os.Pipe()
+	if err != nil {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "line pipe unavailable: " + err.Error(),
+		}
+	}
+	if _, err = linesWriter.Write([]byte("line one\nline two\n")); err != nil {
+		_ = linesReader.Close()
+		_ = linesWriter.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "line pipe write failed: " + err.Error(),
+		}
+	}
+	_ = linesWriter.Close()
+
+	lineScanner := bufio.NewScanner(linesReader)
+	lineA := ""
+	lineB := ""
+	if lineScanner.Scan() {
+		lineA = lineScanner.Text()
+	}
+	if lineScanner.Scan() {
+		lineB = lineScanner.Text()
+	}
+	lineScanErr := lineScanner.Err()
+	_ = linesReader.Close()
+
+	wordsReader, wordsWriter, err := os.Pipe()
+	if err != nil {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "word pipe unavailable: " + err.Error(),
+		}
+	}
+	if _, err = wordsWriter.Write([]byte("one two three\n")); err != nil {
+		_ = wordsReader.Close()
+		_ = wordsWriter.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "word pipe write failed: " + err.Error(),
+		}
+	}
+	_ = wordsWriter.Close()
+
+	wordScanner := bufio.NewScanner(wordsReader)
+	wordScanner.Split(bufio.ScanWords)
+	wordA := ""
+	wordB := ""
+	wordC := ""
+	if wordScanner.Scan() {
+		wordA = wordScanner.Text()
+	}
+	if wordScanner.Scan() {
+		wordB = wordScanner.Text()
+	}
+	if wordScanner.Scan() {
+		wordC = wordScanner.Text()
+	}
+	wordScanErr := wordScanner.Err()
+	_ = wordsReader.Close()
+
+	bytesReader, bytesWriter, err := os.Pipe()
+	if err != nil {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "byte pipe unavailable: " + err.Error(),
+		}
+	}
+	if _, err = bytesWriter.Write([]byte("AZ")); err != nil {
+		_ = bytesReader.Close()
+		_ = bytesWriter.Close()
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "byte pipe write failed: " + err.Error(),
+		}
+	}
+	_ = bytesWriter.Close()
+
+	byteScanner := bufio.NewScanner(bytesReader)
+	byteScanner.Split(bufio.ScanBytes)
+	byteA := ""
+	byteB := ""
+	if byteScanner.Scan() {
+		byteA = byteScanner.Text()
+	}
+	if byteScanner.Scan() {
+		byteB = byteScanner.Text()
+	}
+	byteScanErr := byteScanner.Err()
+	_ = bytesReader.Close()
+
+	if firstByte != 'a' || firstLine != "alpha beta\n" || string(secondLine) != "gamma\n" {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "reader path mismatch",
+		}
+	}
+	if lineScanErr != nil || lineA != "line one" || lineB != "line two" {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ScanLines mismatch",
+		}
+	}
+	if wordScanErr != nil || wordA != "one" || wordB != "two" || wordC != "three" {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ScanWords mismatch",
+		}
+	}
+	if byteScanErr != nil || byteA != "A" || byteB != "Z" {
+		return checkResult{
+			label:  "bufio",
+			ok:     false,
+			detail: "ScanBytes mismatch",
+		}
+	}
+
+	return checkResult{
+		label:  "bufio",
+		ok:     true,
+		detail: "reader writer scanner / line one line two / one two three / A Z",
 	}
 }
 
