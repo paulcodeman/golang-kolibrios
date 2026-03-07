@@ -81,6 +81,49 @@ typedef struct {
 } go_interface_assert_result;
 
 typedef bool (*go_equal_function)(const void* left, const void* right);
+typedef uint32_t (*go_hash_function)(const void* value);
+
+typedef struct {
+    go_type_descriptor common;
+    const go_type_descriptor* key_type;
+    const go_type_descriptor* value_type;
+    const go_type_descriptor* bucket_type;
+    void* hasher;
+    uint8_t key_size;
+    uint8_t value_size;
+    uint8_t bucket_size;
+    uint8_t flags;
+    uint32_t extra;
+} go_map_type_descriptor;
+
+typedef struct {
+    void* value;
+    uint32_t ok;
+} go_mapaccess2_result;
+
+typedef struct {
+    void* key_data;
+    void* value_data;
+} runtime_map_entry;
+
+typedef struct {
+    const go_map_type_descriptor* type;
+    runtime_map_entry* entries;
+    intptr_t len;
+    intptr_t cap;
+    void* zero_value;
+} runtime_map;
+
+typedef struct {
+    runtime_map* map;
+    intptr_t index;
+} runtime_map_iter_state;
+
+typedef struct {
+    void* key;
+    void* value;
+    runtime_map_iter_state* state;
+} runtime_map_iterator;
 
 #define GO_TYPE_KIND_DIRECT_IFACE 0x20u
 #define GO_TYPE_KIND_MASK 0x1Fu
@@ -94,6 +137,20 @@ void runtime_panicmem(void);
 void runtime_typedmemmove(const go_type_descriptor* descriptor, void* dest, const void* src);
 
 static const char runtime_hex_digits[] = "0123456789ABCDEF";
+static const go_type_descriptor runtime_unsafe_pointer_descriptor = {
+    sizeof(void*),
+    sizeof(void*),
+    0,
+    0,
+    0,
+    0,
+    GO_TYPE_KIND_DIRECT_IFACE,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
 
 static int kos_memcmp(const void* left, const void* right, size_t size);
 
@@ -575,6 +632,490 @@ void runtime_console_bridge_close(uint32_t close_window) {
     runtime_console_bridge_write_proc = 0;
     runtime_console_bridge_exit_proc = 0;
     runtime_console_bridge_gets_proc = 0;
+}
+
+static size_t runtime_type_size(const go_type_descriptor* descriptor) {
+    if (descriptor == NULL) {
+        return 0;
+    }
+
+    return (size_t)descriptor->size;
+}
+
+static size_t runtime_map_key_size(const go_map_type_descriptor* map_type) {
+    if (map_type == NULL) {
+        return 0;
+    }
+    if (map_type->key_type != NULL && map_type->key_type->size != 0) {
+        return (size_t)map_type->key_type->size;
+    }
+    if (map_type->key_size != 0) {
+        return (size_t)map_type->key_size;
+    }
+
+    return 0;
+}
+
+static size_t runtime_map_value_size(const go_map_type_descriptor* map_type) {
+    if (map_type == NULL) {
+        return 0;
+    }
+    if (map_type->value_type != NULL && map_type->value_type->size != 0) {
+        return (size_t)map_type->value_type->size;
+    }
+    if (map_type->value_size != 0) {
+        return (size_t)map_type->value_size;
+    }
+
+    return 0;
+}
+
+static void* runtime_alloc_zeroed(size_t size) {
+    void* memory;
+
+    if (size == 0) {
+        size = 1;
+    }
+
+    memory = malloc(size);
+    if (memory == NULL) {
+        return NULL;
+    }
+
+    kos_memset(memory, 0, size);
+    return memory;
+}
+
+static runtime_map* runtime_alloc_map(void) {
+    runtime_map* map;
+
+    map = (runtime_map*)runtime_alloc_zeroed(sizeof(runtime_map));
+    return map;
+}
+
+static bool runtime_map_bind_type(runtime_map* map, const go_map_type_descriptor* map_type) {
+    if (map == NULL || map_type == NULL) {
+        return false;
+    }
+    if (map->type == NULL) {
+        map->type = map_type;
+        return true;
+    }
+
+    return map->type == map_type;
+}
+
+static void* runtime_map_zero_value_for_type(const go_map_type_descriptor* map_type) {
+    return runtime_alloc_zeroed(runtime_map_value_size(map_type));
+}
+
+static void* runtime_map_zero_value(runtime_map* map, const go_map_type_descriptor* map_type) {
+    if (map == NULL) {
+        return runtime_map_zero_value_for_type(map_type);
+    }
+    if (map->zero_value == NULL) {
+        map->zero_value = runtime_alloc_zeroed(runtime_map_value_size(map_type));
+    }
+
+    return map->zero_value;
+}
+
+static bool runtime_map_reserve(runtime_map* map, intptr_t needed) {
+    runtime_map_entry* resized;
+    intptr_t new_cap;
+
+    if (map == NULL) {
+        return false;
+    }
+    if (needed <= map->cap) {
+        return true;
+    }
+
+    new_cap = map->cap;
+    if (new_cap < 4) {
+        new_cap = 4;
+    }
+    while (new_cap < needed) {
+        if (new_cap > INTPTR_MAX / 2) {
+            new_cap = needed;
+            break;
+        }
+        new_cap *= 2;
+    }
+
+    resized = (runtime_map_entry*)realloc(map->entries, (size_t)new_cap * sizeof(runtime_map_entry));
+    if (resized == NULL) {
+        return false;
+    }
+
+    map->entries = resized;
+    map->cap = new_cap;
+    return true;
+}
+
+static uint32_t runtime_memhash32_impl(const void* value) {
+    uint32_t hash;
+
+    if (value == NULL) {
+        return 0;
+    }
+
+    hash = *(const uint32_t*)value;
+    hash ^= hash >> 16;
+    hash *= 0x7feb352du;
+    hash ^= hash >> 15;
+    hash *= 0x846ca68bu;
+    hash ^= hash >> 16;
+    return hash;
+}
+
+static uint32_t runtime_strhash_impl(const void* value) {
+    const go_string* text;
+    uint32_t hash;
+    intptr_t index;
+
+    if (value == NULL) {
+        return 0;
+    }
+
+    text = (const go_string*)value;
+    if (text->str == NULL || text->len <= 0) {
+        return 0;
+    }
+
+    hash = 2166136261u;
+    for (index = 0; index < text->len; index++) {
+        hash ^= (uint32_t)(unsigned char)text->str[index];
+        hash *= 16777619u;
+    }
+
+    return hash;
+}
+
+static intptr_t runtime_map_find_fast32(runtime_map* map, uint32_t key) {
+    intptr_t index;
+
+    if (map == NULL) {
+        return -1;
+    }
+
+    for (index = 0; index < map->len; index++) {
+        const uint32_t* stored;
+
+        stored = (const uint32_t*)map->entries[index].key_data;
+        if (stored != NULL && stored[0] == key) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+static intptr_t runtime_map_find_faststr(runtime_map* map, const char* key_ptr, intptr_t key_len) {
+    go_string key;
+    intptr_t index;
+
+    if (map == NULL) {
+        return -1;
+    }
+
+    key.str = key_ptr;
+    key.len = key_len;
+    for (index = 0; index < map->len; index++) {
+        const go_string* stored;
+
+        stored = (const go_string*)map->entries[index].key_data;
+        if (runtime_string_equals(&key, stored)) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+static runtime_map_entry* runtime_map_insert_fast32(runtime_map* map, const go_map_type_descriptor* map_type, uint32_t key) {
+    runtime_map_entry* entry;
+
+    if (map == NULL || !runtime_map_bind_type(map, map_type)) {
+        return NULL;
+    }
+
+    if (!runtime_map_reserve(map, map->len + 1)) {
+        return NULL;
+    }
+
+    entry = &map->entries[map->len];
+    entry->key_data = runtime_alloc_zeroed(runtime_map_key_size(map_type));
+    entry->value_data = runtime_alloc_zeroed(runtime_map_value_size(map_type));
+    if (entry->key_data == NULL || entry->value_data == NULL) {
+        if (entry->key_data != NULL) {
+            free(entry->key_data);
+        }
+        if (entry->value_data != NULL) {
+            free(entry->value_data);
+        }
+        return NULL;
+    }
+
+    *(uint32_t*)entry->key_data = key;
+    map->len++;
+    return entry;
+}
+
+static runtime_map_entry* runtime_map_insert_faststr(runtime_map* map, const go_map_type_descriptor* map_type, const char* key_ptr, intptr_t key_len) {
+    runtime_map_entry* entry;
+    go_string* stored;
+
+    if (map == NULL || !runtime_map_bind_type(map, map_type)) {
+        return NULL;
+    }
+
+    if (!runtime_map_reserve(map, map->len + 1)) {
+        return NULL;
+    }
+
+    entry = &map->entries[map->len];
+    entry->key_data = runtime_alloc_zeroed(runtime_map_key_size(map_type));
+    entry->value_data = runtime_alloc_zeroed(runtime_map_value_size(map_type));
+    if (entry->key_data == NULL || entry->value_data == NULL) {
+        if (entry->key_data != NULL) {
+            free(entry->key_data);
+        }
+        if (entry->value_data != NULL) {
+            free(entry->value_data);
+        }
+        return NULL;
+    }
+
+    stored = (go_string*)entry->key_data;
+    stored->str = key_ptr;
+    stored->len = key_len;
+    map->len++;
+    return entry;
+}
+
+static void runtime_map_remove_at(runtime_map* map, intptr_t index) {
+    intptr_t last;
+
+    if (map == NULL || index < 0 || index >= map->len) {
+        return;
+    }
+
+    if (map->entries[index].key_data != NULL) {
+        free(map->entries[index].key_data);
+    }
+    if (map->entries[index].value_data != NULL) {
+        free(map->entries[index].value_data);
+    }
+
+    last = map->len - 1;
+    if (index != last) {
+        map->entries[index] = map->entries[last];
+    }
+    map->entries[last].key_data = NULL;
+    map->entries[last].value_data = NULL;
+    map->len--;
+}
+
+void* runtime_makemap__small(void) {
+    return runtime_alloc_map();
+}
+
+void* runtime_makemap(const go_map_type_descriptor* map_type, intptr_t hint, void* ignored) {
+    runtime_map* map;
+
+    (void)ignored;
+
+    if (hint < 0) {
+        runtime_panicmem();
+    }
+
+    map = runtime_alloc_map();
+    if (map == NULL) {
+        return NULL;
+    }
+    if (map_type != NULL) {
+        map->type = map_type;
+        if (hint > 0) {
+            runtime_map_reserve(map, hint);
+        }
+    }
+
+    return map;
+}
+
+void* runtime_mapassign__fast32(const go_map_type_descriptor* map_type, runtime_map* map, uint32_t key) {
+    intptr_t index;
+    runtime_map_entry* entry;
+
+    if (map == NULL) {
+        runtime_fail_simple("assignment to nil map");
+    }
+
+    index = runtime_map_find_fast32(map, key);
+    if (index >= 0) {
+        return map->entries[index].value_data;
+    }
+
+    entry = runtime_map_insert_fast32(map, map_type, key);
+    if (entry == NULL) {
+        runtime_panicmem();
+    }
+
+    return entry->value_data;
+}
+
+void* runtime_mapassign__faststr(const go_map_type_descriptor* map_type, runtime_map* map, const char* key_ptr, intptr_t key_len) {
+    intptr_t index;
+    runtime_map_entry* entry;
+
+    if (map == NULL) {
+        runtime_fail_simple("assignment to nil map");
+    }
+
+    index = runtime_map_find_faststr(map, key_ptr, key_len);
+    if (index >= 0) {
+        return map->entries[index].value_data;
+    }
+
+    entry = runtime_map_insert_faststr(map, map_type, key_ptr, key_len);
+    if (entry == NULL) {
+        runtime_panicmem();
+    }
+
+    return entry->value_data;
+}
+
+void* runtime_mapaccess1__fast32(const go_map_type_descriptor* map_type, runtime_map* map, uint32_t key) {
+    intptr_t index;
+
+    index = runtime_map_find_fast32(map, key);
+    if (index >= 0) {
+        return map->entries[index].value_data;
+    }
+
+    return runtime_map_zero_value(map, map_type);
+}
+
+void* runtime_mapaccess1__faststr(const go_map_type_descriptor* map_type, runtime_map* map, const char* key_ptr, intptr_t key_len) {
+    intptr_t index;
+
+    index = runtime_map_find_faststr(map, key_ptr, key_len);
+    if (index >= 0) {
+        return map->entries[index].value_data;
+    }
+
+    return runtime_map_zero_value(map, map_type);
+}
+
+go_mapaccess2_result runtime_mapaccess2__fast32(const go_map_type_descriptor* map_type, runtime_map* map, uint32_t key) {
+    go_mapaccess2_result result;
+    intptr_t index;
+
+    result.ok = 0;
+    index = runtime_map_find_fast32(map, key);
+    if (index >= 0) {
+        result.value = map->entries[index].value_data;
+        result.ok = 1;
+        return result;
+    }
+
+    result.value = runtime_map_zero_value(map, map_type);
+    return result;
+}
+
+go_mapaccess2_result runtime_mapaccess2__faststr(const go_map_type_descriptor* map_type, runtime_map* map, const char* key_ptr, intptr_t key_len) {
+    go_mapaccess2_result result;
+    intptr_t index;
+
+    result.ok = 0;
+    index = runtime_map_find_faststr(map, key_ptr, key_len);
+    if (index >= 0) {
+        result.value = map->entries[index].value_data;
+        result.ok = 1;
+        return result;
+    }
+
+    result.value = runtime_map_zero_value(map, map_type);
+    return result;
+}
+
+void runtime_mapdelete__fast32(const go_map_type_descriptor* map_type, runtime_map* map, uint32_t key) {
+    intptr_t index;
+
+    (void)map_type;
+
+    index = runtime_map_find_fast32(map, key);
+    if (index >= 0) {
+        runtime_map_remove_at(map, index);
+    }
+}
+
+void runtime_mapdelete__faststr(const go_map_type_descriptor* map_type, runtime_map* map, const char* key_ptr, intptr_t key_len) {
+    intptr_t index;
+
+    (void)map_type;
+
+    index = runtime_map_find_faststr(map, key_ptr, key_len);
+    if (index >= 0) {
+        runtime_map_remove_at(map, index);
+    }
+}
+
+void runtime_mapiterinit(const go_map_type_descriptor* map_type, runtime_map* map, runtime_map_iterator* iterator) {
+    runtime_map_iter_state* state;
+
+    (void)map_type;
+
+    if (iterator == NULL) {
+        return;
+    }
+
+    iterator->key = NULL;
+    iterator->value = NULL;
+    iterator->state = NULL;
+
+    if (map == NULL || map->len == 0) {
+        return;
+    }
+
+    state = (runtime_map_iter_state*)runtime_alloc_zeroed(sizeof(runtime_map_iter_state));
+    if (state == NULL) {
+        return;
+    }
+
+    state->map = map;
+    state->index = 0;
+    iterator->state = state;
+    iterator->key = map->entries[0].key_data;
+    iterator->value = map->entries[0].value_data;
+}
+
+void runtime_mapiternext(runtime_map_iterator* iterator) {
+    runtime_map_iter_state* state;
+    intptr_t next_index;
+
+    if (iterator == NULL || iterator->state == NULL) {
+        if (iterator != NULL) {
+            iterator->key = NULL;
+            iterator->value = NULL;
+        }
+        return;
+    }
+
+    state = iterator->state;
+    next_index = state->index + 1;
+    if (state->map == NULL || next_index >= state->map->len) {
+        free(state);
+        iterator->key = NULL;
+        iterator->value = NULL;
+        iterator->state = NULL;
+        return;
+    }
+
+    state->index = next_index;
+    iterator->key = state->map->entries[next_index].key_data;
+    iterator->value = state->map->entries[next_index].value_data;
 }
 
 static bool runtime_memequal_impl(const void* left, const void* right, size_t size) {
@@ -1289,6 +1830,50 @@ __asm__(".set runtime.strequal..f, runtime_strequal_descriptor");
 __asm__(".global runtime.strequal");
 __asm__(".set runtime.strequal, runtime_strequal_impl");
 
+__asm__(".global runtime.memhash32..f");
+static go_hash_function runtime_memhash32_descriptor = runtime_memhash32_impl;
+__asm__(".set runtime.memhash32..f, runtime_memhash32_descriptor");
+
+__asm__(".global runtime.strhash..f");
+static go_hash_function runtime_strhash_descriptor = runtime_strhash_impl;
+__asm__(".set runtime.strhash..f, runtime_strhash_descriptor");
+
+__asm__(".global runtime.makemap__small");
+__asm__(".set runtime.makemap__small, runtime_makemap__small");
+
+__asm__(".global runtime.makemap");
+__asm__(".set runtime.makemap, runtime_makemap");
+
+__asm__(".global runtime.mapassign__fast32");
+__asm__(".set runtime.mapassign__fast32, runtime_mapassign__fast32");
+
+__asm__(".global runtime.mapassign__faststr");
+__asm__(".set runtime.mapassign__faststr, runtime_mapassign__faststr");
+
+__asm__(".global runtime.mapaccess1__fast32");
+__asm__(".set runtime.mapaccess1__fast32, runtime_mapaccess1__fast32");
+
+__asm__(".global runtime.mapaccess1__faststr");
+__asm__(".set runtime.mapaccess1__faststr, runtime_mapaccess1__faststr");
+
+__asm__(".global runtime.mapaccess2__fast32");
+__asm__(".set runtime.mapaccess2__fast32, runtime_mapaccess2__fast32");
+
+__asm__(".global runtime.mapaccess2__faststr");
+__asm__(".set runtime.mapaccess2__faststr, runtime_mapaccess2__faststr");
+
+__asm__(".global runtime.mapdelete__fast32");
+__asm__(".set runtime.mapdelete__fast32, runtime_mapdelete__fast32");
+
+__asm__(".global runtime.mapdelete__faststr");
+__asm__(".set runtime.mapdelete__faststr, runtime_mapdelete__faststr");
+
+__asm__(".global runtime.mapiterinit");
+__asm__(".set runtime.mapiterinit, runtime_mapiterinit");
+
+__asm__(".global runtime.mapiternext");
+__asm__(".set runtime.mapiternext, runtime_mapiternext");
+
 __asm__(".global runtime.ifaceeq");
 __asm__(".set runtime.ifaceeq, runtime_ifaceeq");
 
@@ -1401,6 +1986,9 @@ __asm__(".set runtime.goPanicSliceConvert, runtime_goPanicSliceConvert");
 
 __asm__(".global runtime.panicmem");
 __asm__(".set runtime.panicmem, runtime_panicmem");
+
+__asm__(".global unsafe.Pointer..d");
+__asm__(".set unsafe.Pointer..d, runtime_unsafe_pointer_descriptor");
 
 __asm__(".global runtime.registerGCRoots");
 __asm__(".set runtime.registerGCRoots, runtime_register_gcroots");

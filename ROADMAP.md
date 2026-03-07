@@ -111,6 +111,7 @@ Tasks:
 - Define the first supported language envelope:
   - strings
   - slices
+  - narrow maps
   - structs
   - interfaces
   - `defer`
@@ -121,7 +122,8 @@ Tasks:
 
 Exit criteria:
 
-- Small apps using heap allocation, strings, slices, and interfaces link
+- Small apps using heap allocation, strings, slices, narrow maps, and
+  interfaces link
 - Runtime symbol requirements are documented and covered by tests.
 - Unsupported language features fail in a known, documented way.
 

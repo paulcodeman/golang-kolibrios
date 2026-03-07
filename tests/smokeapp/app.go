@@ -15,7 +15,7 @@ const (
 	smokeWindowX      = 250
 	smokeWindowY      = 150
 	smokeWindowWidth  = 760
-	smokeWindowHeight = 302
+	smokeWindowHeight = 324
 )
 
 type sourceText interface {
@@ -32,6 +32,11 @@ type smokeText struct {
 
 func (value smokeText) Text() string {
 	return value.text
+}
+
+type smokeMapPair struct {
+	label string
+	count int
 }
 
 type smokeWrappedError struct {
@@ -51,6 +56,7 @@ type App struct {
 	timeOK       bool
 	stringsOK    bool
 	slicesOK     bool
+	mapsOK       bool
 	ifaceOK      bool
 	assertionsOK bool
 	errorsOK     bool
@@ -61,6 +67,7 @@ type App struct {
 	timeoutLine  string
 	stringsLine  string
 	slicesLine   string
+	mapsLine     string
 	ifaceLine    string
 	assertLine   string
 	errorsLine   string
@@ -100,7 +107,7 @@ func (app *App) eventLoop() {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(smokeButtonExit, "Exit", 632, 258)
+	exit := ui.NewButton(smokeButtonExit, "Exit", 632, 278)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -111,11 +118,12 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 114, app.statusColor(app.timeoutOK), app.timeoutLine)
 	kos.DrawText(28, 134, app.statusColor(app.stringsOK), app.stringsLine)
 	kos.DrawText(28, 154, app.statusColor(app.slicesOK), app.slicesLine)
-	kos.DrawText(28, 174, app.statusColor(app.ifaceOK), app.ifaceLine)
-	kos.DrawText(28, 194, app.statusColor(app.assertionsOK), app.assertLine)
-	kos.DrawText(28, 214, app.statusColor(app.errorsOK), app.errorsLine)
-	kos.DrawText(28, 234, app.statusColor(app.systemOK), app.systemLine)
-	kos.DrawText(28, 256, app.statusColor(app.shutdownOK), app.powerLine)
+	kos.DrawText(28, 174, app.statusColor(app.mapsOK), app.mapsLine)
+	kos.DrawText(28, 194, app.statusColor(app.ifaceOK), app.ifaceLine)
+	kos.DrawText(28, 214, app.statusColor(app.assertionsOK), app.assertLine)
+	kos.DrawText(28, 234, app.statusColor(app.errorsOK), app.errorsLine)
+	kos.DrawText(28, 254, app.statusColor(app.systemOK), app.systemLine)
+	kos.DrawText(28, 276, app.statusColor(app.shutdownOK), app.powerLine)
 	exit.Draw()
 	kos.EndRedraw()
 }
@@ -126,6 +134,7 @@ func (app *App) runChecks() {
 	app.timeoutLine = "event : pending"
 	app.stringsLine = "text  : pending"
 	app.slicesLine = "slice : pending"
+	app.mapsLine = "maps  : pending"
 	app.ifaceLine = "iface : pending"
 	app.assertLine = "assert: pending"
 	app.errorsLine = "error : pending"
@@ -135,6 +144,7 @@ func (app *App) runChecks() {
 	app.timeOK, app.clockLine = checkClock()
 	app.stringsOK, app.stringsLine = checkStrings()
 	app.slicesOK, app.slicesLine = checkSlices()
+	app.mapsOK, app.mapsLine = checkMaps()
 	app.ifaceOK, app.ifaceLine = checkInterfaces()
 	app.assertionsOK, app.assertLine = checkAssertions()
 	app.errorsOK, app.errorsLine = checkErrors()
@@ -193,6 +203,7 @@ func (app *App) allOK() bool {
 		app.timeOK &&
 		app.stringsOK &&
 		app.slicesOK &&
+		app.mapsOK &&
 		app.ifaceOK &&
 		app.assertionsOK &&
 		app.errorsOK &&
@@ -239,6 +250,41 @@ func checkSlices() (bool, string) {
 	}
 
 	return false, "slice : FAIL / append or copy mismatch"
+}
+
+func checkMaps() (bool, string) {
+	small := make(map[string]int)
+	small["alpha"] = 1
+	small["beta"] = small["alpha"] + 2
+	delete(small, "alpha")
+	if _, ok := small["alpha"]; ok {
+		return false, "maps  : FAIL / string delete left comma-ok hit"
+	}
+	if small["beta"] != 3 {
+		return false, "maps  : FAIL / string lookup lost value"
+	}
+
+	hinted := make(map[int]smokeMapPair, 100)
+	hinted[7] = smokeMapPair{label: "seven", count: 7}
+	hinted[9] = smokeMapPair{label: "nine", count: 9}
+	delete(hinted, 9)
+	if _, ok := hinted[9]; ok {
+		return false, "maps  : FAIL / int delete left comma-ok hit"
+	}
+
+	sum := 0
+	seenSeven := false
+	for key, value := range hinted {
+		sum += key + value.count
+		if key == 7 && value.label == "seven" {
+			seenSeven = true
+		}
+	}
+	if seenSeven && sum == 14 {
+		return true, "maps  : PASS / string int delete range"
+	}
+
+	return false, "maps  : FAIL / range mismatch"
 }
 
 func checkInterfaces() (bool, string) {

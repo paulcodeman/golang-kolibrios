@@ -166,12 +166,24 @@ main() {
     "memmove" \
     "runtime.concatstrings" \
     "runtime.gcWriteBarrier" \
+    "runtime.makemap" \
+    "runtime.makemap__small" \
     "runtime.growslice" \
     "runtime.makeslice" \
     "runtime.assertitab" \
     "runtime.ifaceE2I2" \
     "runtime.ifaceE2T2" \
     "runtime.ifaceI2I2" \
+    "runtime.mapaccess1__fast32" \
+    "runtime.mapaccess1__faststr" \
+    "runtime.mapaccess2__fast32" \
+    "runtime.mapaccess2__faststr" \
+    "runtime.mapassign__fast32" \
+    "runtime.mapassign__faststr" \
+    "runtime.mapdelete__fast32" \
+    "runtime.mapdelete__faststr" \
+    "runtime.mapiterinit" \
+    "runtime.mapiternext" \
     "runtime.memequal" \
     "runtime.slicebytetostring" \
     "runtime.stringtoslicebyte" \
@@ -182,6 +194,7 @@ main() {
     "runtime.memequal32..f" \
     "runtime.memequal64..f" \
     "runtime.memequal8..f" \
+    "runtime.memhash32..f" \
     "runtime.nilinterequal" \
     "runtime.nilinterequal..f" \
     "runtime.newobject" \
@@ -193,8 +206,10 @@ main() {
     "runtime.goPanicSliceB" \
     "runtime.panicmem" \
     "runtime.registerGCRoots" \
+    "runtime.strhash..f" \
     "runtime.strequal..f" \
     "runtime.typedmemmove" \
+    "unsafe.Pointer..d" \
     "runtime.writeBarrier"
 
   compile_package "kos"
@@ -569,6 +584,30 @@ main() {
     "runtime.memequal" \
     "runtime.memequal32..f" \
     "runtime.newobject" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
+  compile_probe "maps"
+  probe_symbols=$(probe_unresolved_symbols "maps")
+  require_list_symbols "maps probe" "$probe_symbols" \
+    "memcmp" \
+    "runtime.makemap" \
+    "runtime.makemap__small" \
+    "runtime.mapaccess1__fast32" \
+    "runtime.mapaccess1__faststr" \
+    "runtime.mapaccess2__fast32" \
+    "runtime.mapaccess2__faststr" \
+    "runtime.mapassign__fast32" \
+    "runtime.mapassign__faststr" \
+    "runtime.mapdelete__fast32" \
+    "runtime.mapdelete__faststr" \
+    "runtime.mapiterinit" \
+    "runtime.mapiternext" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.memhash32..f" \
+    "runtime.strequal..f" \
+    "runtime.strhash..f" \
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 

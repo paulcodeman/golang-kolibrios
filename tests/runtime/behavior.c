@@ -60,6 +60,14 @@ typedef struct {
 } go_interface_type_descriptor;
 
 typedef struct {
+    const go_type_descriptor common;
+    const go_type_descriptor* key_type;
+    const go_type_descriptor* value_type;
+    const void* bucket_type;
+    const void* hash_descriptor;
+} go_map_type_descriptor;
+
+typedef struct {
     const go_string* name;
     const go_string* package_path;
     const go_type_descriptor* type;
@@ -79,12 +87,28 @@ typedef struct {
 } go_interface_assert_result;
 
 typedef struct {
+    void* value;
+    bool ok;
+} go_mapaccess2_result;
+
+typedef struct {
     go_string value;
 } test_box;
 
 typedef struct {
     uint32_t words[4];
 } test_raw16;
+
+typedef struct {
+    go_string label;
+    intptr_t count;
+} test_map_pair;
+
+typedef struct {
+    void* key;
+    void* value;
+    void* state;
+} runtime_map_iterator;
 
 #define GO_TYPE_KIND_INTERFACE 0x14u
 
@@ -106,6 +130,18 @@ extern bool runtime_interequal(const void* left_value, const void* right_value);
 extern bool runtime_memequal_export(const void* left, const void* right, size_t size) __asm__("runtime.memequal");
 extern void runtime_write_barrier(void** slot, void* ptr);
 extern void runtime_gc_write_barrier(void** slot, void* ptr);
+extern void* runtime_makemap__small(void);
+extern void* runtime_makemap(const go_map_type_descriptor* map_type, intptr_t hint, void* ignored);
+extern void* runtime_mapassign__fast32(const go_map_type_descriptor* map_type, void* map, uint32_t key);
+extern void* runtime_mapassign__faststr(const go_map_type_descriptor* map_type, void* map, const char* key_ptr, intptr_t key_len);
+extern void* runtime_mapaccess1__fast32(const go_map_type_descriptor* map_type, void* map, uint32_t key);
+extern void* runtime_mapaccess1__faststr(const go_map_type_descriptor* map_type, void* map, const char* key_ptr, intptr_t key_len);
+extern go_mapaccess2_result runtime_mapaccess2__fast32(const go_map_type_descriptor* map_type, void* map, uint32_t key);
+extern go_mapaccess2_result runtime_mapaccess2__faststr(const go_map_type_descriptor* map_type, void* map, const char* key_ptr, intptr_t key_len);
+extern void runtime_mapdelete__fast32(const go_map_type_descriptor* map_type, void* map, uint32_t key);
+extern void runtime_mapdelete__faststr(const go_map_type_descriptor* map_type, void* map, const char* key_ptr, intptr_t key_len);
+extern void runtime_mapiterinit(const go_map_type_descriptor* map_type, void* map, runtime_map_iterator* iterator);
+extern void runtime_mapiternext(runtime_map_iterator* iterator);
 extern uint32_t runtime_kos_lookup_dll_export(uint32_t table_addr, const char* name);
 extern uint32_t runtime_kos_call_stdcall0(uint32_t proc);
 extern uint32_t runtime_kos_call_stdcall1(uint32_t proc, uint32_t arg0);
@@ -365,6 +401,74 @@ static const go_type_descriptor byte_descriptor = {
     NULL,
     NULL,
 };
+static const go_type_descriptor int_descriptor = {
+    sizeof(intptr_t),
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+static const go_type_descriptor map_pair_descriptor = {
+    sizeof(test_map_pair),
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+static const go_map_type_descriptor map_string_int_descriptor = {
+    {
+        sizeof(void*),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+    },
+    &string_type_descriptor,
+    &int_descriptor,
+    NULL,
+    NULL,
+};
+static const go_map_type_descriptor map_int_pair_descriptor = {
+    {
+        sizeof(void*),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+    },
+    &int_descriptor,
+    &map_pair_descriptor,
+    NULL,
+    NULL,
+};
 
 static void test_concat_and_slices(void) {
     const go_string parts[] = {
@@ -578,6 +682,73 @@ static void test_interface_paths(void) {
     free(other.methods);
 }
 
+static void test_map_paths(void) {
+    void* string_map;
+    intptr_t* count_slot;
+    go_mapaccess2_result missing_string;
+    void* int_map;
+    test_map_pair* pair_slot;
+    go_mapaccess2_result present_pair;
+    go_mapaccess2_result missing_pair;
+    runtime_map_iterator iterator;
+    intptr_t sum;
+    bool saw_seven;
+
+    string_map = runtime_makemap__small();
+    count_slot = (intptr_t*)runtime_mapassign__faststr(&map_string_int_descriptor, string_map, "alpha", 5);
+    *count_slot = 1;
+    count_slot = (intptr_t*)runtime_mapassign__faststr(&map_string_int_descriptor, string_map, "beta", 4);
+    *count_slot = *(intptr_t*)runtime_mapaccess1__faststr(&map_string_int_descriptor, string_map, "alpha", 5) + 2;
+    runtime_mapdelete__faststr(&map_string_int_descriptor, string_map, "alpha", 5);
+    missing_string = runtime_mapaccess2__faststr(&map_string_int_descriptor, string_map, "alpha", 5);
+    expect_false(missing_string.ok, "runtime map string delete clears comma-ok hit");
+    expect_intptr_eq(
+        *(intptr_t*)runtime_mapaccess1__faststr(&map_string_int_descriptor, string_map, "beta", 4),
+        3,
+        "runtime map string access returns assigned value");
+
+    int_map = runtime_makemap(&map_int_pair_descriptor, 100, NULL);
+    pair_slot = (test_map_pair*)runtime_mapassign__fast32(&map_int_pair_descriptor, int_map, 7);
+    pair_slot->label.str = "seven";
+    pair_slot->label.len = 5;
+    pair_slot->count = 7;
+    pair_slot = (test_map_pair*)runtime_mapassign__fast32(&map_int_pair_descriptor, int_map, 9);
+    pair_slot->label.str = "nine";
+    pair_slot->label.len = 4;
+    pair_slot->count = 9;
+
+    present_pair = runtime_mapaccess2__fast32(&map_int_pair_descriptor, int_map, 7);
+    expect_true(present_pair.ok, "runtime map int access finds assigned value");
+    expect_go_string(((test_map_pair*)present_pair.value)->label, "seven", 5, "runtime map int access preserves string field");
+    expect_intptr_eq(((test_map_pair*)present_pair.value)->count, 7, "runtime map int access preserves int field");
+    expect_intptr_eq(
+        ((test_map_pair*)runtime_mapaccess1__fast32(&map_int_pair_descriptor, int_map, 9))->count,
+        9,
+        "runtime map int fast access returns assigned value");
+
+    runtime_mapdelete__fast32(&map_int_pair_descriptor, int_map, 9);
+    missing_pair = runtime_mapaccess2__fast32(&map_int_pair_descriptor, int_map, 9);
+    expect_false(missing_pair.ok, "runtime map int delete clears comma-ok hit");
+
+    iterator.key = NULL;
+    iterator.value = NULL;
+    iterator.state = NULL;
+    runtime_mapiterinit(&map_int_pair_descriptor, int_map, &iterator);
+    sum = 0;
+    saw_seven = false;
+    while (iterator.key != NULL && iterator.value != NULL) {
+        uint32_t key = *(uint32_t*)iterator.key;
+        test_map_pair* value = (test_map_pair*)iterator.value;
+        sum += (intptr_t)key + value->count;
+        if (key == 7 && value->count == 7 && cstring_equals_len(value->label.str, "seven", 5)) {
+            saw_seven = true;
+        }
+        runtime_mapiternext(&iterator);
+    }
+    expect_true(saw_seven, "runtime map range exposes surviving entry");
+    expect_intptr_eq(sum, 14, "runtime map range sums surviving entry");
+}
+
 #if UINTPTR_MAX == 0xFFFFFFFFu
 typedef struct {
     uint32_t name;
@@ -681,6 +852,7 @@ int main(void) {
     test_arrays_and_barriers();
     test_empty_interface_paths();
     test_interface_paths();
+    test_map_paths();
 #if UINTPTR_MAX == 0xFFFFFFFFu
     test_kos_dll_helpers();
 #endif

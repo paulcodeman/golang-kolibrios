@@ -25,7 +25,7 @@ const (
 	diagWindowX      = 210
 	diagWindowY      = 90
 	diagWindowWidth  = 820
-	diagWindowHeight = 420
+	diagWindowHeight = 580
 
 	diagReportPath     = "/FD/1/GODIAG.TXT"
 	diagProbePath      = "/FD/1/GODIAG.TMP"
@@ -90,7 +90,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 364)
+	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 524)
 	refresh.Width = 116
 
 	app := App{
@@ -131,7 +131,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(diagButtonExit, "Exit", 170, 364)
+	exit := ui.NewButton(diagButtonExit, "Exit", 170, 524)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -199,6 +199,7 @@ func runDiagnostics() snapshot {
 		checkClock(),
 		checkStrings(),
 		checkSlices(),
+		checkMaps(),
 		checkInterfaces(),
 		checkAssertions(),
 		checkErrors(),
@@ -377,6 +378,69 @@ func checkSlices() checkResult {
 	}
 }
 
+func checkMaps() checkResult {
+	small := make(map[string]int)
+	small["alpha"] = 1
+	small["beta"] = small["alpha"] + 2
+	delete(small, "alpha")
+	if _, ok := small["alpha"]; ok {
+		return checkResult{
+			label:  "maps",
+			ok:     false,
+			detail: "string delete left comma-ok hit",
+		}
+	}
+	if small["beta"] != 3 {
+		return checkResult{
+			label:  "maps",
+			ok:     false,
+			detail: "string map lost assigned value",
+		}
+	}
+
+	hinted := make(map[int]diagMapPair, 100)
+	hinted[7] = diagMapPair{label: "seven", count: 7}
+	hinted[9] = diagMapPair{label: "nine", count: 9}
+	pair, ok := hinted[7]
+	if !ok || pair.label != "seven" || pair.count != 7 {
+		return checkResult{
+			label:  "maps",
+			ok:     false,
+			detail: "int lookup lost struct value",
+		}
+	}
+	delete(hinted, 9)
+	if _, ok := hinted[9]; ok {
+		return checkResult{
+			label:  "maps",
+			ok:     false,
+			detail: "int delete left comma-ok hit",
+		}
+	}
+
+	sum := 0
+	seenSeven := false
+	for key, value := range hinted {
+		sum += key + value.count
+		if key == 7 && value.label == "seven" {
+			seenSeven = true
+		}
+	}
+	if !seenSeven || sum != 14 {
+		return checkResult{
+			label:  "maps",
+			ok:     false,
+			detail: "range lost surviving entry",
+		}
+	}
+
+	return checkResult{
+		label:  "maps",
+		ok:     true,
+		detail: "string int delete comma-ok range",
+	}
+}
+
 type sourceText interface {
 	Text() string
 }
@@ -416,6 +480,11 @@ type fmtBufferWriter struct {
 func (writer *fmtBufferWriter) Write(data []byte) (int, error) {
 	writer.data = append(writer.data, data...)
 	return len(data), nil
+}
+
+type diagMapPair struct {
+	label string
+	count int
 }
 
 func checkInterfaces() checkResult {

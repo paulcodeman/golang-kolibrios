@@ -14,6 +14,13 @@ The current runtime glue in `abi/runtime_gccgo.c` provides these key helpers:
 - allocation: `runtime.newobject`, `runtime.makeslice`, `runtime.growslice`
 - byte and string helpers: `runtime.concatstrings`, `runtime.strequal`,
   `runtime.slicebytetostring`, `runtime.stringtoslicebyte`
+- narrow map helpers: `runtime.makemap`, `runtime.makemap__small`,
+  `runtime.mapassign__fast32`, `runtime.mapassign__faststr`,
+  `runtime.mapaccess1__fast32`, `runtime.mapaccess1__faststr`,
+  `runtime.mapaccess2__fast32`, `runtime.mapaccess2__faststr`,
+  `runtime.mapdelete__fast32`, `runtime.mapdelete__faststr`,
+  `runtime.mapiterinit`, `runtime.mapiternext`,
+  `runtime.memhash32..f`, `runtime.strhash..f`
 - interface helpers: `runtime.efaceeq`, `runtime.ifaceeq`,
   `runtime.interequal`, `runtime.assertitab`, `runtime.ifaceE2I2`,
   `runtime.ifaceE2T2`, `runtime.ifaceI2I2`, `runtime.nilinterequal`
@@ -61,6 +68,22 @@ The current helper surface is based on local `gccgo -m32` probe builds.
   `InterfaceAssert runtime.ifaceI2I2(Type *targetInterface, IMT *sourceMethods, void *sourceData)`
 - `runtime.nilinterequal` is currently treated as
   `bool runtime.nilinterequal(Eface *left, Eface *right)`
+- `runtime.makemap__small` is currently treated as
+  `void *runtime.makemap__small(void)`
+- `runtime.makemap` is currently treated as
+  `void *runtime.makemap(Type *mapType, int hint, void *prealloc)`
+- `runtime.mapassign__fast32` is currently treated as
+  `void *runtime.mapassign__fast32(Type *mapType, void *map, uint32 key)`
+- `runtime.mapassign__faststr` is currently treated as
+  `void *runtime.mapassign__faststr(Type *mapType, void *map, const char *keyPtr, int keyLen)`
+- `runtime.mapaccess1__fast32` and `runtime.mapaccess1__faststr` currently
+  return a pointer to the stored value or to a zero-value cell
+- `runtime.mapaccess2__fast32` and `runtime.mapaccess2__faststr` currently use
+  aggregate-return ABI as `{ void *value; bool ok; }`
+- `runtime.mapdelete__fast32` and `runtime.mapdelete__faststr` currently
+  remove entries for the validated key paths
+- `runtime.mapiterinit` / `runtime.mapiternext` currently drive `range` by
+  populating compiler-owned iterator slots for key/value pointers
 - `memmove` must exist as a plain symbol because `gccgo` may emit direct calls
   to `memmove`, not only to `runtime.memmove`
 - `runtime.*..f` equality references are function-descriptor data symbols, not
@@ -113,13 +136,19 @@ Validated by current samples:
   - `for`
   - `switch`
   - methods on structs
+- narrow maps
+  - `make(map[string]T)` and `make(map[string]T, hint)`
+  - `make(map[int]T)` and `make(map[int]T, hint)`
+  - assignment, lookup, comma-ok lookup, delete
+  - `range` over the validated `string` and `int` key paths
 
 Sample coverage:
 
 - `examples/runtime` validates string equality/concatenation, fixed-array
   equality and value-copy, byte-slice growth and conversion, non-empty
   interface dispatch/equality, empty interface equality, assertions, comma-ok
-  assertions, and a simple type switch inside one interactive KolibriOS app
+  assertions, narrow `map[string]int` / `map[int]struct` paths, and a simple
+  type switch inside one interactive KolibriOS app
 - `examples/ipc` validates that a small real app can stay within the current
   runtime envelope while using the syscall/UI layers
 - `tests/smokeapp` validates a headless runtime subset under the emulator smoke
@@ -145,10 +174,13 @@ Focused runtime check coverage:
 - `tests/runtime/type_switch.go` validates the emitted type-switch symbol path
 - `tests/runtime/gcbarrier.go` validates the emitted heap-allocation plus
   pointer-write barrier symbol path for the current malloc-based runtime
+- `tests/runtime/maps.go` validates the emitted `make`, assign, lookup,
+  comma-ok, delete, and `range` symbol paths for the validated
+  `map[string]T` and `map[int]T` fast paths
 - `tests/runtime/behavior.c` validates host-side runtime behavior for
   allocation, fixed-array equality helpers, byte-slice helpers,
-  write-barrier stubs, empty-interface equality, and the validated interface
-  assertion/dispatch helpers
+  write-barrier stubs, empty-interface equality, the validated interface
+  assertion/dispatch helpers, and narrow map assign/access/delete/range helpers
 - `scripts/check-runtime-probes.sh` compiles these probes and checks that
   `abi/runtime_gccgo.c` exports the required symbol set
 - `scripts/check-runtime-behavior.sh` compiles and runs the host-side behavior
@@ -161,7 +193,7 @@ Focused runtime check coverage:
 These features are not yet a supported part of the bootstrap contract:
 
 - general slice growth beyond the validated bootstrap byte-slice paths
-- maps
+- general map support beyond the validated `string`/`int` key fast paths
 - general type assertions and type switches beyond the validated concrete and
   interface assertion paths
 - general interface conversions beyond the validated assertion and equality

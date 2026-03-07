@@ -14,7 +14,7 @@ const (
 	runtimeCheckWindowX      = 280
 	runtimeCheckWindowY      = 180
 	runtimeCheckWindowWidth  = 720
-	runtimeCheckWindowHeight = 284
+	runtimeCheckWindowHeight = 308
 	runtimeCheckWindowTitle  = "KolibriOS Runtime Demo"
 )
 
@@ -50,11 +50,17 @@ func (value bridgeText) Text() string {
 	return value.text
 }
 
+type runtimeMapPair struct {
+	label string
+	count int
+}
+
 type App struct {
 	enabled        bool
 	stringsOK      bool
 	arraysOK       bool
 	slicesOK       bool
+	mapsOK         bool
 	ifaceOK        bool
 	emptyIfaceOK   bool
 	assertionsOK   bool
@@ -62,6 +68,7 @@ type App struct {
 	stringsLine    string
 	arraysLine     string
 	slicesLine     string
+	mapsLine       string
 	ifaceLine      string
 	emptyIfaceLine string
 	assertionsLine string
@@ -69,7 +76,7 @@ type App struct {
 }
 
 func NewApp() App {
-	recheck := ui.NewButton(runtimeCheckButtonRecheck, "Recheck", 28, 230)
+	recheck := ui.NewButton(runtimeCheckButtonRecheck, "Recheck", 28, 250)
 	recheck.Width = 132
 
 	app := App{
@@ -108,7 +115,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(runtimeCheckButtonExit, "Exit", 182, 230)
+	exit := ui.NewButton(runtimeCheckButtonExit, "Exit", 182, 250)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -118,9 +125,10 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 104, app.statusColor(app.stringsOK), app.stringsLine)
 	kos.DrawText(28, 124, app.statusColor(app.arraysOK), app.arraysLine)
 	kos.DrawText(28, 144, app.statusColor(app.slicesOK), app.slicesLine)
-	kos.DrawText(28, 164, app.statusColor(app.ifaceOK), app.ifaceLine)
-	kos.DrawText(28, 184, app.statusColor(app.emptyIfaceOK), app.emptyIfaceLine)
-	kos.DrawText(28, 204, app.statusColor(app.assertionsOK), app.assertionsLine)
+	kos.DrawText(28, 164, app.statusColor(app.mapsOK), app.mapsLine)
+	kos.DrawText(28, 184, app.statusColor(app.ifaceOK), app.ifaceLine)
+	kos.DrawText(28, 204, app.statusColor(app.emptyIfaceOK), app.emptyIfaceLine)
+	kos.DrawText(28, 224, app.statusColor(app.assertionsOK), app.assertionsLine)
 	app.recheck.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -130,6 +138,7 @@ func (app *App) runChecks() {
 	app.stringsOK, app.stringsLine = checkStrings(app.enabled)
 	app.arraysOK, app.arraysLine = checkArrays(app.enabled)
 	app.slicesOK, app.slicesLine = checkSlices(app.enabled)
+	app.mapsOK, app.mapsLine = checkMaps(app.enabled)
 	app.ifaceOK, app.ifaceLine = checkInterfaces(app.enabled)
 	app.emptyIfaceOK, app.emptyIfaceLine = checkEmptyInterface(app.enabled)
 	app.assertionsOK, app.assertionsLine = checkAssertions(app.enabled)
@@ -154,6 +163,7 @@ func (app *App) allOK() bool {
 	return app.stringsOK &&
 		app.arraysOK &&
 		app.slicesOK &&
+		app.mapsOK &&
 		app.ifaceOK &&
 		app.emptyIfaceOK &&
 		app.assertionsOK
@@ -232,6 +242,51 @@ func checkSlices(enabled bool) (bool, string) {
 	}
 
 	return false, "slices : FAIL / copy or growth mismatch"
+}
+
+func checkMaps(enabled bool) (bool, string) {
+	small := make(map[string]int)
+	small["alpha"] = 1
+	if enabled {
+		small["beta"] = small["alpha"] + 2
+	} else {
+		small["beta"] = small["alpha"] + 4
+	}
+	delete(small, "alpha")
+	if _, ok := small["alpha"]; ok {
+		return false, "maps   : FAIL / string delete left comma-ok hit"
+	}
+
+	hinted := make(map[int]runtimeMapPair, 100)
+	hinted[7] = runtimeMapPair{label: "seven", count: 7}
+	deleteValue := runtimeMapPair{label: "nine", count: 9}
+	if !enabled {
+		deleteValue = runtimeMapPair{label: "nine", count: 11}
+	}
+	hinted[9] = deleteValue
+	delete(hinted, 9)
+	if _, ok := hinted[9]; ok {
+		return false, "maps   : FAIL / int delete left comma-ok hit"
+	}
+
+	sum := 0
+	seenSeven := false
+	for key, value := range hinted {
+		sum += key + value.count
+		if key == 7 && value.label == "seven" {
+			seenSeven = true
+		}
+	}
+
+	expected := 17
+	if !enabled {
+		expected = 19
+	}
+	if small["beta"] == expected-14 && seenSeven && sum == 14 {
+		return true, "maps   : PASS / string int delete range"
+	}
+
+	return false, "maps   : FAIL / assign lookup or range mismatch"
 }
 
 func checkInterfaces(enabled bool) (bool, string) {
