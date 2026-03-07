@@ -110,8 +110,9 @@ This lets the bootstrap build precompile additional shared packages before the
 app object itself, instead of hardcoding only `kos` and `ui`.
 
 For ordinary import paths such as `import "errors"`, the current bootstrap shim
-package lives in a same-named repository-root directory and is exposed through
-the shared `-I$(ROOT)` include path.
+sources live under `stdlib/<package>`. Their compiled export data is still
+exposed through the shared `-I$(ROOT)` include path, so apps keep the ordinary
+Go import path even though the repository layout is now cleaner.
 
 Current example:
 

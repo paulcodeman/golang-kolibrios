@@ -30,15 +30,12 @@ The project is still in prototype stage. Right now the practical path is
 
 - `abi/` - syscall assembly stubs and runtime glue used during linking
 - `apps/` - fuller KolibriOS utilities built on the same bootstrap SDK
-- `bytes/` - bootstrap-compatible `bytes` package shim for common byte-slice helpers
 - `docs/` - bootstrap and build documentation
-- `errors/` - bootstrap-compatible `errors` package shim for ordinary Go imports
 - `examples/` - curated public KolibriOS demo applications
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
-- `path/` - bootstrap-compatible `path` package shim for slash-based path logic
 - `scripts/` - helper scripts for supported host environments
-- `strings/` - bootstrap-compatible `strings` package shim for common string helpers
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, and `bytes`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -147,6 +144,9 @@ New applications can be scaffolded from `templates/basic-app` via
 `scripts/new-app.sh` into `examples/<name>`.
 The shared app makefile now accepts an ordered `PACKAGE_DIRS` list so bootstrap
 apps can precompile additional shared packages beyond `kos` and `ui`.
+Shim sources for ordinary stdlib imports now live under `stdlib/<name>`, while
+their compiled export data is still exposed through the repository-root include
+path so existing `import "errors"` / `import "path"` style code keeps working.
 The first emulator-backed smoke path is available through
 `scripts/check-emulator-smoke.sh`; it boots a pruned temporary copy of the
 official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with

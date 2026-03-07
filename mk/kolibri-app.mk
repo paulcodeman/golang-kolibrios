@@ -2,6 +2,7 @@ PROGRAM ?= app
 PACKAGE_NAME ?= $(PROGRAM)
 ROOT ?= ../..
 ROOT_ABS := $(abspath $(ROOT))
+STDLIB_DIR_ABS := $(ROOT_ABS)/stdlib
 
 ABI_DIR = $(ROOT)/abi
 MK_DIR = $(ROOT)/mk
@@ -30,11 +31,15 @@ PACKAGE_GOXS =
 PREVIOUS_PACKAGE_GOXS =
 
 define REGISTER_PACKAGE
+PACKAGE_SOURCE_DIR_$(1) := $(if $(wildcard $(ROOT_ABS)/$(1)),$(ROOT_ABS)/$(1),$(if $(wildcard $(STDLIB_DIR_ABS)/$(1)),$(STDLIB_DIR_ABS)/$(1),$(error package source dir not found for $(1))))
+PACKAGE_SOURCES_$(1) := $$(wildcard $$(PACKAGE_SOURCE_DIR_$(1))/*.go)
+PACKAGE_SOURCE_FILES_$(1) := $$(notdir $$(PACKAGE_SOURCES_$(1)))
+
 PACKAGE_OBJS += $(ROOT)/$(1).gccgo.o
 PACKAGE_GOXS += $(ROOT)/$(1).gox
 
-$(ROOT)/$(1).gccgo.o: $(wildcard $(ROOT_ABS)/$(1)/*.go) $(PREVIOUS_PACKAGE_GOXS)
-	cd $(ROOT_ABS)/$(1) && $(GO) $(GO_COMPILER_FLAGS) -o $(ROOT_ABS)/$(1).gccgo.o $(notdir $(wildcard $(ROOT_ABS)/$(1)/*.go))
+$(ROOT)/$(1).gccgo.o: $$(PACKAGE_SOURCES_$(1)) $(PREVIOUS_PACKAGE_GOXS)
+	cd $$(PACKAGE_SOURCE_DIR_$(1)) && $(GO) $(GO_COMPILER_FLAGS) -o $(ROOT_ABS)/$(1).gccgo.o $$(PACKAGE_SOURCE_FILES_$(1))
 
 $(ROOT)/$(1).gox: $(ROOT)/$(1).gccgo.o
 	$(OBJCOPY) -j .go_export $$< $$@

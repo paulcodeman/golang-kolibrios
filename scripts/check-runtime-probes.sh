@@ -56,11 +56,31 @@ compile_probe() {
 
 compile_package() {
   local package_name=$1
+  local source_dir
+
+  source_dir=$(package_source_dir "$package_name")
 
   gccgo "${gccgo_flags[@]}" \
     -I"$repo_root" \
     -o "$tmp_dir/$package_name.gccgo.o" \
-    "$repo_root/$package_name"/*.go
+    "$source_dir"/*.go
+}
+
+package_source_dir() {
+  local package_name=$1
+
+  if [[ -d "$repo_root/$package_name" ]]; then
+    printf '%s\n' "$repo_root/$package_name"
+    return
+  fi
+
+  if [[ -d "$repo_root/stdlib/$package_name" ]]; then
+    printf '%s\n' "$repo_root/stdlib/$package_name"
+    return
+  fi
+
+  printf 'package source dir not found: %s\n' "$package_name" >&2
+  exit 1
 }
 
 probe_unresolved_symbols() {

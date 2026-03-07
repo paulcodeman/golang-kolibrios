@@ -164,6 +164,9 @@ successful build.
 - Shared bootstrap build logic now lives in `mk/kolibri-app.mk`.
 - `mk/kolibri-app.mk` now accepts an ordered `PACKAGE_DIRS` list so apps can
   precompile extra shared packages before the final app object.
+- Bootstrap stdlib shim sources now live under `stdlib/`, while the compiled
+  `.gox` export data remains available through the repository-root include path
+  for ordinary imports such as `import "errors"` and `import "bytes"`.
 - New applications can be scaffolded from `templates/basic-app` via
   `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.
