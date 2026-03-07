@@ -21,12 +21,13 @@ func Unwrap(err error) error {
 		return nil
 	}
 
-	value, ok := err.(unwrapper)
+	var value interface{} = err
+	unwrapped, ok := value.(unwrapper)
 	if !ok {
 		return nil
 	}
 
-	return value.Unwrap()
+	return unwrapped.Unwrap()
 }
 
 func Is(err error, target error) bool {

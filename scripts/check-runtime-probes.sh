@@ -183,6 +183,14 @@ main() {
     "runtime.memequal32..f" \
     "runtime.strequal..f"
 
+  compile_probe "errors_unwrap"
+  probe_symbols=$(probe_unresolved_symbols "errors_unwrap")
+  require_list_symbols "errors_unwrap probe" "$probe_symbols" \
+    "runtime.ifaceE2I2" \
+    "runtime.interequal..f" \
+    "runtime.memequal32..f" \
+    "runtime.strequal..f"
+
   compile_probe "type_switch"
   probe_symbols=$(probe_unresolved_symbols "type_switch")
   require_list_symbols "type_switch probe" "$probe_symbols" \
