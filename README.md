@@ -20,7 +20,7 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, and `bytes` shims plus compatibility samples that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, and `io` shims plus compatibility samples that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
 - `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that prefers debug-console report capture and falls back to `/FD/1/GODIAG.TXT`
@@ -132,6 +132,7 @@ Output:
 - `examples/path/path.kex`
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
+- `examples/io/io.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 The current `Makefile` removes intermediate `.o` and `.gox` files after a
@@ -189,6 +190,7 @@ Main sources:
 - `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample
 - `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
+- `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
 - `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 

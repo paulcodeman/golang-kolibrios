@@ -56,14 +56,36 @@ compile_probe() {
 
 compile_package() {
   local package_name=$1
+  shift
+  local source_dir
+  local include_dirs=("-I$repo_root")
+  local dependency
+
+  source_dir=$(package_source_dir "$package_name")
+
+  for dependency in "$@"; do
+    compile_package_export "$dependency"
+    include_dirs+=("-I$tmp_dir")
+  done
+
+  gccgo "${gccgo_flags[@]}" \
+    "${include_dirs[@]}" \
+    -o "$tmp_dir/$package_name.gccgo.o" \
+    "$source_dir"/*.go
+}
+
+compile_package_export() {
+  local package_name=$1
   local source_dir
 
   source_dir=$(package_source_dir "$package_name")
 
   gccgo "${gccgo_flags[@]}" \
     -I"$repo_root" \
-    -o "$tmp_dir/$package_name.gccgo.o" \
+    -o "$tmp_dir/$package_name.export.o" \
     "$source_dir"/*.go
+
+  objcopy -j .go_export "$tmp_dir/$package_name.export.o" "$tmp_dir/$package_name.gox"
 }
 
 package_source_dir() {
@@ -86,13 +108,13 @@ package_source_dir() {
 probe_unresolved_symbols() {
   local probe_name=$1
 
-  nm -u "$tmp_dir/$probe_name.o" | awk '{print $2}' | sort -u
+  nm -u "$tmp_dir/$probe_name.o" | sed -E 's/^[[:space:]]*U[[:space:]]+//' | sort -u
 }
 
 package_unresolved_symbols() {
   local package_name=$1
 
-  nm -u "$tmp_dir/$package_name.gccgo.o" | awk '{print $2}' | sort -u
+  nm -u "$tmp_dir/$package_name.gccgo.o" | sed -E 's/^[[:space:]]*U[[:space:]]+//' | sort -u
 }
 
 require_list_symbols() {
@@ -185,6 +207,27 @@ main() {
     "runtime.memequal32..f" \
     "runtime.memequal8..f" \
     "runtime.newobject"
+
+  compile_package "io"
+  probe_symbols=$(package_unresolved_symbols "io")
+  require_list_symbols "io package" "$probe_symbols" \
+    "memcmp" \
+    "memmove" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicSliceAcap" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.ifacevaleq" \
+    "runtime.interequal..f" \
+    "runtime.makeslice" \
+    "runtime.memequal32..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.registerGCRoots" \
+    "runtime.strequal..f" \
+    "runtime.stringtoslicebyte" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
 
   compile_probe "arrays"
   probe_symbols=$(probe_unresolved_symbols "arrays")

@@ -226,9 +226,15 @@ Current bootstrap status:
   `bytes.Join`, `bytes.TrimPrefix`, and `bytes.TrimSuffix` is now in place.
 - `examples/bytes` is the fourth compatibility sample, using ordinary
   `import "bytes"`.
+- Local support for `io.Reader`, `io.Writer`, `io.Closer`, `io.ReadWriter`,
+  `io.ReadCloser`, `io.WriteCloser`, `io.EOF`, `io.ErrShortWrite`,
+  `io.ReadAll`, `io.Copy`, `io.CopyBuffer`, and `io.WriteString` is now in
+  place.
+- `examples/io` is the fifth compatibility sample, using ordinary
+  `import "io"`.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
-- Broader package coverage (`io`, `time`, `os`, `syscall`)
+- Broader package coverage (`time`, `os`, `syscall`)
   remains pending.
 
 ## Phase 6 - Port the Native Go Toolchain

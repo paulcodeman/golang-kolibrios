@@ -97,6 +97,7 @@ Successful build output:
 - `examples/path/path.kex`
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
+- `examples/io/io.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -149,6 +150,9 @@ successful build.
 - `examples/bytes` - implemented
   - bootstrap-compatible `import "bytes"` sample with `Join`, `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `IndexByte`, `Cut`, `TrimPrefix`, and `TrimSuffix`
   - byte-slice helper checks tied to a real KolibriOS file path and current-folder probe
+- `examples/io` - implemented
+  - bootstrap-compatible `import "io"` sample with `Reader`, `Writer`, `ReadAll`, `Copy`, and `WriteString`
+  - chunked stream checks tied to a real KolibriOS file path and current-folder probe
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
   - runtime, file, and system probes in one reusable tool
