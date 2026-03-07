@@ -56,6 +56,8 @@ packed arguments, and return conventions.
 | `63` | `kos.DebugOutHex`, `kos.DebugOutChar`, `kos.DebugOutStr` | `kos.DebugHex`, `kos.DebugChar`, `kos.DebugString` | Debug board helpers |
 | `68.12` | `malloc` | runtime-only | Lazy heap init via `68.11` |
 | `68.13` | `free` | runtime-only | Lazy heap init via `68.11` |
+| `68.18` | `kos.LoadDLLWithEncoding` | `kos.LoadDLLFileWithEncoding`, `kos.LoadDLLFile`, `kos.LoadConsoleDLL` | Returns a DLL export-table pointer, not a closeable handle |
+| `68.19` | `kos.LoadDLL` | `kos.LoadDLLFileLegacy` | Legacy/default path contract |
 | `68.20` | `realloc` | runtime-only | Lazy heap init via `68.11` |
 | `70` | `kos.FileSystem` | - | Raw long-name file system interface |
 | `71.1` | `kos.SetCaptionWithPrefix` | `kos.SetWindowTitleWithEncodingPrefix` | Uses the caption-prefix encoding contract |

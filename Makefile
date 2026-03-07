@@ -1,8 +1,8 @@
-.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path strings bytes io os diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes clean-io clean-os clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-diag rebuild-smokeapp rebuild-all
+.PHONY: all examples apps check-runtime check-runtime-probes check-runtime-behavior check-app-template check-emulator-smoke check-diagnostics window runtime time system input ipc files path strings bytes io os fmt diag smokeapp clean clean-examples clean-apps clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes clean-io clean-os clean-fmt clean-diag clean-smokeapp rebuild-window rebuild-runtime rebuild-time rebuild-system rebuild-input rebuild-ipc rebuild-files rebuild-path rebuild-strings rebuild-bytes rebuild-io rebuild-os rebuild-fmt rebuild-diag rebuild-smokeapp rebuild-all
 
 all: examples apps smokeapp
 
-examples: window runtime time system input ipc files path strings bytes io os
+examples: window runtime time system input ipc files path strings bytes io os fmt
 
 apps: diag
 
@@ -59,6 +59,9 @@ io:
 os:
 	$(MAKE) -C examples/os all
 
+fmt:
+	$(MAKE) -C examples/fmt all
+
 diag:
 	$(MAKE) -C apps/diag all
 
@@ -67,7 +70,7 @@ smokeapp:
 
 clean: clean-examples clean-apps clean-smokeapp
 
-clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes clean-io clean-os
+clean-examples: clean-window clean-runtime clean-time clean-system clean-input clean-ipc clean-files clean-path clean-strings clean-bytes clean-io clean-os clean-fmt
 
 clean-apps: clean-diag
 
@@ -106,6 +109,9 @@ clean-io:
 
 clean-os:
 	$(MAKE) -C examples/os clean
+
+clean-fmt:
+	$(MAKE) -C examples/fmt clean
 
 clean-diag:
 	$(MAKE) -C apps/diag clean
@@ -148,6 +154,9 @@ rebuild-io:
 
 rebuild-os:
 	$(MAKE) -C examples/os clean all
+
+rebuild-fmt:
+	$(MAKE) -C examples/fmt clean all
 
 rebuild-diag:
 	$(MAKE) -C apps/diag clean all

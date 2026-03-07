@@ -38,6 +38,8 @@ global go_0kos.GetKernelVersion
 global go_0kos.SystemShutdown
 global go_0kos.GetFreeRAM
 global go_0kos.GetTotalRAM
+global go_0kos.LoadDLLWithEncoding
+global go_0kos.LoadDLL
 global go_0kos.GetCurrentFolderRaw
 global go_0kos.SetCaption
 global go_0kos.SetCaptionWithPrefix
@@ -500,6 +502,39 @@ go_0kos.GetTotalRAM:
     mov ebx, 17
     int 0x40
     pop ebx
+    ret
+
+go_0kos.LoadDLLWithEncoding:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+16]
+    push dword [ebp+12]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov edx, [ebp+8]
+    mov eax, 68
+    mov ebx, 18
+    int 0x40
+    pop ebx
+    pop ebp
+    ret
+
+go_0kos.LoadDLL:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push dword [ebp+12]
+    push dword [ebp+8]
+    call runtime_prepare_window_title
+    add esp, 8
+    mov ecx, eax
+    mov eax, 68
+    mov ebx, 19
+    int 0x40
+    pop ebx
+    pop ebp
     ret
 
 go_0kos.GetCurrentFolderRaw:

@@ -262,6 +262,42 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "fmt" "errors" "io"
+  probe_symbols=$(package_unresolved_symbols "fmt")
+  require_list_symbols "fmt package" "$probe_symbols" \
+    "go_0errors.New" \
+    "go_0io.ErrShortWrite" \
+    "go_0io.WriteString" \
+    "go_0io.Writer..d" \
+    "go_0io.ioError..p" \
+    "go_0io.ioError.Error" \
+    "memcmp" \
+    "memmove" \
+    "runtime.concatstrings" \
+    "runtime.gcWriteBarrier" \
+    "runtime.goPanicIndex" \
+    "runtime.goPanicIndexU" \
+    "runtime.goPanicSliceAlen" \
+    "runtime.goPanicSliceB" \
+    "runtime.growslice" \
+    "runtime.ifaceE2I2" \
+    "runtime.ifaceeq" \
+    "runtime.interequal..f" \
+    "runtime.memequal" \
+    "runtime.memequal16..f" \
+    "runtime.memequal32..f" \
+    "runtime.memequal64..f" \
+    "runtime.memequal8..f" \
+    "runtime.newobject" \
+    "runtime.nilinterequal..f" \
+    "runtime.panicdottype" \
+    "runtime.registerGCRoots" \
+    "runtime.slicebytetostring" \
+    "runtime.strequal..f" \
+    "runtime.stringtoslicebyte" \
+    "runtime.typedmemmove" \
+    "runtime.writeBarrier"
+
   compile_probe "arrays"
   probe_symbols=$(probe_unresolved_symbols "arrays")
   require_list_symbols "arrays probe" "$probe_symbols" \

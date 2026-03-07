@@ -99,6 +99,7 @@ Successful build output:
 - `examples/bytes/bytes.kex`
 - `examples/io/io.kex`
 - `examples/os/os.kex`
+- `examples/fmt/fmt.kex`
 - `tests/smokeapp/smokeapp.kex`
 
 Intermediate `.o`, `.gox`, and generated linker files are deleted after a
@@ -157,9 +158,12 @@ successful build.
 - `examples/os` - implemented
   - bootstrap-compatible `import "os"` sample with `Getwd`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, and `Remove`
   - file lifecycle checks against a real writable KolibriOS path with append, rename, and cleanup validation
+- `examples/fmt` - implemented
+  - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, and `Errorf`
+  - formatted text checks tied to a real KolibriOS file path and current-folder probe
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `os`, and system probes in one reusable tool
+  - runtime, file, narrow `os`, `fmt`, DLL-load, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

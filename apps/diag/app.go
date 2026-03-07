@@ -2,6 +2,7 @@ package diagapp
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -17,7 +18,7 @@ const (
 	diagWindowX      = 210
 	diagWindowY      = 90
 	diagWindowWidth  = 820
-	diagWindowHeight = 366
+	diagWindowHeight = 392
 
 	diagReportPath     = "/FD/1/GODIAG.TXT"
 	diagProbePath      = "/FD/1/GODIAG.TMP"
@@ -98,7 +99,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 310)
+	refresh := ui.NewButton(diagButtonRefresh, "Refresh", 28, 336)
 	refresh.Width = 116
 
 	app := App{
@@ -139,7 +140,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(diagButtonExit, "Exit", 170, 310)
+	exit := ui.NewButton(diagButtonExit, "Exit", 170, 336)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -209,8 +210,10 @@ func runDiagnostics() snapshot {
 		checkInterfaces(),
 		checkAssertions(),
 		checkErrors(),
+		checkFmt(),
 		checkFiles(),
 		checkOS(),
+		checkDLL(),
 		checkSystem(version, screenWidth, screenHeight),
 		checkReportProbe(),
 	}
@@ -389,6 +392,31 @@ func (value diagText) Text() string {
 	return value.text
 }
 
+type fmtLabel struct {
+	text string
+}
+
+func (label fmtLabel) String() string {
+	return label.text
+}
+
+type fmtError struct {
+	text string
+}
+
+func (err fmtError) Error() string {
+	return err.text
+}
+
+type fmtBufferWriter struct {
+	data []byte
+}
+
+func (writer *fmtBufferWriter) Write(data []byte) (int, error) {
+	writer.data = append(writer.data, data...)
+	return len(data), nil
+}
+
 func checkInterfaces() checkResult {
 	var left sourceText = diagText{text: "iface diag"}
 	var right sourceText = diagText{text: "iface diag"}
@@ -475,6 +503,113 @@ func checkErrors() checkResult {
 		label:  "errors",
 		ok:     true,
 		detail: "ordinary import path stable",
+	}
+}
+
+func checkFmt() checkResult {
+	label := fmtLabel{text: "fmt"}
+	if fmt.Sprintf("ok") != "ok" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "literal sprintf mismatch",
+		}
+	}
+	if fmt.Sprintf("%s", "fmt") != "fmt" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%s mismatch",
+		}
+	}
+	if fmt.Sprintf("%v", label) != "fmt" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%v stringer mismatch",
+		}
+	}
+	if fmt.Sprintf("%d", 42) != "42" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%d mismatch",
+		}
+	}
+	if fmt.Sprintf("%x", uint32(0x2A)) != "2a" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%x mismatch",
+		}
+	}
+	if fmt.Sprintf("%t", true) != "true" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%t mismatch",
+		}
+	}
+	if fmt.Sprintf("%%") != "%" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%% mismatch",
+		}
+	}
+	if fmt.Sprintf("%v", fmtError{text: "diag fmt error"}) != "diag fmt error" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "%v error mismatch",
+		}
+	}
+	sprintfText := fmt.Sprintf("%v/%s/%d/%x/%t/%%", label, "ok", 42, uint32(0x2A), true)
+	if sprintfText != "fmt/ok/42/2a/true/%" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Sprintf mismatch",
+		}
+	}
+
+	sprintlnText := fmt.Sprintln(label, "line", true, 7)
+	if sprintlnText != "fmt line true 7\n" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Sprintln mismatch",
+		}
+	}
+
+	writer := &fmtBufferWriter{}
+	written, err := fmt.Fprintf(writer, "cwd=%s / head=%x", kos.CurrentFolder(), []byte{0x4B, 0x50})
+	if err != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Fprintf returned error",
+		}
+	}
+	if string(writer.data) != "cwd="+kos.CurrentFolder()+" / head=4b50" || written != len(writer.data) {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Fprintf mismatch",
+		}
+	}
+
+	if fmt.Errorf("%v error %d", label, 7).Error() != "fmt error 7" {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "Errorf mismatch",
+		}
+	}
+	return checkResult{
+		label:  "fmt",
+		ok:     true,
+		detail: "sprintf fprintf errorf",
 	}
 }
 
@@ -705,6 +840,23 @@ func checkOS() checkResult {
 		label:  "os",
 		ok:     true,
 		detail: "cwd " + base + " / append rename cleanup",
+	}
+}
+
+func checkDLL() checkResult {
+	table := kos.LoadConsoleDLL()
+	if table == 0 {
+		return checkResult{
+			label:  "dll",
+			ok:     false,
+			detail: "load " + kos.ConsoleDLLPath + " failed",
+		}
+	}
+
+	return checkResult{
+		label:  "dll",
+		ok:     true,
+		detail: kos.ConsoleDLLPath + " / export table " + formatHex64(uint64(table)),
 	}
 }
 

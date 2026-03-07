@@ -133,6 +133,33 @@ Current behavior notes:
 - `io.EOF` and `io.ErrShortWrite` are local bootstrap sentinels implemented as
   concrete package values to avoid init-time cross-package calls
 
+### `fmt`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `fmt.Stringer`
+- `fmt.Sprint`
+- `fmt.Sprintln`
+- `fmt.Sprintf`
+- `fmt.Fprint`
+- `fmt.Fprintln`
+- `fmt.Fprintf`
+- `fmt.Errorf`
+
+Current behavior notes:
+
+- current formatting support is intentionally narrow and covers `%s`, `%d`,
+  `%x`, `%X`, `%t`, `%v`, `%c`, and `%%`
+- strings, byte slices, booleans, signed and unsigned integers, `error`, and
+  `fmt.Stringer` values are supported by the current formatter
+- `fmt.Errorf` currently formats through the local bootstrap formatter and then
+  returns `errors.New(...)`; `%w` is rendered like `%v` and does not yet create
+  an unwrap chain
+- width, precision, padding, floating-point formatting, maps, structs, and the
+  broader printing/scanning surface are not implemented yet
+
 ### `os`
 
 Implemented locally in the repository as a bootstrap shim.
@@ -235,6 +262,11 @@ Compatibility samples using ordinary import paths:
   - current-folder lookup through `Getwd`
   - file create, append, read, and copy flow through `Create`, `OpenFile`, `ReadFile`, and `Open`
   - file rename and cleanup flow through `Rename` and `Remove`
+- `examples/fmt`
+  - `import "fmt"`
+  - formatted strings via `Sprintf` and `Sprintln`
+  - writer formatting via `Fprintf`
+  - formatted error construction via `Errorf`
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
 stdlib-shaped path, string, byte-slice, io, os, and error logic now follows ordinary Go package structure

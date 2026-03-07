@@ -238,9 +238,14 @@ Current bootstrap status:
   place.
 - `examples/os` is the sixth compatibility sample, using ordinary
   `import "os"`.
+- Local support for `fmt.Sprint`, `fmt.Sprintln`, `fmt.Sprintf`,
+  `fmt.Fprint`, `fmt.Fprintln`, `fmt.Fprintf`, narrow `%s/%d/%x/%X/%t/%v/%c/%%`
+  formatting, and `fmt.Errorf` is now in place.
+- `examples/fmt` is the seventh compatibility sample, using ordinary
+  `import "fmt"`.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
-- Broader package coverage (`fmt`, `time`, `syscall`)
+- Broader package coverage (`time`, `syscall`)
   remains pending.
 
 ## Phase 6 - Port the Native Go Toolchain

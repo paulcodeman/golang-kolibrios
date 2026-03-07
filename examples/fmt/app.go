@@ -1,0 +1,181 @@
+package fmtdemo
+
+import (
+	"fmt"
+
+	"../../kos"
+	"../../ui"
+)
+
+const (
+	fmtButtonExit    kos.ButtonID = 1
+	fmtButtonRefresh kos.ButtonID = 2
+
+	fmtWindowTitle  = "KolibriOS Fmt Demo"
+	fmtWindowX      = 228
+	fmtWindowY      = 140
+	fmtWindowWidth  = 852
+	fmtWindowHeight = 334
+
+	fmtProbePath    = "/sys/default.skn"
+	fmtPreviewBytes = 12
+)
+
+type probeLabel struct {
+	text string
+}
+
+func (label probeLabel) String() string {
+	return label.text
+}
+
+type bufferWriter struct {
+	data []byte
+}
+
+func (writer *bufferWriter) Write(data []byte) (int, error) {
+	writer.data = append(writer.data, data...)
+	return len(data), nil
+}
+
+type App struct {
+	summary      string
+	sprintfLine  string
+	sprintlnLine string
+	fprintfLine  string
+	errorLine    string
+	infoLine     string
+	ok           bool
+	refreshBtn   ui.Button
+}
+
+func NewApp() App {
+	refresh := ui.NewButton(fmtButtonRefresh, "Refresh", 28, 282)
+	refresh.Width = 116
+
+	app := App{
+		refreshBtn: refresh,
+	}
+	app.refreshProbe()
+	return app
+}
+
+func (app *App) Run() {
+	for {
+		switch kos.WaitEvent() {
+		case kos.EventRedraw:
+			app.Redraw()
+		case kos.EventButton:
+			if app.handleButton(kos.CurrentButtonID()) {
+				return
+			}
+		}
+	}
+}
+
+func (app *App) handleButton(id kos.ButtonID) bool {
+	switch id {
+	case fmtButtonRefresh:
+		app.refreshProbe()
+		app.Redraw()
+	case fmtButtonExit:
+		kos.Exit()
+		return true
+	}
+
+	return false
+}
+
+func (app *App) Redraw() {
+	exit := ui.NewButton(fmtButtonExit, "Exit", 170, 282)
+	exit.Width = 96
+
+	kos.BeginRedraw()
+	kos.OpenWindow(fmtWindowX, fmtWindowY, fmtWindowWidth, fmtWindowHeight, fmtWindowTitle)
+	kos.DrawText(28, 44, app.summaryColor(), app.summary)
+	kos.DrawText(28, 66, ui.Silver, "This sample imports the ordinary fmt package: import \"fmt\"")
+	kos.DrawText(28, 92, ui.Aqua, app.sprintfLine)
+	kos.DrawText(28, 114, ui.Lime, app.sprintlnLine)
+	kos.DrawText(28, 136, ui.Navy, app.fprintfLine)
+	kos.DrawText(28, 158, ui.Maroon, app.errorLine)
+	kos.DrawText(28, 180, ui.Black, app.infoLine)
+	app.refreshBtn.Draw()
+	exit.Draw()
+	kos.EndRedraw()
+}
+
+func (app *App) refreshProbe() {
+	info, status := kos.GetPathInfo(fmtProbePath)
+	if status != kos.FileSystemOK {
+		app.fail("file info unavailable", "Info: "+fmt.Sprintf("%s / status %d", fmtProbePath, uint32(status)))
+		return
+	}
+
+	data, status := kos.ReadAllFile(fmtProbePath)
+	if status != kos.FileSystemOK {
+		app.fail("file read unavailable", "Info: "+fmt.Sprintf("%s / status %d", fmtProbePath, uint32(status)))
+		return
+	}
+	if len(data) > fmtPreviewBytes {
+		data = data[:fmtPreviewBytes]
+	}
+
+	currentFolder := kos.CurrentFolder()
+	label := probeLabel{text: "fmt"}
+
+	sprintfText := fmt.Sprintf("%v/%s/%d/%x/%t/%%", label, "ok", 42, uint32(0x2A), true)
+	printlnText := fmt.Sprintln(label, "line", true, 7)
+	writer := &bufferWriter{}
+	written, writeErr := fmt.Fprintf(writer, "cwd=%s / head=%x / size=%d", currentFolder, data, len(data))
+	formatErr := fmt.Errorf("%v error %d", label, 7)
+
+	app.sprintfLine = "Sprintf: " + sprintfText
+	app.sprintlnLine = "Sprintln: " + trimTrailingNewline(printlnText) + " / newline " + fmt.Sprintf("%t", hasTrailingNewline(printlnText))
+	app.fprintfLine = "Fprintf: wrote " + formatInt(written) + " / " + string(writer.data)
+	app.errorLine = "Errorf: " + formatErr.Error()
+	app.infoLine = fmt.Sprintf("File: %s / size %d / attrs 0x%x / head %x", fmtProbePath, info.Size, uint32(info.Attributes), data)
+
+	expectedSprintf := "fmt/ok/42/2a/true/%"
+	if sprintfText != expectedSprintf {
+		app.fail("Sprintf mismatch", "Info: expected "+expectedSprintf)
+		return
+	}
+
+	expectedSprintln := "fmt line true 7\n"
+	if printlnText != expectedSprintln {
+		app.fail("Sprintln mismatch", "Info: expected "+trimTrailingNewline(expectedSprintln))
+		return
+	}
+
+	expectedFprintf := "cwd=" + currentFolder + " / head=" + formatHexBytes(data) + " / size=" + formatInt(len(data))
+	if writeErr != nil {
+		app.fail("Fprintf returned error", "Info: "+writeErr.Error())
+		return
+	}
+	if written != len(expectedFprintf) || string(writer.data) != expectedFprintf {
+		app.fail("Fprintf mismatch", "Info: expected "+expectedFprintf)
+		return
+	}
+
+	if formatErr.Error() != "fmt error 7" {
+		app.fail("Errorf mismatch", "Info: expected fmt error 7")
+		return
+	}
+
+	app.ok = true
+	app.summary = "fmt probe ok / ordinary import fmt package resolved"
+}
+
+func (app *App) fail(detail string, info string) {
+	app.ok = false
+	app.summary = "fmt probe failed / " + detail
+	app.infoLine = info
+}
+
+func (app *App) summaryColor() kos.Color {
+	if app.ok {
+		return ui.Lime
+	}
+
+	return ui.Red
+}
