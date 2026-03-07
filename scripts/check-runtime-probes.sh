@@ -357,6 +357,14 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
+  compile_package "time" "kos"
+  probe_symbols=$(package_unresolved_symbols "time")
+  require_list_symbols "time package" "$probe_symbols" \
+    "go_0kos.SleepCentiseconds" \
+    "go_0kos.SystemDate" \
+    "go_0kos.SystemTime" \
+    "go_0kos.UptimeNanoseconds"
+
   compile_probe "arrays"
   probe_symbols=$(probe_unresolved_symbols "arrays")
   require_list_symbols "arrays probe" "$probe_symbols" \

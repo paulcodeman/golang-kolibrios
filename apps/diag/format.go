@@ -1,6 +1,10 @@
 package diagapp
 
-import "kos"
+import (
+	"time"
+
+	"kos"
+)
 
 var decimalDigits = [...]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 var hexDigits = [...]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"}
@@ -59,6 +63,39 @@ func formatByte(value byte) string {
 
 func formatClock(value kos.ClockTime) string {
 	return formatByte(value.Hour) + ":" + formatByte(value.Minute) + ":" + formatByte(value.Second)
+}
+
+func formatTwoDigits(value int) string {
+	return decimalDigits[value/10] + decimalDigits[value%10]
+}
+
+func formatFourDigits(value int) string {
+	return formatTwoDigits(value/100) + formatTwoDigits(value%100)
+}
+
+func formatInt64(value int64) string {
+	if value < 0 {
+		return "-" + formatUint32(uint32(-value))
+	}
+
+	return formatUint32(uint32(value))
+}
+
+func formatTimeStamp(value time.Time) string {
+	return formatFourDigits(value.Year()) + "-" +
+		formatTwoDigits(int(value.Month())) + "-" +
+		formatTwoDigits(value.Day()) + " " +
+		formatTwoDigits(value.Hour()) + ":" +
+		formatTwoDigits(value.Minute()) + ":" +
+		formatTwoDigits(value.Second())
+}
+
+func formatDurationMilliseconds(value time.Duration) string {
+	if value < 0 {
+		return "-" + formatDurationMilliseconds(-value)
+	}
+
+	return formatInt(int(value)/int(time.Millisecond)) + " ms"
 }
 
 func formatKernelVersion(value kos.KernelVersionInfo) string {

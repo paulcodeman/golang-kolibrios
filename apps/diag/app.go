@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"syscall"
+	"time"
 
 	"kos"
 	"ui"
@@ -195,6 +196,7 @@ func runDiagnostics() snapshot {
 		checkInterfaces(),
 		checkAssertions(),
 		checkErrors(),
+		checkTime(),
 		checkSyscall(),
 		checkFmt(),
 		checkFiles(),
@@ -492,6 +494,60 @@ func checkErrors() checkResult {
 		label:  "errors",
 		ok:     true,
 		detail: "ordinary import path stable",
+	}
+}
+
+func checkTime() checkResult {
+	const (
+		sleepRequest = 50 * time.Millisecond
+		minimumDelta = 10 * time.Millisecond
+	)
+
+	start := time.Now()
+	time.Sleep(sleepRequest)
+	delta := time.Since(start)
+	now := time.Now()
+
+	if now.Year() < 2000 || now.Year() > 2099 {
+		return checkResult{
+			label:  "time",
+			ok:     false,
+			detail: "year outside bootstrap range",
+		}
+	}
+	if now.Month() < time.January || now.Month() > time.December {
+		return checkResult{
+			label:  "time",
+			ok:     false,
+			detail: "invalid month",
+		}
+	}
+	if now.Day() < 1 || now.Day() > 31 || now.Hour() > 23 || now.Minute() > 59 || now.Second() > 59 {
+		return checkResult{
+			label:  "time",
+			ok:     false,
+			detail: "invalid wall clock fields",
+		}
+	}
+	if !time.Unix(now.Unix(), int64(now.Nanosecond())).Equal(now) {
+		return checkResult{
+			label:  "time",
+			ok:     false,
+			detail: "unix roundtrip mismatch",
+		}
+	}
+	if delta < minimumDelta {
+		return checkResult{
+			label:  "time",
+			ok:     false,
+			detail: "sleep delta too short / " + formatDurationMilliseconds(delta),
+		}
+	}
+
+	return checkResult{
+		label:  "time",
+		ok:     true,
+		detail: formatTimeStamp(now) + " / sleep " + formatDurationMilliseconds(delta),
 	}
 }
 

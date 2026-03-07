@@ -118,10 +118,10 @@ successful build.
   - strings, fixed arrays, slices, interfaces, empty interface equality
   - assertions and type switch in one `.kex`
 - `examples/time` - implemented
-  - system time decode from syscall `3`
-  - uptime counters from `26.9` and `26.10`
-  - timed wait via function `23`
-  - delay probe via function `5`
+  - bootstrap-compatible `import "time"` sample with `Now`, `Unix`, `Sleep`, and `Since`
+  - wall clock assembled from syscalls `29` and `3`
+  - monotonic duration path backed by `26.10`
+  - timed wait and redraw loop still driven by the KolibriOS event layer
 - `examples/system` - implemented, including skin-margin, cursor, keyboard-layout, system-language, skin-switch, and active-window/focus probes
   - kernel version query
   - screen working-area query
@@ -168,7 +168,7 @@ successful build.
   - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, `os.Stat`, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, `time`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, `os.Stat`, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

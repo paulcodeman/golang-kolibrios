@@ -20,11 +20,11 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, and `fmt` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
-- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, and `fmt.Scanln` bootstrap paths, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
+- `apps/diag` provides a reusable KolibriOS diagnostics utility plus a headless QEMU check path that now covers runtime, files, narrow bootstrap `syscall`, `os`, `fmt`, `time`, and real `CONSOLE.OBJ` init/write/exit flows, including `fmt.Print*`, `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, and `time.Since` bootstrap paths, via debug-console report capture with `/FD/1/GODIAG.TXT` fallback
 - `kos` now includes a bootstrap `CONSOLE.OBJ` wrapper built on top of the `68.18/68.19` DLL loader path and export-table lookup
 - a longer-term plan is tracked in `ROADMAP.md`
 
@@ -37,7 +37,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, and `fmt`
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -190,7 +190,7 @@ Main sources:
 
 - `examples/window` - basic window loop, redraw handling, buttons, and primitive drawing
 - `examples/runtime` - integrated runtime smoke panel for strings, fixed arrays, slices, interfaces, empty interfaces, assertions, and type switches
-- `examples/time` - system time, uptime counters, wait timeout, and sleep probe
+- `examples/time` - ordinary `import "time"` compatibility sample for `Now`, `Unix`, `Sleep`, `Since`, wall-clock accessors, and the monotonic uptime-backed duration path
 - `examples/system` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
@@ -202,7 +202,7 @@ Main sources:
 - `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, file create/read/write flows, rename/remove, and narrow `IsNotExist` handling
 - `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
-- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and pipe-backed scanning checks
+- `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and pipe-backed scanning checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset
 
 ## Development Notes

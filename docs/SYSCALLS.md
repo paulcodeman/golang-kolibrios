@@ -12,6 +12,7 @@ packed arguments, and return conventions.
 | `0` | `kos.Window` | `kos.OpenWindow` | Window creation and redraw |
 | `2` | `kos.GetKey` | `kos.ReadKey` | Raw keyboard event decode |
 | `3` | `kos.GetTime` | `kos.SystemTime` | Returns packed BCD time |
+| `29` | `kos.GetDate` | `kos.SystemDate` | Returns packed BCD date with two-digit year |
 | `4` | `kos.WriteText` | `kos.DrawText` | UTF-8 flag is set in the asm stub |
 | `5` | `kos.Sleep` | `kos.SleepCentiseconds`, `kos.SleepMilliseconds`, `kos.SleepSeconds` | Delay in 1/100 second |
 | `8` | `kos.CreateButton` | `kos.DrawButton` | Button definition |

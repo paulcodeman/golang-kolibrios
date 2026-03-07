@@ -9,6 +9,9 @@ func Sleep(uint32)
 // Function 3 - get system time.
 func GetTime() uint32
 
+// Function 29 - get system date.
+func GetDate() uint32
+
 // Function 26, subfunction 9 - get uptime counter in 1/100 second.
 func GetTimeCounter() uint32
 

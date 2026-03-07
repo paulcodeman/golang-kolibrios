@@ -6,6 +6,12 @@ type ClockTime struct {
 	Second byte
 }
 
+type ClockDate struct {
+	Day   byte
+	Month byte
+	Year  byte // syscall 29 returns only the low two digits (00..99).
+}
+
 func SystemTime() ClockTime {
 	value := GetTime()
 
@@ -13,6 +19,16 @@ func SystemTime() ClockTime {
 		Hour:   decodeBCDByte(byte(value)),
 		Minute: decodeBCDByte(byte(value >> 8)),
 		Second: decodeBCDByte(byte(value >> 16)),
+	}
+}
+
+func SystemDate() ClockDate {
+	value := GetDate()
+
+	return ClockDate{
+		Day:   decodeBCDByte(byte(value >> 16)),
+		Month: decodeBCDByte(byte(value >> 8)),
+		Year:  decodeBCDByte(byte(value)),
 	}
 }
 

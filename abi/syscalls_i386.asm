@@ -21,6 +21,7 @@ global go_0kos.Redraw
 global go_0kos.Window
 global go_0kos.WriteText
 global go_0kos.GetTime
+global go_0kos.GetDate
 global go_0kos.GetTimeCounter
 global go_0kos.GetTimeCounterPro
 global go_0kos.GetScreenSize
@@ -286,6 +287,11 @@ go_0kos.DrawBar:
 
 go_0kos.GetTime:
     mov eax, 3
+    int 0x40
+    ret
+
+go_0kos.GetDate:
+    mov eax, 29
     int 0x40
     ret
 

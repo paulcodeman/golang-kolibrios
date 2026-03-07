@@ -249,12 +249,20 @@ Current bootstrap status:
   place.
 - `examples/fmt` is the seventh compatibility sample, using ordinary
   `import "fmt"`.
+- Local support for `time.Duration`, `time.Month`, `time.Time`, `time.Now`,
+  `time.Unix`, `time.Sleep`, `time.Since`, `Time.Add`, `Time.Sub`,
+  `Time.Before`, `Time.After`, `Time.Equal`, and the basic wall-clock field
+  accessors is now in place, with wall time assembled from syscalls `29` and
+  `3` plus a monotonic `Since/Sub` path backed by `26.10`.
+- `examples/time` is now an eighth compatibility sample, using ordinary
+  `import "time"`.
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
-  `fmt.Fscanln`, and `fmt.Scanln` through pipe-backed stdio capture, plus the
-  active-console stdout bridge in headless QEMU.
+  `fmt.Fscanln`, `fmt.Scanln`, `time.Now`, `time.Sleep`, and `time.Since`
+  through pipe-backed stdio capture plus the documented clock bridge, along
+  with the active-console stdout bridge in headless QEMU.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
 - `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,
@@ -265,8 +273,8 @@ Current bootstrap status:
   `CONSOLE.OBJ` init/write/exit path plus ordinary `fmt.Print*` through the
   active console backend instead of DLL load alone; the sample itself now also
   demonstrates `fmt.Scanln` against the same console-backed stdio path.
-- Broader package coverage (`time`)
-  remains pending.
+- Broader package coverage beyond the current bootstrap subset still remains
+  pending.
 
 ## Phase 6 - Port the Native Go Toolchain
 

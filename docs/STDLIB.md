@@ -133,6 +133,60 @@ Current behavior notes:
 - `io.EOF` and `io.ErrShortWrite` are local bootstrap sentinels implemented as
   concrete package values to avoid init-time cross-package calls
 
+### `time`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `time.Duration`
+- `time.Nanosecond`
+- `time.Microsecond`
+- `time.Millisecond`
+- `time.Second`
+- `time.Minute`
+- `time.Hour`
+- `time.Month`
+- `time.January` through `time.December`
+- `time.Time`
+- `time.Now`
+- `time.Unix`
+- `time.Sleep`
+- `time.Since`
+- `time.Time.Add`
+- `time.Time.Sub`
+- `time.Time.Before`
+- `time.Time.After`
+- `time.Time.Equal`
+- `time.Time.IsZero`
+- `time.Time.Unix`
+- `time.Time.Nanosecond`
+- `time.Time.Second`
+- `time.Time.Minute`
+- `time.Time.Hour`
+- `time.Time.Day`
+- `time.Time.Month`
+- `time.Time.Year`
+
+Current behavior notes:
+
+- `time.Now` assembles the wall clock from syscalls `29` and `3`, and carries a
+  separate monotonic component from `26.10` so `time.Since` and `Time.Sub`
+  remain useful even though the current wall clock itself is only second
+  resolution
+- the current bootstrap mapping for syscall `29` expands the documented
+  two-digit year `YY` into `2000 + YY`; this is now part of the documented
+  compatibility contract for the bootstrap path
+- `time.Unix` returns wall-clock-only values without a monotonic component
+- `Time.Before`, `Time.After`, `Time.Equal`, and `Time.Sub` prefer the
+  monotonic component when both operands were produced by `time.Now` or derived
+  from such values through `Time.Add`; otherwise they fall back to wall-clock
+  comparison
+- `time.Sleep` rounds positive durations up to the documented 1/100-second
+  kernel delay granularity from syscall `5`
+- time zones, locations, parsing, formatting, timers, tickers, and the broader
+  calendar surface are not implemented yet
+
 ### `fmt`
 
 Implemented locally in the repository as a bootstrap shim.
@@ -234,7 +288,7 @@ Current behavior notes:
   record for callers that still need KolibriOS-specific metadata such as raw
   file attributes
 - the bootstrap `os.FileInfo` type intentionally does not expose `ModTime`
-  yet; that part waits on the local `time` shim
+  yet; that part waits on broader `time` calendar/location coverage
 - `OpenFile` currently supports the narrow bootstrap flag set documented above;
   descriptor duplication, permissions, and sync semantics are not implemented
   yet
@@ -347,6 +401,11 @@ Compatibility samples using ordinary import paths:
   - chunked stream reads with `ReadAll`
   - byte transfer through `Copy`
   - string-to-writer bridge through `WriteString`
+- `examples/time`
+  - `import "time"`
+  - wall clock access through `Now`, `Unix`, `Year`, `Month`, `Day`, `Hour`, `Minute`, and `Second`
+  - monotonic duration path through `Sleep`, `Since`, and `Sub`
+  - documented bootstrap year expansion `YY => 2000+YY`
 - `examples/os`
   - `import "os"`
   - current-folder lookup through `Getwd`
@@ -363,14 +422,10 @@ Compatibility samples using ordinary import paths:
   - ordinary `os.Stdout` reassignment for bootstrap stdout capture
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
-stdlib-shaped path, string, byte-slice, io, os, and error logic now follows ordinary Go package structure
-instead of custom-only local helpers.
+stdlib-shaped path, string, byte-slice, io, os, fmt, time, and error logic now
+follows ordinary Go package structure instead of custom-only local helpers.
 
 ## Not Yet Supported
 
-The following roadmap packages are still pending bootstrap implementations:
-
-- `time`
-
-Until they are explicitly documented here, they should be treated as
+Any package surface not explicitly documented above should still be treated as
 unsupported for the KolibriOS bootstrap target.
