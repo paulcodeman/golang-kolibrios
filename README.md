@@ -20,7 +20,7 @@ The project is still in prototype stage. Right now the practical path is
 - `examples/window` builds successfully into `examples/window/window.kex`
 - the build flow targets 32-bit KolibriOS binaries
 - the documented `gccgo` bootstrap line now covers `M0-M4`: reproducible build, audited syscall/runtime subset, reusable app template, and headless QEMU smoke
-- Phase 5 bootstrap work now includes local `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
+- Phase 5 bootstrap work now includes local `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time` shims plus compatibility samples and diagnostics that import those packages through ordinary Go import paths
 - the shared linker script emits separate RX/RW load segments, so example builds no longer trigger the old RWX warning
 - the shared linker template now derives the `MENUET01` memory header from the linked image size plus a stack reserve, so larger apps stay executable instead of failing loader validation
 - public demos now live under `examples/`, fuller utilities live under `apps/`, and internal smoke/test programs live under `tests/`
@@ -37,7 +37,7 @@ The project is still in prototype stage. Right now the practical path is
 - `kos/` - raw Go bindings and small higher-level wrappers
 - `mk/` - shared bootstrap make logic and linker templates
 - `scripts/` - helper scripts for supported host environments
-- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time`
+- `stdlib/` - bootstrap-compatible stdlib shim sources such as `errors`, `path`, `path/filepath`, `strings`, `bytes`, `io`, `syscall`, `os`, `fmt`, and `time`
 - `tests/` - focused bootstrap runtime probes and internal smoke apps
 - `ui/` - minimal UI helpers built on top of `kos`
 - `sysfuncs.txt` - KolibriOS system function specification
@@ -132,6 +132,7 @@ Output:
 - `examples/ipc/ipc.kex`
 - `examples/files/files.kex`
 - `examples/path/path.kex`
+- `examples/filepath/filepath.kex`
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
 - `examples/io/io.kex`
@@ -155,7 +156,8 @@ linked image size plus `APP_STACK_RESERVE` (default `0x10000`), so larger
 bootstrap apps remain executable without hand-editing the linker script.
 Shim sources for ordinary stdlib imports now live under `stdlib/<name>`, while
 their compiled export data is still exposed through the repository-root include
-path so existing `import "errors"` / `import "path"` style code keeps working.
+path for top-level imports and through `.pkg/` for nested import paths such as
+`import "path/filepath"`, so ordinary Go-style imports keep working.
 The first emulator-backed smoke path is available through
 `scripts/check-emulator-smoke.sh`; it boots a pruned temporary copy of the
 official KolibriOS image in QEMU, replaces the existing `@HA` autorun slot with
@@ -196,6 +198,7 @@ Main sources:
 - `examples/ipc` - function `60` self-IPC event and buffer probe
 - `examples/files` - file info probe plus ordinary `import "errors"`, `import "io"`, and `import "os"` compatibility sample with `os.Stat`, `os.Open`, and bootstrap error matching
 - `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample, with metadata validation now routed through `os.Stat`
+- `examples/filepath` - ordinary `import "path/filepath"` compatibility sample for clean/join/split/ext/abs/slash helpers, with metadata validation now routed through `os.Stat`
 - `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers, with cwd/file probes now routed through `os.Getwd` and `os.Stat`
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers, with cwd/file probes now routed through `os.Getwd` and `os.Stat`
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`, with file/cwd probes now routed through `os.ReadFile`, `os.Getwd`, and `os.Stat`

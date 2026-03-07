@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -26,6 +27,7 @@ const (
 	diagProbePath      = "/FD/1/GODIAG.TMP"
 	diagHeadlessPath   = "/FD/1/GODIAG.AUTO"
 	diagFilesProbePath = "/sys/default.skn"
+	diagFilepathRaw    = "\\sys\\.\\skins\\..\\default.skn"
 	diagOSProbeRoot    = "/FD/1"
 	diagOSProbeDir     = "GOOSCHK"
 	diagOSProbeFile    = "CHECK.TXT"
@@ -199,6 +201,7 @@ func runDiagnostics() snapshot {
 		checkTime(),
 		checkSyscall(),
 		checkFmt(),
+		checkFilepath(),
 		checkFiles(),
 		checkOS(),
 	}
@@ -798,6 +801,78 @@ func checkFmt() checkResult {
 		label:  "fmt",
 		ok:     true,
 		detail: "sprintf fprintf print scan stdout stdin",
+	}
+}
+
+func checkFilepath() checkResult {
+	const expectedPath = "/sys/default.skn"
+
+	cleaned := filepath.Clean(diagFilepathRaw)
+	joined := filepath.Join("/sys", ".", "skins", "..", "default.skn")
+	dir, file := filepath.Split(cleaned)
+	base := filepath.Base(cleaned)
+	ext := filepath.Ext(cleaned)
+	slashed := filepath.ToSlash(diagFilepathRaw)
+	restored := filepath.FromSlash(expectedPath)
+	volume := filepath.VolumeName(cleaned)
+	relativeAbs, err := filepath.Abs("default.skn")
+	if err != nil {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "abs failed: " + err.Error(),
+		}
+	}
+
+	if cleaned != expectedPath {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "clean mismatch: " + cleaned,
+		}
+	}
+	if joined != expectedPath {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "join mismatch: " + joined,
+		}
+	}
+	if dir != "/sys/" || file != "default.skn" || base != "default.skn" || ext != ".skn" || !filepath.IsAbs(cleaned) {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "split/base/ext mismatch",
+		}
+	}
+	if filepath.Clean(slashed) != expectedPath || restored != expectedPath || volume != "" {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "slash or volume mismatch",
+		}
+	}
+	if !filepath.IsAbs(relativeAbs) || filepath.Base(relativeAbs) != "default.skn" {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "abs semantics mismatch",
+		}
+	}
+
+	info, err := os.Stat(cleaned)
+	if err != nil {
+		return checkResult{
+			label:  "filepath",
+			ok:     false,
+			detail: "stat failed: " + err.Error(),
+		}
+	}
+
+	return checkResult{
+		label:  "filepath",
+		ok:     true,
+		detail: "clean join split abs volume / size " + formatHex64(uint64(info.Size())),
 	}
 }
 

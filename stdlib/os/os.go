@@ -10,7 +10,9 @@ import (
 type FileMode uint32
 
 const (
-	ModeDir FileMode = 1 << 31
+	PathSeparator              = '/'
+	PathListSeparator          = ':'
+	ModeDir           FileMode = 1 << 31
 )
 
 func (mode FileMode) IsDir() bool {

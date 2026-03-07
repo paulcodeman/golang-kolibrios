@@ -193,6 +193,7 @@ Tasks:
   - `io`
   - `time`
   - `path`
+  - `path/filepath`
   - `os`
   - `syscall`
 - Specify where KolibriOS semantics differ from Unix-like systems.
@@ -216,21 +217,28 @@ Current bootstrap status:
 - Local support for `path.Clean`, `path.Join`, `path.Dir`, `path.Base`,
   `path.Ext`, `path.Split`, and `path.IsAbs` is now in place.
 - `examples/path` is the second compatibility sample, using ordinary `import "path"`.
+- Local support for `filepath.Separator`, `filepath.ListSeparator`,
+  `filepath.Abs`, `filepath.Clean`, `filepath.Join`, `filepath.Split`,
+  `filepath.Base`, `filepath.Dir`, `filepath.Ext`, `filepath.IsAbs`,
+  `filepath.ToSlash`, `filepath.FromSlash`, and `filepath.VolumeName` is now
+  in place.
+- `examples/filepath` is the third compatibility sample, using ordinary
+  `import "path/filepath"`.
 - Local support for `strings.Contains`, `strings.Cut`, `strings.HasPrefix`,
   `strings.HasSuffix`, `strings.Index`, `strings.Join`, `strings.LastIndex`,
   `strings.TrimPrefix`, and `strings.TrimSuffix` is now in place.
-- `examples/strings` is the third compatibility sample, using ordinary
+- `examples/strings` is the fourth compatibility sample, using ordinary
   `import "strings"`.
 - Local support for `bytes.Contains`, `bytes.Cut`, `bytes.Equal`,
   `bytes.HasPrefix`, `bytes.HasSuffix`, `bytes.Index`, `bytes.IndexByte`,
   `bytes.Join`, `bytes.TrimPrefix`, and `bytes.TrimSuffix` is now in place.
-- `examples/bytes` is the fourth compatibility sample, using ordinary
+- `examples/bytes` is the fifth compatibility sample, using ordinary
   `import "bytes"`.
 - Local support for `io.Reader`, `io.Writer`, `io.Closer`, `io.ReadWriter`,
   `io.ReadCloser`, `io.WriteCloser`, `io.EOF`, `io.ErrShortWrite`,
   `io.ReadAll`, `io.Copy`, `io.CopyBuffer`, and `io.WriteString` is now in
   place.
-- `examples/io` is the fifth compatibility sample, using ordinary
+- `examples/io` is the sixth compatibility sample, using ordinary
   `import "io"`.
 - Local support for `os.Getwd`, `os.Open`, `os.Create`, `os.OpenFile`,
   `os.ReadFile`, `os.WriteFile`, `os.Mkdir`, `os.Remove`, `os.Rename`,
@@ -239,7 +247,7 @@ Current bootstrap status:
   process-local `os.Getenv`/`LookupEnv`/`Setenv`/`Unsetenv`/`Clearenv`/
   `Environ`, narrow `os.Err*` sentinels, `os.PathError`, `os.LinkError`, and
   fd-backed `os.Stdin`/`os.Stdout`/`os.Stderr` are now in place.
-- `examples/os` is the sixth compatibility sample, using ordinary
+- `examples/os` is the seventh compatibility sample, using ordinary
   `import "os"`.
 - `examples/files`, `examples/os`, and `apps/diag` now use `os.Stat` plus
   `FileInfo.Sys()` instead of direct `kos.GetPathInfo(...)` calls for their
@@ -251,14 +259,14 @@ Current bootstrap status:
   `fmt.Println`, `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, `fmt.Scanln`,
   narrow `%s/%d/%x/%X/%t/%v/%c/%%` formatting, and `fmt.Errorf` is now in
   place.
-- `examples/fmt` is the seventh compatibility sample, using ordinary
+- `examples/fmt` is the eighth compatibility sample, using ordinary
   `import "fmt"`.
 - Local support for `time.Duration`, `time.Month`, `time.Time`, `time.Now`,
   `time.Unix`, `time.Sleep`, `time.Since`, `Time.Add`, `Time.Sub`,
   `Time.Before`, `Time.After`, `Time.Equal`, and the basic wall-clock field
   accessors is now in place, with wall time assembled from syscalls `29` and
   `3` plus a monotonic `Since/Sub` path backed by `26.10`.
-- `examples/time` is now an eighth compatibility sample, using ordinary
+- `examples/time` is now a ninth compatibility sample, using ordinary
   `import "time"`.
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
@@ -279,8 +287,9 @@ Current bootstrap status:
   demonstrates `fmt.Scanln` against the same console-backed stdio path.
 - At this point the original Phase 5 package list is in place, and the current
   bootstrap contract now documents the KolibriOS mappings for paths,
-  pipe-backed stdio, active-console-backed stdin/stdout, file metadata time,
-  wall clock, current process id, and a process-local environment store.
+  filepath normalization, pipe-backed stdio, active-console-backed
+  stdin/stdout, file metadata time, wall clock, current process id, and a
+  process-local environment store.
 - Broader package coverage beyond the current bootstrap subset still remains
   pending.
 

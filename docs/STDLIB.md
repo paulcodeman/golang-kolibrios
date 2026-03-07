@@ -50,6 +50,39 @@ Current behavior notes:
 - relative paths preserve leading `..` segments
 - globbing helpers such as `Match` are not implemented yet
 
+### `path/filepath`
+
+Implemented locally in the repository as a bootstrap shim.
+
+Supported API:
+
+- `filepath.Separator`
+- `filepath.ListSeparator`
+- `filepath.Abs`
+- `filepath.Base`
+- `filepath.Clean`
+- `filepath.Dir`
+- `filepath.Ext`
+- `filepath.FromSlash`
+- `filepath.IsAbs`
+- `filepath.Join`
+- `filepath.Split`
+- `filepath.ToSlash`
+- `filepath.VolumeName`
+
+Current behavior notes:
+
+- semantics are intentionally slash-first and map onto the current KolibriOS
+  path model rather than Windows drive-letter rules
+- `filepath.Clean`, `Join`, `Base`, `Dir`, `Split`, `Ext`, and `IsAbs` route
+  through the local bootstrap `path` package after normalizing backslashes with
+  `ToSlash`
+- `filepath.Abs` resolves relative paths against `os.Getwd`
+- `filepath.Separator` is `'/'`, `filepath.ListSeparator` is `':'`, and
+  `filepath.VolumeName` always returns `""` for the current bootstrap target
+- globbing, walking, symlink evaluation, volume-aware behavior, and the broader
+  filepath surface are not implemented yet
+
 ### `strings`
 
 Implemented locally in the repository as a bootstrap shim.
@@ -244,6 +277,8 @@ Supported API:
 - `os.FileMode`
 - `os.ModeDir`
 - `os.FileMode.IsDir`
+- `os.PathSeparator`
+- `os.PathListSeparator`
 - `os.O_RDONLY`
 - `os.O_WRONLY`
 - `os.O_RDWR`
@@ -376,10 +411,12 @@ The shared app makefile now accepts an ordered `PACKAGE_DIRS` list.
 This lets the bootstrap build precompile additional shared packages before the
 app object itself, instead of hardcoding only `kos` and `ui`.
 
-For ordinary import paths such as `import "errors"`, the current bootstrap shim
-sources live under `stdlib/<package>`. Their compiled export data is still
-exposed through the shared `-I$(ROOT)` include path, so apps keep the ordinary
-Go import path even though the repository layout is now cleaner.
+For ordinary import paths such as `import "errors"` or
+`import "path/filepath"`, the current bootstrap shim sources live under
+`stdlib/<package>`. Top-level compiled export data is still exposed through the
+shared `-I$(ROOT)` include path, while nested import paths are emitted under the
+shared `-I$(ROOT)/.pkg` include root so apps keep the ordinary Go import path
+even though the repository layout is now cleaner.
 
 Current example:
 
@@ -406,6 +443,12 @@ Compatibility samples using ordinary import paths:
   - `import "path"`
   - slash normalization with `Clean` and `Join`
   - component extraction with `Split`, `Base`, `Dir`, and `Ext`
+  - metadata probe through ordinary `os.Stat`
+- `examples/filepath`
+  - `import "path/filepath"`
+  - slash and backslash normalization with `Clean`, `ToSlash`, and `FromSlash`
+  - component extraction with `Split`, `Base`, `Dir`, `Ext`, and `VolumeName`
+  - relative-path resolution with `Abs`
   - metadata probe through ordinary `os.Stat`
 - `examples/strings`
   - `import "strings"`
@@ -449,8 +492,9 @@ Compatibility samples using ordinary import paths:
   - ordinary `os.Getwd`, `os.Stat`, and `os.ReadFile` for the file/cwd probe
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
-stdlib-shaped path, string, byte-slice, io, os, fmt, time, and error logic now
-follows ordinary Go package structure instead of custom-only local helpers.
+stdlib-shaped path, filepath, string, byte-slice, io, os, fmt, time, and error
+logic now follows ordinary Go package structure instead of custom-only local
+helpers.
 
 ## Not Yet Supported
 

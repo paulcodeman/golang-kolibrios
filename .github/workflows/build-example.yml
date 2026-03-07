@@ -47,6 +47,7 @@ jobs:
           test -f examples/ipc/ipc.kex
           test -f examples/files/files.kex
           test -f examples/path/path.kex
+          test -f examples/filepath/filepath.kex
           test -f examples/strings/strings.kex
           test -f examples/bytes/bytes.kex
           test -f examples/io/io.kex
@@ -69,6 +70,7 @@ jobs:
             examples/ipc/ipc.kex
             examples/files/files.kex
             examples/path/path.kex
+            examples/filepath/filepath.kex
             examples/strings/strings.kex
             examples/bytes/bytes.kex
             examples/io/io.kex

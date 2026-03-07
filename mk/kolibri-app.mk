@@ -3,6 +3,8 @@ PACKAGE_NAME ?= $(PROGRAM)
 ROOT ?= ../..
 ROOT_ABS := $(abspath $(ROOT))
 STDLIB_DIR_ABS := $(ROOT_ABS)/stdlib
+PACKAGE_ARTIFACT_ROOT := $(ROOT)/.pkg
+PACKAGE_ARTIFACT_ROOT_ABS := $(ROOT_ABS)/.pkg
 
 ABI_DIR = $(ROOT)/abi
 MK_DIR = $(ROOT)/mk
@@ -20,7 +22,7 @@ LDSCRIPT_TEMPLATE = $(MK_DIR)/static.lds.in
 LDSCRIPT = $(BUILD_DIR)/$(PROGRAM).lds
 APP_STACK_RESERVE ?= 0x10000
 
-GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I. -I$(ROOT_ABS)
+GO_COMPILER_FLAGS = -m32 -c -nostdlib -nostdinc -fno-stack-protector -fno-split-stack -static -fno-leading-underscore -fno-common -fno-pie -g -ffunction-sections -fdata-sections -I. -I$(ROOT_ABS) -I$(PACKAGE_ARTIFACT_ROOT_ABS)
 GCC_COMPILER_FLAGS = -m32 -c -ffunction-sections -fdata-sections -fno-pic -fno-pie -fno-stack-protector
 LDFLAGS = -n -T $(LDSCRIPT) -m elf_i386 --no-ld-generated-unwind-info -z noexecstack -z relro -z now --gc-sections --entry=$(ENTRYPOINT)
 
@@ -35,17 +37,23 @@ define REGISTER_PACKAGE
 PACKAGE_SOURCE_DIR_$(1) := $(if $(wildcard $(ROOT_ABS)/$(1)),$(ROOT_ABS)/$(1),$(if $(wildcard $(STDLIB_DIR_ABS)/$(1)),$(STDLIB_DIR_ABS)/$(1),$(error package source dir not found for $(1))))
 PACKAGE_SOURCES_$(1) := $$(wildcard $$(PACKAGE_SOURCE_DIR_$(1))/*.go)
 PACKAGE_SOURCE_FILES_$(1) := $$(notdir $$(PACKAGE_SOURCES_$(1)))
+PACKAGE_ARTIFACT_PREFIX_$(1) := $(if $(findstring /,$(1)),$(PACKAGE_ARTIFACT_ROOT)/$(1),$(ROOT)/$(1))
+PACKAGE_ARTIFACT_PREFIX_ABS_$(1) := $(if $(findstring /,$(1)),$(PACKAGE_ARTIFACT_ROOT_ABS)/$(1),$(ROOT_ABS)/$(1))
+PACKAGE_OBJ_$(1) := $$(PACKAGE_ARTIFACT_PREFIX_$(1)).gccgo.o
+PACKAGE_GOX_$(1) := $$(PACKAGE_ARTIFACT_PREFIX_$(1)).gox
 
-PACKAGE_OBJS += $(ROOT)/$(1).gccgo.o
-PACKAGE_GOXS += $(ROOT)/$(1).gox
+PACKAGE_OBJS += $$(PACKAGE_OBJ_$(1))
+PACKAGE_GOXS += $$(PACKAGE_GOX_$(1))
 
-$(ROOT)/$(1).gccgo.o: $$(PACKAGE_SOURCES_$(1)) $(PREVIOUS_PACKAGE_GOXS)
-	cd $$(PACKAGE_SOURCE_DIR_$(1)) && $(GO) $(GO_COMPILER_FLAGS) -o $(ROOT_ABS)/$(1).gccgo.o $$(PACKAGE_SOURCE_FILES_$(1))
+$$(PACKAGE_OBJ_$(1)): $$(PACKAGE_SOURCES_$(1)) $(PREVIOUS_PACKAGE_GOXS)
+	mkdir -p $$(dir $$@)
+	cd $$(PACKAGE_SOURCE_DIR_$(1)) && $(GO) $(GO_COMPILER_FLAGS) -o $$(PACKAGE_ARTIFACT_PREFIX_ABS_$(1)).gccgo.o $$(PACKAGE_SOURCE_FILES_$(1))
 
-$(ROOT)/$(1).gox: $(ROOT)/$(1).gccgo.o
+$$(PACKAGE_GOX_$(1)): $$(PACKAGE_OBJ_$(1))
+	mkdir -p $$(dir $$@)
 	$(OBJCOPY) -j .go_export $$< $$@
 
-PREVIOUS_PACKAGE_GOXS += $(ROOT)/$(1).gox
+PREVIOUS_PACKAGE_GOXS += $$(PACKAGE_GOX_$(1))
 endef
 
 $(foreach pkg,$(PACKAGE_DIRS),$(eval $(call REGISTER_PACKAGE,$(pkg))))
@@ -61,7 +69,7 @@ INTERMEDIATE_ARTIFACTS = $(ABI_OBJS) $(PACKAGE_OBJS) $(PACKAGE_GOXS) $(APP_OBJ) 
 all: $(PROGRAM).kex
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(PACKAGE_ARTIFACT_ROOT)
 	rm -f $(INTERMEDIATE_ARTIFACTS) $(PROGRAM).kex
 
 link: $(PROGRAM).kex
@@ -77,6 +85,7 @@ $(PROGRAM).kex: $(OBJS) $(PACKAGE_GOXS) $(LDSCRIPT)
 	strip $(PROGRAM).kex
 	$(OBJCOPY) $(PROGRAM).kex -O binary
 	rm -f $(INTERMEDIATE_ARTIFACTS)
+	rm -rf $(PACKAGE_ARTIFACT_ROOT)
 	rmdir $(BUILD_DIR) 2>/dev/null || true
 
 $(APP_OBJ): $(APP_SOURCES) $(PACKAGE_GOXS)

@@ -95,6 +95,7 @@ Successful build output:
 - `examples/ipc/ipc.kex`
 - `examples/files/files.kex`
 - `examples/path/path.kex`
+- `examples/filepath/filepath.kex`
 - `examples/strings/strings.kex`
 - `examples/bytes/bytes.kex`
 - `examples/io/io.kex`
@@ -147,6 +148,9 @@ successful build.
 - `examples/path` - implemented
   - bootstrap-compatible `import "path"` sample with `Clean`, `Join`, `Dir`, `Base`, `Ext`, and `IsAbs`
   - slash-based path normalization against a real KolibriOS file probe, with metadata now checked through ordinary `os.Stat`
+- `examples/filepath` - implemented
+  - bootstrap-compatible `import "path/filepath"` sample with `Clean`, `Join`, `Split`, `Base`, `Ext`, `Abs`, `ToSlash`, `FromSlash`, and `VolumeName`
+  - slash-first filepath normalization against a real KolibriOS file probe, with metadata now checked through ordinary `os.Stat`
 - `examples/strings` - implemented
   - bootstrap-compatible `import "strings"` sample with `Join`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `LastIndex`, `Cut`, `TrimPrefix`, and `TrimSuffix`
   - string helper checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.Stat` and `os.Getwd`
@@ -183,7 +187,8 @@ successful build.
   precompile extra shared packages before the final app object.
 - Bootstrap stdlib shim sources now live under `stdlib/`, while the compiled
   `.gox` export data remains available through the repository-root include path
-  for ordinary imports such as `import "errors"` and `import "bytes"`.
+  for top-level imports and through `.pkg/` for nested imports such as
+  `import "path/filepath"`.
 - New applications can be scaffolded from `templates/basic-app` via
   `scripts/new-app.sh`.
 - The linker script is generated from `mk/static.lds.in`.

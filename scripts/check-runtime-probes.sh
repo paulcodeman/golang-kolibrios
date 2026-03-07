@@ -4,6 +4,7 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 tmp_dir=$(mktemp -d)
+tmp_include_dir="$tmp_dir/.pkg"
 
 cleanup() {
   rm -rf "$tmp_dir"
@@ -58,35 +59,42 @@ compile_package() {
   local package_name=$1
   shift
   local source_dir
-  local include_dirs=("-I$repo_root")
+  local include_dirs=("-I$repo_root" "-I$repo_root/.pkg" "-I$tmp_dir" "-I$tmp_include_dir")
   local dependency
+  local artifact_prefix
 
   source_dir=$(package_source_dir "$package_name")
+  artifact_prefix=$(package_artifact_prefix "$package_name")
 
   for dependency in "$@"; do
     compile_package_export "$dependency"
-    include_dirs+=("-I$tmp_dir")
   done
 
+  mkdir -p "$(dirname "$artifact_prefix")"
   gccgo "${gccgo_flags[@]}" \
     "${include_dirs[@]}" \
-    -o "$tmp_dir/$package_name.gccgo.o" \
+    -o "$artifact_prefix.gccgo.o" \
     "$source_dir"/*.go
 }
 
 compile_package_export() {
   local package_name=$1
   local source_dir
+  local artifact_prefix
 
   source_dir=$(package_source_dir "$package_name")
+  artifact_prefix=$(package_artifact_prefix "$package_name")
 
+  mkdir -p "$(dirname "$artifact_prefix")"
   gccgo "${gccgo_flags[@]}" \
     -I"$repo_root" \
+    -I"$repo_root/.pkg" \
     -I"$tmp_dir" \
-    -o "$tmp_dir/$package_name.export.o" \
+    -I"$tmp_include_dir" \
+    -o "$artifact_prefix.export.o" \
     "$source_dir"/*.go
 
-  objcopy -j .go_export "$tmp_dir/$package_name.export.o" "$tmp_dir/$package_name.gox"
+  objcopy -j .go_export "$artifact_prefix.export.o" "$artifact_prefix.gox"
 }
 
 package_source_dir() {
@@ -114,8 +122,22 @@ probe_unresolved_symbols() {
 
 package_unresolved_symbols() {
   local package_name=$1
+  local artifact_prefix
 
-  nm -u "$tmp_dir/$package_name.gccgo.o" | sed -E 's/^[[:space:]]*U[[:space:]]+//' | sort -u
+  artifact_prefix=$(package_artifact_prefix "$package_name")
+
+  nm -u "$artifact_prefix.gccgo.o" | sed -E 's/^[[:space:]]*U[[:space:]]+//' | sort -u
+}
+
+package_artifact_prefix() {
+  local package_name=$1
+
+  if [[ "$package_name" == */* ]]; then
+    printf '%s\n' "$tmp_include_dir/$package_name"
+    return
+  fi
+
+  printf '%s\n' "$tmp_dir/$package_name"
 }
 
 require_list_symbols() {
@@ -223,6 +245,18 @@ main() {
     "runtime.memequal32..f" \
     "runtime.strequal..f" \
     "runtime.writeBarrier"
+
+  compile_package "path/filepath" "path" "kos" "io" "syscall" "time" "os"
+  probe_symbols=$(package_unresolved_symbols "path/filepath")
+  require_list_symbols "path/filepath package" "$probe_symbols" \
+    "go_0os.Getwd" \
+    "go_0path.Base" \
+    "go_0path.Clean" \
+    "go_0path.Dir" \
+    "go_0path.Ext" \
+    "go_0path.IsAbs" \
+    "go_0path.Join" \
+    "go_0path.Split"
 
   compile_package "strings"
   probe_symbols=$(package_unresolved_symbols "strings")
