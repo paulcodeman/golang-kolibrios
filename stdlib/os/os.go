@@ -12,6 +12,10 @@ const (
 	ModeDir FileMode = 1 << 31
 )
 
+func (mode FileMode) IsDir() bool {
+	return mode&ModeDir != 0
+}
+
 const (
 	O_RDONLY int = 0
 	O_WRONLY int = 1
@@ -169,6 +173,44 @@ func (err *statusError) Error() string {
 	return err.text
 }
 
+type FileInfo interface {
+	Name() string
+	Size() int64
+	Mode() FileMode
+	IsDir() bool
+	Sys() interface{}
+}
+
+type fileInfo struct {
+	name string
+	raw  kos.FileInfo
+}
+
+func (info fileInfo) Name() string {
+	return info.name
+}
+
+func (info fileInfo) Size() int64 {
+	return int64(info.raw.Size)
+}
+
+func (info fileInfo) Mode() FileMode {
+	mode := FileMode(0)
+	if info.raw.Attributes&kos.FileAttributeDirectory != 0 {
+		mode |= ModeDir
+	}
+
+	return mode
+}
+
+func (info fileInfo) IsDir() bool {
+	return info.Mode().IsDir()
+}
+
+func (info fileInfo) Sys() interface{} {
+	return info.raw
+}
+
 type File struct {
 	name     string
 	fd       int
@@ -190,6 +232,22 @@ func Getwd() (dir string, err error) {
 	}
 
 	return dir, nil
+}
+
+func Stat(name string) (FileInfo, error) {
+	info, status := kos.GetPathInfo(name)
+	if status != kos.FileSystemOK {
+		return nil, wrapPathError("stat", name, status)
+	}
+
+	return fileInfo{
+		name: baseName(name),
+		raw:  info,
+	}, nil
+}
+
+func IsNotExist(err error) bool {
+	return errorMatches(err, ErrNotExist)
 }
 
 func ReadFile(name string) ([]byte, error) {
@@ -320,6 +378,20 @@ func (file *File) Name() string {
 	}
 
 	return file.name
+}
+
+func (file *File) Stat() (FileInfo, error) {
+	if file == nil {
+		return nil, &PathError{Op: "stat", Path: "", Err: ErrInvalid}
+	}
+	if file.closed {
+		return nil, &PathError{Op: "stat", Path: file.name, Err: ErrClosed}
+	}
+	if file.fdBacked {
+		return nil, &PathError{Op: "stat", Path: file.name, Err: ErrInvalid}
+	}
+
+	return Stat(file.name)
 }
 
 func (file *File) Close() error {
@@ -543,4 +615,53 @@ func newDescriptorFile(name string, fd int, readable bool, writable bool) *File 
 		writable: writable,
 		fdBacked: true,
 	}
+}
+
+func errorMatches(err error, target error) bool {
+	for err != nil {
+		if err == target {
+			return true
+		}
+
+		unwrapper, ok := interface{}(err).(interface{ Unwrap() error })
+		if !ok {
+			return false
+		}
+
+		err = unwrapper.Unwrap()
+	}
+
+	return target == nil
+}
+
+func baseName(name string) string {
+	if name == "" {
+		return "."
+	}
+
+	end := len(name)
+	for end > 1 && name[end-1] == '/' {
+		end--
+	}
+	name = name[:end]
+	if name == "" {
+		return "/"
+	}
+
+	lastSlash := -1
+	for index := len(name) - 1; index >= 0; index-- {
+		if name[index] == '/' {
+			lastSlash = index
+			break
+		}
+	}
+
+	if lastSlash < 0 {
+		return name
+	}
+	if lastSlash == 0 && len(name) == 1 {
+		return "/"
+	}
+
+	return name[lastSlash+1:]
 }

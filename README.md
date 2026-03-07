@@ -194,12 +194,12 @@ Main sources:
 - `examples/system` - kernel/style/title/skin/cursor/keyboard-layout/system-language/active-window probes
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
-- `examples/files` - file info probe plus ordinary `import "errors"`, `import "io"`, and `import "os"` compatibility sample
+- `examples/files` - file info probe plus ordinary `import "errors"`, `import "io"`, and `import "os"` compatibility sample with `os.Stat`, `os.Open`, and bootstrap error matching
 - `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample
 - `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
 - `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
 - `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
-- `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, file create/read/write flows, rename/remove, and narrow error wrappers
+- `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, file create/read/write flows, rename/remove, and narrow `IsNotExist` handling
 - `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
 - `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and pipe-backed scanning checks

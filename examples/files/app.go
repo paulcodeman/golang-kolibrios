@@ -10,16 +10,16 @@ import (
 )
 
 const (
-	filesButtonExit kos.ButtonID = 1
+	filesButtonExit    kos.ButtonID = 1
 	filesButtonRefresh kos.ButtonID = 2
 
 	filesProbePath = "/sys/default.skn"
 
-	filesWindowX = 320
-	filesWindowY = 180
-	filesWindowWidth = 620
+	filesWindowX      = 320
+	filesWindowY      = 180
+	filesWindowWidth  = 620
 	filesWindowHeight = 252
-	filesWindowTitle = "KolibriOS Files Demo"
+	filesWindowTitle  = "KolibriOS Files Demo"
 	filesPreviewBytes = 16
 )
 
@@ -128,22 +128,32 @@ func (app *App) refreshProbe() {
 	app.lastError = nil
 	app.errorsOK = checkErrorsCompatibility()
 
-	info, status := kos.GetPathInfo(app.path)
-	if status != kos.FileSystemOK {
+	info, err := os.Stat(app.path)
+	if err != nil {
 		app.fail(&probeError{
-			op:     "get info",
+			op:     "stat",
 			path:   app.path,
-			status: status,
+			detail: err.Error(),
+			cause:  errPathInfo,
+		})
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail(&probeError{
+			op:     "stat",
+			path:   app.path,
+			detail: "unexpected sys info payload",
 			cause:  errPathInfo,
 		})
 		return
 	}
 
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 
 	previewSize := filesPreviewBytes
-	if info.Size > 0 && info.Size < uint64(previewSize) {
-		previewSize = int(info.Size)
+	if info.Size() > 0 && info.Size() < int64(previewSize) {
+		previewSize = int(info.Size())
 	}
 	if previewSize == 0 {
 		previewSize = filesPreviewBytes

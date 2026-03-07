@@ -37,8 +37,6 @@ const (
 	diagHeadlessEnd   = "[[GODIAG-END]]\r\n"
 )
 
-var errFileProbe = &diagSentinel{text: "file probe failed"}
-
 type diagSentinel struct {
 	text string
 }
@@ -56,21 +54,6 @@ func (err wrappedError) Error() string {
 }
 
 func (err wrappedError) Unwrap() error {
-	return err.cause
-}
-
-type probeError struct {
-	op     string
-	path   string
-	status kos.FileSystemStatus
-	cause  error
-}
-
-func (err probeError) Error() string {
-	return err.op + " " + err.path + " / " + formatFileSystemStatus(err.status)
-}
-
-func (err probeError) Unwrap() error {
 	return err.cause
 }
 
@@ -301,8 +284,8 @@ func exportReport(reportPath string, report string) string {
 }
 
 func headlessModeRequested() bool {
-	_, status := kos.GetPathInfo(diagHeadlessPath)
-	return status == kos.FileSystemOK
+	_, err := os.Stat(diagHeadlessPath)
+	return err == nil
 }
 
 func emitHeadlessReport(reportLine string, reportBody string) {
@@ -807,56 +790,66 @@ func checkSyscall() checkResult {
 }
 
 func checkFiles() checkResult {
-	info, status := kos.GetPathInfo(diagFilesProbePath)
-	if status != kos.FileSystemOK {
-		err := probeError{
-			op:     "get info",
-			path:   diagFilesProbePath,
-			status: status,
-			cause:  errFileProbe,
-		}
+	info, err := os.Stat(diagFilesProbePath)
+	if err != nil {
 		return checkResult{
 			label:  "files",
 			ok:     false,
-			detail: err.Error(),
+			detail: "stat " + diagFilesProbePath + " / " + err.Error(),
+		}
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		return checkResult{
+			label:  "files",
+			ok:     false,
+			detail: "stat sys payload mismatch",
 		}
 	}
 
 	previewSize := diagPreviewBytes
-	if info.Size > 0 && info.Size < uint64(previewSize) {
-		previewSize = int(info.Size)
+	if info.Size() > 0 && info.Size() < int64(previewSize) {
+		previewSize = int(info.Size())
 	}
 	if previewSize == 0 {
 		previewSize = diagPreviewBytes
 	}
 
-	buffer := make([]byte, previewSize)
-	read, status := kos.ReadFile(diagFilesProbePath, buffer, 0)
-	if status != kos.FileSystemOK && status != kos.FileSystemEOF {
-		err := probeError{
-			op:     "read",
-			path:   diagFilesProbePath,
-			status: status,
-			cause:  errFileProbe,
-		}
+	file, err := os.Open(diagFilesProbePath)
+	if err != nil {
 		return checkResult{
 			label:  "files",
 			ok:     false,
-			detail: err.Error(),
+			detail: "open " + diagFilesProbePath + " / " + err.Error(),
+		}
+	}
+
+	buffer := make([]byte, previewSize)
+	read, err := file.Read(buffer)
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil && !errors.Is(err, io.EOF) {
+		return checkResult{
+			label:  "files",
+			ok:     false,
+			detail: "read " + diagFilesProbePath + " / " + err.Error(),
 		}
 	}
 
 	return checkResult{
 		label: "files",
 		ok:    true,
-		detail: "size " + formatHex64(info.Size) +
+		detail: "size " + formatHex64(uint64(info.Size())) +
+			" / attrs " + formatHex64(uint64(rawInfo.Attributes)) +
 			" / head " + formatBytePreview(buffer[:int(read)]),
 	}
 }
 
 func checkOS() checkResult {
 	base := diagOSProbeRoot
-	if _, status := kos.GetPathInfo(base); status != kos.FileSystemOK {
+	if _, err := os.Stat(base); err != nil {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return checkResult{
@@ -968,6 +961,15 @@ func checkOS() checkResult {
 			detail: "open " + err.Error(),
 		}
 	}
+	readerInfo, err := reader.Stat()
+	if err != nil {
+		_ = reader.Close()
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "file stat " + err.Error(),
+		}
+	}
 
 	data, readErr := io.ReadAll(reader)
 	closeErr := reader.Close()
@@ -987,6 +989,13 @@ func checkOS() checkResult {
 			label:  "os",
 			ok:     false,
 			detail: "payload mismatch",
+		}
+	}
+	if readerInfo.Size() != int64(len(payload)) {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "file stat size mismatch",
 		}
 	}
 
@@ -1154,7 +1163,7 @@ func diagJoinPath(base string, name string) string {
 
 func diagRemoveIfExists(name string) error {
 	err := os.Remove(name)
-	if err == nil || errors.Is(err, os.ErrNotExist) {
+	if err == nil || os.IsNotExist(err) {
 		return nil
 	}
 

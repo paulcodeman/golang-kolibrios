@@ -186,8 +186,10 @@ Implemented locally in the repository as a bootstrap shim.
 Supported API:
 
 - `os.File`
+- `os.FileInfo`
 - `os.FileMode`
 - `os.ModeDir`
+- `os.FileMode.IsDir`
 - `os.O_RDONLY`
 - `os.O_WRONLY`
 - `os.O_RDWR`
@@ -208,10 +210,13 @@ Supported API:
 - `os.PathError`
 - `os.LinkError`
 - `os.Getwd`
+- `os.Stat`
 - `os.Open`
 - `os.Create`
 - `os.OpenFile`
+- `(*os.File).Stat`
 - `os.Pipe`
+- `os.IsNotExist`
 - `os.ReadFile`
 - `os.WriteFile`
 - `os.Mkdir`
@@ -223,6 +228,13 @@ Current behavior notes:
 - current files are name-plus-offset wrappers over KolibriOS path-based file
   syscalls, but the package now also has a narrow fd-backed mode for
   `os.Stdin`, `os.Stdout`, `os.Stderr`, and `os.Pipe`
+- `os.Stat` and `(*os.File).Stat` expose a narrow bootstrap `os.FileInfo`
+  surface with `Name`, `Size`, `Mode`, `IsDir`, and `Sys`; `Mode` currently
+  exposes only `ModeDir`, and `Sys()` returns the underlying `kos.FileInfo`
+  record for callers that still need KolibriOS-specific metadata such as raw
+  file attributes
+- the bootstrap `os.FileInfo` type intentionally does not expose `ModTime`
+  yet; that part waits on the local `time` shim
 - `OpenFile` currently supports the narrow bootstrap flag set documented above;
   descriptor duplication, permissions, and sync semantics are not implemented
   yet
@@ -236,8 +248,13 @@ Current behavior notes:
   `os.DefaultStdin`, `os.DefaultStdout`, and `os.DefaultStderr`; `fmt.Print*`
   uses that path internally so ordinary stdout-style Go code stays usable even
   when imported package globals arrive zeroed
+- `os.IsNotExist` currently follows the unwrap chain for bootstrap `os.PathError`
+  and `os.LinkError` values and checks against the local `os.ErrNotExist`
+  sentinel
 - `(*os.File).Close` currently marks bootstrap fd-backed files closed locally,
   but it does not yet invoke a documented kernel close-handle syscall
+- `(*os.File).Stat` currently works only for path-backed files; fd-backed files
+  such as pipes and stdio handles still return `ErrInvalid`
 - `Rename` resolves ordinary Go-style relative and absolute paths into the
   special KolibriOS `80.10` target-path contract and currently supports only
   same-volume rename or move operations
@@ -307,6 +324,7 @@ Compatibility samples using ordinary import paths:
 
 - `examples/files`
   - `import "errors"`, `import "io"`, `import "os"`
+  - metadata probe through `os.Stat` with raw KolibriOS attributes available via `FileInfo.Sys()`
   - ordinary `os.Open` / `Read` / `Close` for the preview read path
   - wrapped file-probe failures with `Unwrap`
   - sentinel classification with `errors.Is`
@@ -332,8 +350,9 @@ Compatibility samples using ordinary import paths:
 - `examples/os`
   - `import "os"`
   - current-folder lookup through `Getwd`
+  - metadata lookup through `Stat` and `(*os.File).Stat`
   - file create, append, read, and copy flow through `Create`, `OpenFile`, `ReadFile`, and `Open`
-  - file rename and cleanup flow through `Rename` and `Remove`
+  - file rename and cleanup flow through `Rename`, `Remove`, and `IsNotExist`
 - `examples/fmt`
   - `import "fmt"`
   - formatted strings via `Sprintf` and `Sprintln`

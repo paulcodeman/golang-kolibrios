@@ -1,7 +1,6 @@
 package osdemo
 
 import (
-	"errors"
 	"io"
 	"os"
 	"path"
@@ -111,7 +110,7 @@ func (app *App) refreshProbe() {
 	}
 
 	baseDir := osPreferredRoot
-	if _, status := kos.GetPathInfo(baseDir); status != kos.FileSystemOK {
+	if _, err := os.Stat(baseDir); err != nil {
 		baseDir = cwd
 	}
 
@@ -176,6 +175,12 @@ func (app *App) refreshProbe() {
 		app.fail("open failed")
 		return
 	}
+	readerInfo, err := reader.Stat()
+	if err != nil {
+		_ = reader.Close()
+		app.fail("file stat failed")
+		return
+	}
 	copyTarget := &bufferWriter{}
 	copied, copyErr := io.Copy(copyTarget, reader)
 	closeErr = reader.Close()
@@ -187,11 +192,16 @@ func (app *App) refreshProbe() {
 		return
 	}
 
-	info, status := kos.GetPathInfo(demoFile)
-	if status != kos.FileSystemOK {
+	info, err := os.Stat(demoFile)
+	if err != nil {
 		app.ok = false
-		app.summary = "os probe failed / file info unavailable"
-		app.infoLine = "Info: " + demoFile + " / " + formatFileSystemStatus(status)
+		app.summary = "os probe failed / stat unavailable"
+		app.infoLine = "Info: " + demoFile + " / " + err.Error()
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch")
 		return
 	}
 
@@ -228,18 +238,22 @@ func (app *App) refreshProbe() {
 		app.fail("copy length mismatch")
 		return
 	}
+	if readerInfo.Size() != int64(len(payload)) {
+		app.fail("file stat size mismatch")
+		return
+	}
 	if string(renamedData) != payload {
 		app.fail("renamed payload mismatch")
 		return
 	}
-	if info.Size != uint64(len(payload)) {
+	if info.Size() != int64(len(payload)) {
 		app.fail("file size mismatch")
 		return
 	}
 
 	app.ok = true
 	app.summary = "os probe ok / ordinary import os package resolved"
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 }
 
 func (app *App) fail(detail string) {
@@ -258,7 +272,7 @@ func (app *App) summaryColor() kos.Color {
 
 func removeIfExists(name string) error {
 	err := os.Remove(name)
-	if err == nil || errors.Is(err, os.ErrNotExist) {
+	if err == nil || os.IsNotExist(err) {
 		return nil
 	}
 

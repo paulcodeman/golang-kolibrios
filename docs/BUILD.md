@@ -141,7 +141,7 @@ successful build.
   - self-targeted IPC send via function `60.2`
   - IPC event `7` handling and buffer drain
 - `examples/files` - implemented
-  - path info probe via function `80.5`
+  - metadata probe via ordinary `os.Stat` with raw `kos.FileInfo` available through `FileInfo.Sys()`
   - file head read via ordinary `os.Open` / `Read` / `Close`
   - bootstrap-compatible `import "errors"`, `import "io"`, and `import "os"` sample with wrapped sentinel checks
 - `examples/path` - implemented
@@ -157,8 +157,8 @@ successful build.
   - bootstrap-compatible `import "io"` sample with `Reader`, `Writer`, `ReadAll`, `Copy`, and `WriteString`
   - chunked stream checks tied to a real KolibriOS file path and current-folder probe
 - `examples/os` - implemented
-  - bootstrap-compatible `import "os"` sample with `Getwd`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, and `Remove`
-  - file lifecycle checks against a real writable KolibriOS path with append, rename, and cleanup validation
+  - bootstrap-compatible `import "os"` sample with `Getwd`, `Stat`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, `Remove`, and `IsNotExist`
+  - file lifecycle checks against a real writable KolibriOS path with append, stat, rename, and cleanup validation
 - `examples/fmt` - implemented
   - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, `Print`, `Printf`, `Println`, `Fscanln`, `Scanln`, and `Errorf`
   - formatted text and narrow scanning checks tied to a real KolibriOS file path, current-folder probe, and pipe-backed stdio capture
@@ -168,7 +168,7 @@ successful build.
   - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan checks, `os.Stat`, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

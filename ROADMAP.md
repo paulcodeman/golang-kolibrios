@@ -234,10 +234,14 @@ Current bootstrap status:
   `import "io"`.
 - Local support for `os.Getwd`, `os.Open`, `os.Create`, `os.OpenFile`,
   `os.ReadFile`, `os.WriteFile`, `os.Mkdir`, `os.Remove`, `os.Rename`,
-  `os.Pipe`, narrow `os.Err*` sentinels, `os.PathError`, `os.LinkError`,
-  and fd-backed `os.Stdin`/`os.Stdout`/`os.Stderr` are now in place.
+  `os.Stat`, `(*os.File).Stat`, `os.IsNotExist`, `os.Pipe`, narrow
+  `os.Err*` sentinels, `os.PathError`, `os.LinkError`, and fd-backed
+  `os.Stdin`/`os.Stdout`/`os.Stderr` are now in place.
 - `examples/os` is the sixth compatibility sample, using ordinary
   `import "os"`.
+- `examples/files`, `examples/os`, and `apps/diag` now use `os.Stat` plus
+  `FileInfo.Sys()` instead of direct `kos.GetPathInfo(...)` calls for their
+  main metadata path.
 - Local support for `fmt.Sprint`, `fmt.Sprintln`, `fmt.Sprintf`,
   `fmt.Fprint`, `fmt.Fprintln`, `fmt.Fprintf`, `fmt.Print`, `fmt.Printf`,
   `fmt.Println`, `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, `fmt.Scanln`,
