@@ -11,6 +11,8 @@ const (
 	filesButtonExit kos.ButtonID = 1
 	filesButtonRefresh kos.ButtonID = 2
 
+	filesProbePath = "/sys/default.skn"
+
 	filesWindowX = 320
 	filesWindowY = 180
 	filesWindowWidth = 620
@@ -20,9 +22,17 @@ const (
 )
 
 var (
-	errPathInfo = errors.New("path info failed")
-	errPathRead = errors.New("path read failed")
+	errPathInfo = &pathSentinel{text: "path info failed"}
+	errPathRead = &pathSentinel{text: "path read failed"}
 )
+
+type pathSentinel struct {
+	text string
+}
+
+func (err *pathSentinel) Error() string {
+	return err.text
+}
 
 type probeError struct {
 	op     string
@@ -31,11 +41,11 @@ type probeError struct {
 	cause  error
 }
 
-func (err *probeError) Error() string {
+func (err probeError) Error() string {
 	return err.op + " " + err.path + " / " + formatFileSystemStatus(err.status)
 }
 
-func (err *probeError) Unwrap() error {
+func (err probeError) Unwrap() error {
 	return err.cause
 }
 
@@ -46,6 +56,7 @@ type App struct {
 	readLine   string
 	classLine  string
 	errorLine  string
+	errorsOK   bool
 	lastError  error
 	refreshBtn ui.Button
 }
@@ -55,7 +66,7 @@ func NewApp() App {
 	refresh.Width = 116
 
 	app := App{
-		path:       kos.DefaultSkinPath,
+		path:       filesProbePath,
 		refreshBtn: refresh,
 	}
 	app.refreshProbe()
@@ -96,11 +107,11 @@ func (app *App) Redraw() {
 	kos.OpenWindow(filesWindowX, filesWindowY, filesWindowWidth, filesWindowHeight, filesWindowTitle)
 	kos.DrawText(28, 44, app.summaryColor(), app.summary)
 	kos.DrawText(28, 66, ui.Silver, "This sample imports errors with the ordinary import path: import \"errors\"")
-	kos.DrawText(28, 88, ui.White, "Path: "+app.path)
+	kos.DrawText(28, 88, ui.Black, "Path: "+app.path)
 	kos.DrawText(28, 112, ui.Aqua, app.infoLine)
 	kos.DrawText(28, 134, ui.Lime, app.readLine)
 	kos.DrawText(28, 156, ui.Yellow, app.classLine)
-	kos.DrawText(28, 178, ui.White, app.errorLine)
+	kos.DrawText(28, 178, ui.Black, app.errorLine)
 	app.refreshBtn.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -108,6 +119,7 @@ func (app *App) Redraw() {
 
 func (app *App) refreshProbe() {
 	app.lastError = nil
+	app.errorsOK = checkErrorsCompatibility()
 
 	info, status := kos.GetPathInfo(app.path)
 	if status != kos.FileSystemOK {
@@ -143,9 +155,16 @@ func (app *App) refreshProbe() {
 	}
 
 	app.readLine = "Read: " + formatUint32(read) + " bytes / head " + formatBytePreview(buffer[:int(read)])
-	app.classLine = "errors.Is: no wrapped error"
+	if app.errorsOK {
+		app.classLine = "errors: sentinel and unwrap chain ok"
+		app.errorLine = "Error: none"
+		app.summary = "file probe ok / bootstrap errors package resolved"
+		return
+	}
+
 	app.errorLine = "Error: none"
-	app.summary = "file probe ok / bootstrap errors package resolved"
+	app.classLine = "errors: bootstrap self-check failed"
+	app.summary = "file probe ok / bootstrap errors self-check failed"
 }
 
 func (app *App) fail(err error) {
@@ -171,9 +190,21 @@ func (app *App) fail(err error) {
 }
 
 func (app *App) summaryColor() kos.Color {
-	if app.lastError == nil {
+	if app.lastError == nil && app.errorsOK {
 		return ui.Lime
 	}
 
 	return ui.Red
+}
+
+func checkErrorsCompatibility() bool {
+	wrapped := &probeError{
+		op:     "diag",
+		path:   filesProbePath,
+		status: kos.FileSystemNotFound,
+		cause:  errPathInfo,
+	}
+	return errors.Is(errPathInfo, errPathInfo) &&
+		errors.Unwrap(wrapped) == errPathInfo &&
+		errors.Is(wrapped, errPathInfo)
 }

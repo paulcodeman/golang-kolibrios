@@ -96,6 +96,7 @@ extern void runtime_typedmemmove(const go_type_descriptor* descriptor, void* des
 extern go_string runtime_slicebytetostring(void* ignored, const unsigned char* src, intptr_t len);
 extern go_slice runtime_stringtoslicebyte(void* ignored, const char* src, intptr_t len);
 extern bool runtime_efaceeq(const go_type_descriptor* left_type, const void* left_data, const go_type_descriptor* right_type, const void* right_data);
+extern bool runtime_ifacevaleq(const go_interface_method_table* left_methods, const void* left_data, const go_type_descriptor* right_type, const void* right_data);
 extern bool runtime_nilinterequal(const void* left_value, const void* right_value);
 extern bool runtime_ifaceE2T2(const go_type_descriptor* target_type, const go_type_descriptor* source_type, const void* source_data, void* target_value);
 extern go_interface_method_table* runtime_assertitab(const go_type_descriptor* target_type, const go_type_descriptor* source_type);
@@ -556,6 +557,8 @@ static void test_interface_paths(void) {
     other.methods = runtime_assertitab(&labeler_interface_descriptor.common, &box_type_descriptor);
     other.data = &different;
 
+    expect_true(runtime_ifacevaleq(left.methods, left.data, &box_type_descriptor, &mirror), "runtime_ifacevaleq matches equal interface vs concrete value");
+    expect_false(runtime_ifacevaleq(left.methods, left.data, &box_type_descriptor, &different), "runtime_ifacevaleq rejects different concrete value");
     expect_true(runtime_interequal(&left, &right), "runtime_interequal matches equal interface values");
     expect_false(runtime_interequal(&left, &other), "runtime_interequal rejects different interface values");
 

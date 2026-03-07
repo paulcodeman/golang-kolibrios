@@ -692,6 +692,23 @@ static go_equal_function runtime_resolve_equal_function(const go_type_descriptor
     return *descriptor->equal;
 }
 
+static bool runtime_type_descriptor_matches(const go_type_descriptor* left, const go_type_descriptor* right) {
+    if (left == right) {
+        return true;
+    }
+    if (left == NULL || right == NULL) {
+        return false;
+    }
+
+    return left->size == right->size &&
+        left->ptrdata == right->ptrdata &&
+        left->hash == right->hash &&
+        left->align == right->align &&
+        left->field_align == right->field_align &&
+        left->kind == right->kind &&
+        runtime_string_equals(left->name, right->name);
+}
+
 static const go_named_type_method_descriptor* runtime_find_named_method(const go_uncommon_type* uncommon, const go_interface_method_descriptor* target_method) {
     const go_named_type_method_descriptor* methods;
     const go_named_type_method_descriptor* current;
@@ -710,7 +727,7 @@ static const go_named_type_method_descriptor* runtime_find_named_method(const go
         if (!runtime_string_equals(current->package_path, target_method->package_path)) {
             continue;
         }
-        if (current->interface_type != target_method->type) {
+        if (!runtime_type_descriptor_matches(current->interface_type, target_method->type)) {
             continue;
         }
 
@@ -930,6 +947,21 @@ bool runtime_ifaceeq(const go_interface_method_table* left_methods, const void* 
     return runtime_value_equal(left_type, left_data, right_data);
 }
 
+bool runtime_ifacevaleq(const go_interface_method_table* left_methods, const void* left_data, const go_type_descriptor* right_type, const void* right_data) {
+    const go_type_descriptor* left_type;
+
+    if (left_methods == NULL) {
+        return false;
+    }
+
+    left_type = left_methods->type;
+    if (left_type != right_type) {
+        return false;
+    }
+
+    return runtime_value_equal(left_type, left_data, right_data);
+}
+
 bool runtime_interequal(const void* left_value, const void* right_value) {
     const go_interface* left;
     const go_interface* right;
@@ -1121,6 +1153,9 @@ __asm__(".set runtime.strequal, runtime_strequal_impl");
 
 __asm__(".global runtime.ifaceeq");
 __asm__(".set runtime.ifaceeq, runtime_ifaceeq");
+
+__asm__(".global runtime.ifacevaleq");
+__asm__(".set runtime.ifacevaleq, runtime_ifacevaleq");
 
 __asm__(".global runtime.efaceeq");
 __asm__(".set runtime.efaceeq, runtime_efaceeq");

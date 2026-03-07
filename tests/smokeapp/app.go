@@ -1,6 +1,8 @@
 package smokeapp
 
 import (
+	"errors"
+
 	"../../kos"
 	"../../ui"
 )
@@ -12,7 +14,7 @@ const (
 	smokeWindowX      = 250
 	smokeWindowY      = 150
 	smokeWindowWidth  = 760
-	smokeWindowHeight = 280
+	smokeWindowHeight = 302
 )
 
 type sourceText interface {
@@ -31,6 +33,18 @@ func (value smokeText) Text() string {
 	return value.text
 }
 
+type smokeWrappedError struct {
+	cause error
+}
+
+func (err smokeWrappedError) Error() string {
+	return "wrapped"
+}
+
+func (err smokeWrappedError) Unwrap() error {
+	return err.cause
+}
+
 type App struct {
 	timeoutOK    bool
 	timeOK       bool
@@ -38,6 +52,7 @@ type App struct {
 	slicesOK     bool
 	ifaceOK      bool
 	assertionsOK bool
+	errorsOK     bool
 	systemOK     bool
 	shutdownOK   bool
 	summary      string
@@ -47,6 +62,7 @@ type App struct {
 	slicesLine   string
 	ifaceLine    string
 	assertLine   string
+	errorsLine   string
 	systemLine   string
 	powerLine    string
 }
@@ -83,7 +99,7 @@ func (app *App) eventLoop() {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(smokeButtonExit, "Exit", 632, 236)
+	exit := ui.NewButton(smokeButtonExit, "Exit", 632, 258)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -96,8 +112,9 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 154, app.statusColor(app.slicesOK), app.slicesLine)
 	kos.DrawText(28, 174, app.statusColor(app.ifaceOK), app.ifaceLine)
 	kos.DrawText(28, 194, app.statusColor(app.assertionsOK), app.assertLine)
-	kos.DrawText(28, 214, app.statusColor(app.systemOK), app.systemLine)
-	kos.DrawText(28, 236, app.statusColor(app.shutdownOK), app.powerLine)
+	kos.DrawText(28, 214, app.statusColor(app.errorsOK), app.errorsLine)
+	kos.DrawText(28, 234, app.statusColor(app.systemOK), app.systemLine)
+	kos.DrawText(28, 256, app.statusColor(app.shutdownOK), app.powerLine)
 	exit.Draw()
 	kos.EndRedraw()
 }
@@ -110,6 +127,7 @@ func (app *App) runChecks() {
 	app.slicesLine = "slice : pending"
 	app.ifaceLine = "iface : pending"
 	app.assertLine = "assert: pending"
+	app.errorsLine = "error : pending"
 	app.systemLine = "sys   : pending"
 	app.powerLine = "power : pending"
 
@@ -118,6 +136,7 @@ func (app *App) runChecks() {
 	app.slicesOK, app.slicesLine = checkSlices()
 	app.ifaceOK, app.ifaceLine = checkInterfaces()
 	app.assertionsOK, app.assertLine = checkAssertions()
+	app.errorsOK, app.errorsLine = checkErrors()
 	app.systemOK, app.systemLine = checkSystemSurface()
 	app.powerLine = "power : waiting for timeout gate"
 
@@ -175,6 +194,7 @@ func (app *App) allOK() bool {
 		app.slicesOK &&
 		app.ifaceOK &&
 		app.assertionsOK &&
+		app.errorsOK &&
 		app.systemOK
 }
 
@@ -250,6 +270,25 @@ func checkAssertions() (bool, string) {
 	}
 
 	return false, "assert: FAIL / assertion runtime mismatch"
+}
+
+func checkErrors() (bool, string) {
+	sentinel := errors.New("smoke sentinel")
+	wrapped := smokeWrappedError{cause: sentinel}
+
+	if !errors.Is(sentinel, sentinel) {
+		return false, "error : FAIL / sentinel self-match"
+	}
+
+	if errors.Unwrap(wrapped) != sentinel {
+		return false, "error : FAIL / Unwrap lost wrapped cause"
+	}
+
+	if !errors.Is(wrapped, sentinel) {
+		return false, "error : FAIL / Is failed through Unwrap"
+	}
+
+	return true, "error : PASS / ordinary import errors"
 }
 
 func checkSystemSurface() (bool, string) {
