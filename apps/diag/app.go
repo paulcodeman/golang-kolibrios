@@ -7,8 +7,8 @@ import (
 	"os"
 	"syscall"
 
-	"../../kos"
-	"../../ui"
+	"kos"
+	"ui"
 )
 
 const (
@@ -614,7 +614,7 @@ func checkFmt() checkResult {
 		}
 	}
 
-	previousStdout := os.Stdout
+	previousStdout := os.DefaultStdout()
 	os.Stdout = stdoutWriter
 	printCount, printErr := fmt.Print(label, " print ", 7, "\n")
 	printfCount, printfErr := fmt.Printf("cwd=%s", kos.CurrentFolder())
@@ -976,8 +976,8 @@ func checkDLL() checkResult {
 	}
 
 	return checkResult{
-		label:  "dll",
-		ok:     true,
+		label: "dll",
+		ok:    true,
 		detail: kos.ConsoleDLLPath +
 			" / table " + formatHex64(uint64(table)) +
 			" / ver " + formatHex64(uint64(version)) +
@@ -1009,21 +1009,37 @@ func checkConsole() checkResult {
 		}
 		titleState = "title ok"
 	}
-
-	if _, err := fmt.Fprintf(console, "golang-kolibrios console probe\r\n"); err != nil {
+	if _, err := kos.WriteActiveConsole([]byte("active console preflight\n")); err != nil {
 		_ = console.Close()
 		return checkResult{
 			label:  "console",
 			ok:     false,
-			detail: "fmt header failed",
+			detail: "active console bridge failed: " + err.Error(),
 		}
 	}
-	if _, err := fmt.Fprintf(console, "fmt writer path active / table 0x%x / ver 0x%x\r\n", uint32(console.ExportTable()), console.Version()); err != nil {
+
+	if _, err := fmt.Println("golang-kolibrios console probe"); err != nil {
 		_ = console.Close()
 		return checkResult{
 			label:  "console",
 			ok:     false,
-			detail: "fmt body failed",
+			detail: "stdout fmt header failed: " + err.Error(),
+		}
+	}
+	if _, err := fmt.Printf("stdout fmt path active / table 0x%x / ver 0x%x\n", uint32(console.ExportTable()), console.Version()); err != nil {
+		_ = console.Close()
+		return checkResult{
+			label:  "console",
+			ok:     false,
+			detail: "stdout fmt body failed: " + err.Error(),
+		}
+	}
+	if _, err := fmt.Fprintf(console, "direct writer path active\n"); err != nil {
+		_ = console.Close()
+		return checkResult{
+			label:  "console",
+			ok:     false,
+			detail: "writer fmt body failed: " + err.Error(),
 		}
 	}
 
@@ -1031,7 +1047,7 @@ func checkConsole() checkResult {
 	return checkResult{
 		label:  "console",
 		ok:     true,
-		detail: "init fmt exit / " + titleState,
+		detail: "init stdout fmt writer exit / " + titleState,
 	}
 }
 

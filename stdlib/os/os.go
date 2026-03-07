@@ -36,9 +36,78 @@ var ErrExist = &osError{text: "file already exists"}
 var ErrNotExist = &osError{text: "file does not exist"}
 var ErrClosed = &osError{text: "file already closed"}
 
-var Stdin = newDescriptorFile("stdin", int(kos.StdinFD), true, false)
-var Stdout = newDescriptorFile("stdout", int(kos.StdoutFD), false, true)
-var Stderr = newDescriptorFile("stderr", int(kos.StderrFD), false, true)
+var Stdin = &File{
+	name:     "stdin",
+	fd:       int(kos.StdinFD),
+	readable: true,
+	writable: false,
+	fdBacked: true,
+}
+
+var Stdout = &File{
+	name:     "stdout",
+	fd:       int(kos.StdoutFD),
+	readable: false,
+	writable: true,
+	fdBacked: true,
+}
+
+var Stderr = &File{
+	name:     "stderr",
+	fd:       int(kos.StderrFD),
+	readable: false,
+	writable: true,
+	fdBacked: true,
+}
+
+func init() {
+	ensureStandardFiles()
+}
+
+func ensureStandardFiles() {
+	if Stdin == nil || Stdin.name == "" {
+		Stdin = &File{
+			name:     "stdin",
+			fd:       int(kos.StdinFD),
+			readable: true,
+			writable: false,
+			fdBacked: true,
+		}
+	}
+	if Stdout == nil || Stdout.name == "" {
+		Stdout = &File{
+			name:     "stdout",
+			fd:       int(kos.StdoutFD),
+			readable: false,
+			writable: true,
+			fdBacked: true,
+		}
+	}
+	if Stderr == nil || Stderr.name == "" {
+		Stderr = &File{
+			name:     "stderr",
+			fd:       int(kos.StderrFD),
+			readable: false,
+			writable: true,
+			fdBacked: true,
+		}
+	}
+}
+
+func DefaultStdin() *File {
+	ensureStandardFiles()
+	return Stdin
+}
+
+func DefaultStdout() *File {
+	ensureStandardFiles()
+	return Stdout
+}
+
+func DefaultStderr() *File {
+	ensureStandardFiles()
+	return Stderr
+}
 
 type PathError struct {
 	Op   string
@@ -307,6 +376,18 @@ func (file *File) Write(buffer []byte) (int, error) {
 		return 0, nil
 	}
 	if file.fdBacked {
+		if file.usesActiveConsole() && kos.HasActiveConsole() {
+			written, err := kos.WriteActiveConsole(buffer)
+			if err != nil {
+				return written, &PathError{Op: "write", Path: file.name, Err: err}
+			}
+			if written != len(buffer) {
+				return written, io.ErrShortWrite
+			}
+
+			return written, nil
+		}
+
 		written, err := syscall.Write(file.fd, buffer)
 		if err != nil {
 			return written, &PathError{Op: "write", Path: file.name, Err: err}
@@ -364,6 +445,14 @@ func (file *File) ensureWritable(op string) error {
 	}
 
 	return nil
+}
+
+func (file *File) usesActiveConsole() bool {
+	if file == nil || !file.fdBacked {
+		return false
+	}
+
+	return file.fd == int(kos.StdoutFD) || file.fd == int(kos.StderrFD)
 }
 
 func wrapPathError(op string, name string, status kos.FileSystemStatus) error {

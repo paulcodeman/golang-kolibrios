@@ -135,7 +135,7 @@ func (app *App) refreshProbe() {
 		app.fail("stdout pipe unavailable", "Info: "+pipeErr.Error())
 		return
 	}
-	previousStdout := os.Stdout
+	previousStdout := os.DefaultStdout()
 	os.Stdout = stdoutWriter
 	printWritten, printErr := fmt.Print(label, " print ", 7, "\n")
 	printfWritten, printfErr := fmt.Printf("cwd=%s / size=%d", currentFolder, len(data))

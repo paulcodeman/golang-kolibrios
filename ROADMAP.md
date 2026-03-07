@@ -247,8 +247,9 @@ Current bootstrap status:
 - Local support for `syscall.Errno`, `syscall.Read`, `syscall.Write`,
   `syscall.Pipe`, and `syscall.Pipe2` is now in place through the documented
   `77.10`, `77.11`, and `77.13` contracts.
-- `apps/diag` now validates the bootstrap `syscall` pipe layer and `fmt.Print*`
-  through pipe-backed `os.Stdout` capture in headless QEMU.
+- `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`
+  through pipe-backed `os.Stdout` capture, and the active-console stdout bridge
+  in headless QEMU.
 - `apps/diag` is the first fuller utility outside `examples/`, giving the
   project a reusable diagnostics app plus a headless emulator validation path.
 - `kos` now has a first bootstrap wrapper for `/sys/lib/console.obj`,
@@ -256,7 +257,8 @@ Current bootstrap status:
   `con_set_title`, `con_getch`, and `con_exit` coverage.
 - `examples/console` is the first non-window SDK sample built on that console
   wrapper, and `apps/diag` headless validation now exercises the real
-  `CONSOLE.OBJ` init/write/exit path instead of DLL load alone.
+  `CONSOLE.OBJ` init/write/exit path plus ordinary `fmt.Print*` through the
+  active console backend instead of DLL load alone.
 - Broader package coverage (`time`)
   remains pending.
 

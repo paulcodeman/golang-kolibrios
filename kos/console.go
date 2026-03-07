@@ -15,8 +15,7 @@ type Console struct {
 	version         uint32
 }
 
-var activeConsoleTable DLLExportTable
-var activeConsoleExitProc DLLProc
+var activeConsole Console
 
 func LoadConsole() (Console, bool) {
 	return LoadConsoleFromDLL(LoadConsoleDLL())
@@ -138,6 +137,24 @@ func (console Console) Write(data []byte) (int, error) {
 	return 0, &consoleError{text: "console write failed"}
 }
 
+func HasActiveConsole() bool {
+	return ConsoleBridgeReadyRaw() != 0
+}
+
+func WriteActiveConsole(data []byte) (int, error) {
+	if len(data) == 0 {
+		return 0, nil
+	}
+	if !HasActiveConsole() {
+		return 0, &consoleError{text: "active console unavailable"}
+	}
+	if ConsoleBridgeWriteRaw(byteSliceAddress(data), uint32(len(data))) == 0 {
+		return 0, &consoleError{text: "console write failed"}
+	}
+
+	return len(data), nil
+}
+
 func (console Console) KeyHit() bool {
 	return console.keyHitProc.Valid() && CallStdcall0Raw(uint32(console.keyHitProc)) != 0
 }
@@ -185,23 +202,22 @@ func (err *consoleError) Error() string {
 }
 
 func registerActiveConsole(console Console) {
-	activeConsoleTable = console.table
-	activeConsoleExitProc = console.exitProc
+	activeConsole = console
+	ConsoleBridgeSetRaw(uint32(console.table), uint32(console.writeStringProc), uint32(console.exitProc))
 }
 
 func unregisterActiveConsole(console Console) {
-	if activeConsoleTable == console.table {
-		activeConsoleTable = 0
-		activeConsoleExitProc = 0
+	ConsoleBridgeClearRaw(uint32(console.table))
+	if activeConsole.table == console.table {
+		activeConsole = Console{}
 	}
 }
 
 func closeActiveConsole(closeWindow bool) {
-	if activeConsoleTable == 0 || !activeConsoleExitProc.Valid() {
+	if !HasActiveConsole() {
 		return
 	}
 
-	CallStdcall1VoidRaw(uint32(activeConsoleExitProc), boolToUint32(closeWindow))
-	activeConsoleTable = 0
-	activeConsoleExitProc = 0
+	ConsoleBridgeCloseRaw(boolToUint32(closeWindow))
+	activeConsole = Console{}
 }

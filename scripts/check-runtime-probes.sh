@@ -326,12 +326,11 @@ main() {
     "go_0errors.New" \
     "go_0io.ErrShortWrite" \
     "go_0io.WriteString" \
-    "go_0io.Writer..d" \
     "go_0io.ioError..p" \
     "go_0io.ioError.Error" \
     "go_0os.File..p" \
+    "go_0os.DefaultStdout" \
     "go_0os.File.Write" \
-    "go_0os.Stdout" \
     "memcmp" \
     "memmove" \
     "runtime.concatstrings" \
@@ -342,7 +341,6 @@ main() {
     "runtime.goPanicSliceB" \
     "runtime.growslice" \
     "runtime.ifaceE2I2" \
-    "runtime.ifaceeq" \
     "runtime.interequal..f" \
     "runtime.memequal" \
     "runtime.memequal16..f" \

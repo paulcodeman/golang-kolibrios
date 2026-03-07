@@ -23,45 +23,98 @@ func (buffer *buffer) String() string {
 	return string(buffer.data)
 }
 
-type countWriter struct {
-	writer  io.Writer
-	written int
-	err     error
+func (buffer *buffer) writeString(value string) {
+	if value == "" {
+		return
+	}
+
+	buffer.data = append(buffer.data, value...)
 }
 
-func (writer *countWriter) writeString(value string) {
-	if writer.err != nil || value == "" {
-		return
-	}
-
-	written, err := io.WriteString(writer.writer, value)
-	writer.written += written
-	if err != nil {
-		writer.err = err
-		return
-	}
-	if written != len(value) {
-		writer.err = io.ErrShortWrite
-	}
+func (buffer *buffer) writeByte(value byte) {
+	buffer.data = append(buffer.data, value)
 }
 
-func (writer *countWriter) writeByte(value byte) {
-	var data [1]byte
-
-	if writer.err != nil {
-		return
+func writeRendered(writer io.Writer, text string) (n int, err error) {
+	if text == "" {
+		return 0, nil
 	}
 
-	data[0] = value
-	written, err := writer.writer.Write(data[:])
-	writer.written += written
+	written, err := io.WriteString(writer, text)
 	if err != nil {
-		writer.err = err
-		return
+		return written, err
 	}
-	if written != len(data) {
-		writer.err = io.ErrShortWrite
+	if written != len(text) {
+		return written, io.ErrShortWrite
 	}
+
+	return written, nil
+}
+
+func renderPrint(values ...interface{}) string {
+	buffer := &buffer{}
+	for index := 0; index < len(values); index++ {
+		buffer.writeString(formatValue(values[index], 'v'))
+	}
+
+	return buffer.String()
+}
+
+func renderPrintln(values ...interface{}) string {
+	buffer := &buffer{}
+	for index := 0; index < len(values); index++ {
+		if index > 0 {
+			buffer.writeByte(' ')
+		}
+		buffer.writeString(formatValue(values[index], 'v'))
+	}
+	buffer.writeByte('\n')
+
+	return buffer.String()
+}
+
+func renderPrintf(format string, values ...interface{}) string {
+	buffer := &buffer{}
+	valueIndex := 0
+	textStart := 0
+
+	for index := 0; index < len(format); index++ {
+		if format[index] != '%' {
+			continue
+		}
+
+		buffer.writeString(format[textStart:index])
+		textStart = index + 1
+
+		if textStart >= len(format) {
+			buffer.writeString("%!(NOVERB)")
+			return buffer.String()
+		}
+
+		verb := format[textStart]
+		textStart++
+		if verb == '%' {
+			buffer.writeByte('%')
+			index = textStart - 1
+			continue
+		}
+
+		if valueIndex >= len(values) {
+			buffer.writeString(missingVerb(verb))
+			index = textStart - 1
+			continue
+		}
+
+		buffer.writeString(formatValue(values[valueIndex], verb))
+		valueIndex++
+		index = textStart - 1
+	}
+
+	if textStart < len(format) {
+		buffer.writeString(format[textStart:])
+	}
+
+	return buffer.String()
 }
 
 func Sprint(values ...interface{}) string {
@@ -83,81 +136,27 @@ func Sprintf(format string, values ...interface{}) string {
 }
 
 func Fprint(writer io.Writer, values ...interface{}) (n int, err error) {
-	count := &countWriter{writer: writer}
-	for index := 0; index < len(values); index++ {
-		count.writeString(formatValue(values[index], 'v'))
-	}
-
-	return count.written, count.err
+	return writeRendered(writer, renderPrint(values...))
 }
 
 func Fprintln(writer io.Writer, values ...interface{}) (n int, err error) {
-	count := &countWriter{writer: writer}
-	for index := 0; index < len(values); index++ {
-		if index > 0 {
-			count.writeByte(' ')
-		}
-		count.writeString(formatValue(values[index], 'v'))
-	}
-	count.writeByte('\n')
-
-	return count.written, count.err
+	return writeRendered(writer, renderPrintln(values...))
 }
 
 func Fprintf(writer io.Writer, format string, values ...interface{}) (n int, err error) {
-	count := &countWriter{writer: writer}
-	valueIndex := 0
-	textStart := 0
-
-	for index := 0; index < len(format); index++ {
-		if format[index] != '%' {
-			continue
-		}
-
-		count.writeString(format[textStart:index])
-		textStart = index + 1
-
-		if textStart >= len(format) {
-			count.writeString("%!(NOVERB)")
-			return count.written, count.err
-		}
-
-		verb := format[textStart]
-		textStart++
-		if verb == '%' {
-			count.writeByte('%')
-			index = textStart - 1
-			continue
-		}
-
-		if valueIndex >= len(values) {
-			count.writeString(missingVerb(verb))
-			index = textStart - 1
-			continue
-		}
-
-		count.writeString(formatValue(values[valueIndex], verb))
-		valueIndex++
-		index = textStart - 1
-	}
-
-	if textStart < len(format) {
-		count.writeString(format[textStart:])
-	}
-
-	return count.written, count.err
+	return writeRendered(writer, renderPrintf(format, values...))
 }
 
 func Print(values ...interface{}) (n int, err error) {
-	return Fprint(os.Stdout, values...)
+	return Fprint(os.DefaultStdout(), values...)
 }
 
 func Println(values ...interface{}) (n int, err error) {
-	return Fprintln(os.Stdout, values...)
+	return Fprintln(os.DefaultStdout(), values...)
 }
 
 func Printf(format string, values ...interface{}) (n int, err error) {
-	return Fprintf(os.Stdout, format, values...)
+	return Fprintf(os.DefaultStdout(), format, values...)
 }
 
 func Errorf(format string, values ...interface{}) error {

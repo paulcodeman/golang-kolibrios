@@ -164,11 +164,11 @@ successful build.
   - formatted text checks tied to a real KolibriOS file path, current-folder probe, and pipe-backed `os.Stdout` capture
 - `examples/console` - implemented
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
-  - ordinary `fmt.Fprintf` output through `kos.Console` as an `io.Writer`
+  - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `kos.Console` `io.Writer` support
   - waits for `Esc` so the sample exercises real console input instead of timing out immediately
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset

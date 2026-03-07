@@ -3,7 +3,7 @@ package consoledemo
 import (
 	"fmt"
 
-	"../../kos"
+	"kos"
 )
 
 const consoleDemoTitle = "KolibriOS Console Demo"
@@ -17,23 +17,23 @@ func Main() {
 		return
 	}
 
-	if _, err := fmt.Fprintf(console, "KolibriOS console demo\r\n"); err != nil {
-		kos.DebugString("console demo: fmt write failed")
+	if _, err := fmt.Println("KolibriOS console demo"); err != nil {
+		kos.DebugString("console demo: stdout write failed")
 		kos.Exit()
 		return
 	}
-	_, _ = fmt.Fprintf(console, "Loaded %s and resolved required exports.\r\n", kos.ConsoleDLLPath)
-	_, _ = fmt.Fprintf(console, "fmt.Fprintf now writes through CONSOLE.OBJ as an io.Writer.\r\n")
-	_, _ = fmt.Fprintf(console, "export table: 0x%x / version: 0x%x\r\n", uint32(console.ExportTable()), console.Version())
+	_, _ = fmt.Printf("Loaded %s and resolved required exports.\n", kos.ConsoleDLLPath)
+	_, _ = fmt.Println("fmt.Print* now routes through os.Stdout into CONSOLE.OBJ.")
+	_, _ = fmt.Printf("export table: 0x%x / version: 0x%x\n", uint32(console.ExportTable()), console.Version())
 	if console.SupportsTitle() {
 		console.SetTitle(consoleDemoTitle + " / ready")
 	}
 
 	if console.SupportsInput() {
-		_, _ = fmt.Fprintf(console, "Press Esc to close this console.\r\n")
+		_, _ = fmt.Println("Press Esc to close this console.")
 		waitForConsoleExitKey(console)
 	} else {
-		_, _ = fmt.Fprintf(console, "Input export missing, closing in three seconds.\r\n")
+		_, _ = fmt.Println("Input export missing, closing in three seconds.")
 		kos.SleepSeconds(3)
 	}
 

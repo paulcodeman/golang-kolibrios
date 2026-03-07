@@ -120,6 +120,21 @@ func CallStdcall2VoidRaw(proc uint32, arg0 uint32, arg1 uint32) __asm__("runtime
 // Runtime helper - invoke a stdcall function pointer with 5 arguments and no return value.
 func CallStdcall5VoidRaw(proc uint32, arg0 uint32, arg1 uint32, arg2 uint32, arg3 uint32, arg4 uint32) __asm__("runtime_kos_call_stdcall5_void")
 
+// Runtime helper - check whether a shared active console bridge is registered.
+func ConsoleBridgeReadyRaw() uint32 __asm__("runtime_console_bridge_ready")
+
+// Runtime helper - register active console write/exit procedures in shared runtime state.
+func ConsoleBridgeSetRaw(table uint32, writeProc uint32, exitProc uint32) __asm__("runtime_console_bridge_set")
+
+// Runtime helper - clear the shared active console bridge if the table matches.
+func ConsoleBridgeClearRaw(table uint32) __asm__("runtime_console_bridge_clear")
+
+// Runtime helper - write directly through the shared active console bridge.
+func ConsoleBridgeWriteRaw(data uint32, size uint32) uint32 __asm__("runtime_console_bridge_write")
+
+// Runtime helper - close the shared active console bridge and clear it.
+func ConsoleBridgeCloseRaw(closeWindow uint32) __asm__("runtime_console_bridge_close")
+
 // Function 70 - file system interface with long names support.
 func FileSystem(request *FileSystemRequest, secondary *uint32) int
 

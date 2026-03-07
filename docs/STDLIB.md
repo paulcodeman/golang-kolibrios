@@ -161,8 +161,9 @@ Current behavior notes:
   returns `errors.New(...)`; `%w` is rendered like `%v` and does not yet create
   an unwrap chain
 - `fmt.Print`, `fmt.Printf`, and `fmt.Println` now route through `os.Stdout`,
-  so ordinary stdout-style Go code can be exercised by redirecting `os.Stdout`
-  to a pipe-backed `*os.File`
+  so ordinary stdout-style Go code can be exercised either by redirecting
+  `os.Stdout` to a pipe-backed `*os.File` or by opening an active
+  `CONSOLE.OBJ` backend through `kos.OpenConsole`
 - width, precision, padding, floating-point formatting, maps, structs, and the
   broader printing/scanning surface are not implemented yet
 
@@ -189,6 +190,9 @@ Supported API:
 - `os.Stdin`
 - `os.Stdout`
 - `os.Stderr`
+- `os.DefaultStdin`
+- `os.DefaultStdout`
+- `os.DefaultStderr`
 - `os.PathError`
 - `os.LinkError`
 - `os.Getwd`
@@ -211,9 +215,14 @@ Current behavior notes:
   descriptor duplication, permissions, and sync semantics are not implemented
   yet
 - the fd-backed path currently follows the documented `77.10/77.11/77.13`
-  contracts, which are currently specified for pipe descriptors; ordinary
-  stdout-style code is therefore validated primarily through pipe redirection
-  rather than launcher-provided console streams
+  contracts, which are currently specified for pipe descriptors; the default
+  `os.Stdout` and `os.Stderr` handles additionally route through the active
+  `CONSOLE.OBJ` instance when one has been opened through the bootstrap `kos`
+  console wrapper
+- the bootstrap runtime currently re-materializes default stdio handles through
+  `os.DefaultStdin`, `os.DefaultStdout`, and `os.DefaultStderr`; `fmt.Print*`
+  uses that path internally so ordinary stdout-style Go code stays usable even
+  when imported package globals arrive zeroed
 - `(*os.File).Close` currently marks bootstrap fd-backed files closed locally,
   but it does not yet invoke a documented kernel close-handle syscall
 - `Rename` resolves ordinary Go-style relative and absolute paths into the
