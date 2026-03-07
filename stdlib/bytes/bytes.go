@@ -1,7 +1,202 @@
 package bytes
 
+import "io"
+
 type Buffer struct {
 	buf []byte
+}
+
+type Reader struct {
+	value []byte
+	index int64
+	prev  int64
+}
+
+type readerError struct {
+	text string
+}
+
+func (err *readerError) Error() string {
+	return err.text
+}
+
+func NewReader(data []byte) *Reader {
+	return &Reader{
+		value: data,
+		prev:  -1,
+	}
+}
+
+func (reader *Reader) Len() int {
+	if reader == nil || reader.index >= int64(len(reader.value)) {
+		return 0
+	}
+
+	return len(reader.value) - int(reader.index)
+}
+
+func (reader *Reader) Size() int64 {
+	if reader == nil {
+		return 0
+	}
+
+	return int64(len(reader.value))
+}
+
+func (reader *Reader) Reset(data []byte) {
+	if reader == nil {
+		return
+	}
+
+	reader.value = data
+	reader.index = 0
+	reader.prev = -1
+}
+
+func (reader *Reader) Read(p []byte) (n int, err error) {
+	if reader == nil {
+		return 0, io.EOF
+	}
+	if len(p) == 0 {
+		return 0, nil
+	}
+	if reader.index >= int64(len(reader.value)) {
+		reader.prev = -1
+		return 0, io.EOF
+	}
+
+	start := int(reader.index)
+	n = copy(p, reader.value[start:])
+	reader.index += int64(n)
+	reader.prev = -1
+	return n, nil
+}
+
+func (reader *Reader) ReadAt(p []byte, off int64) (n int, err error) {
+	if reader == nil {
+		return 0, io.EOF
+	}
+	if len(p) == 0 {
+		return 0, nil
+	}
+	if off < 0 {
+		return 0, &readerError{text: "bytes.Reader.ReadAt: negative offset"}
+	}
+	if off >= int64(len(reader.value)) {
+		return 0, io.EOF
+	}
+
+	n = copy(p, reader.value[int(off):])
+	if n < len(p) {
+		return n, io.EOF
+	}
+
+	return n, nil
+}
+
+func (reader *Reader) ReadByte() (byte, error) {
+	if reader == nil || reader.index >= int64(len(reader.value)) {
+		return 0, io.EOF
+	}
+
+	reader.prev = reader.index
+	value := reader.value[int(reader.index)]
+	reader.index++
+	return value, nil
+}
+
+func (reader *Reader) UnreadByte() error {
+	if reader == nil || reader.prev < 0 {
+		return &readerError{text: "bytes.Reader.UnreadByte: no byte to unread"}
+	}
+
+	reader.index = reader.prev
+	reader.prev = -1
+	return nil
+}
+
+func (reader *Reader) Seek(offset int64, whence int) (int64, error) {
+	if reader == nil {
+		return 0, &readerError{text: "bytes.Reader.Seek: nil reader"}
+	}
+
+	base := int64(0)
+	switch whence {
+	case io.SeekStart:
+		base = 0
+	case io.SeekCurrent:
+		base = reader.index
+	case io.SeekEnd:
+		base = int64(len(reader.value))
+	default:
+		return reader.index, &readerError{text: "bytes.Reader.Seek: invalid whence"}
+	}
+
+	position := base + offset
+	if position < 0 {
+		return reader.index, &readerError{text: "bytes.Reader.Seek: negative position"}
+	}
+
+	reader.index = position
+	reader.prev = -1
+	return reader.index, nil
+}
+
+func (reader *Reader) WriteTo(writer io.Writer) (n int64, err error) {
+	if reader == nil || reader.index >= int64(len(reader.value)) {
+		return 0, nil
+	}
+
+	start := int(reader.index)
+	wrote, err := writer.Write(reader.value[start:])
+	reader.index += int64(wrote)
+	reader.prev = -1
+	n = int64(wrote)
+	if err != nil {
+		return n, err
+	}
+	if wrote != len(reader.value)-start {
+		return n, io.ErrShortWrite
+	}
+
+	return n, nil
+}
+
+func Split(s []byte, sep []byte) [][]byte {
+	return SplitN(s, sep, -1)
+}
+
+func SplitN(s []byte, sep []byte, n int) [][]byte {
+	if n == 0 {
+		return nil
+	}
+	if len(sep) == 0 {
+		return splitBytes(s, n)
+	}
+	if n == 1 {
+		return [][]byte{s}
+	}
+
+	var parts [][]byte
+	start := 0
+	for start <= len(s) {
+		if n > 0 && len(parts)+1 >= n {
+			parts = append(parts, s[start:])
+			return parts
+		}
+
+		index := Index(s[start:], sep)
+		if index < 0 {
+			parts = append(parts, s[start:])
+			return parts
+		}
+
+		index += start
+		parts = append(parts, s[start:index])
+		start = index + len(sep)
+	}
+
+	return append(parts, []byte{})
 }
 
 func Contains(s []byte, subslice []byte) bool {
@@ -110,6 +305,79 @@ func TrimSuffix(s []byte, suffix []byte) []byte {
 	return s
 }
 
+func TrimSpace(s []byte) []byte {
+	start := 0
+	for start < len(s) && isASCIISpace(s[start]) {
+		start++
+	}
+
+	end := len(s)
+	for end > start && isASCIISpace(s[end-1]) {
+		end--
+	}
+
+	return s[start:end]
+}
+
+func Fields(s []byte) [][]byte {
+	var fields [][]byte
+	start := -1
+
+	for index := 0; index < len(s); index++ {
+		if isASCIISpace(s[index]) {
+			if start >= 0 {
+				fields = append(fields, s[start:index])
+				start = -1
+			}
+			continue
+		}
+		if start < 0 {
+			start = index
+		}
+	}
+	if start >= 0 {
+		fields = append(fields, s[start:])
+	}
+
+	return fields
+}
+
+func ReplaceAll(s []byte, old []byte, new []byte) []byte {
+	if len(old) == 0 {
+		if len(s) == 0 {
+			return append([]byte{}, new...)
+		}
+
+		replaced := make([]byte, 0, len(s)+(len(s)+1)*len(new))
+		replaced = append(replaced, new...)
+		for index := 0; index < len(s); index++ {
+			replaced = append(replaced, s[index])
+			replaced = append(replaced, new...)
+		}
+		return replaced
+	}
+
+	index := Index(s, old)
+	if index < 0 {
+		return append([]byte{}, s...)
+	}
+
+	replaced := make([]byte, 0, len(s))
+	start := 0
+	for index >= 0 {
+		replaced = append(replaced, s[start:index]...)
+		replaced = append(replaced, new...)
+		start = index + len(old)
+		next := Index(s[start:], old)
+		if next < 0 {
+			break
+		}
+		index = start + next
+	}
+	replaced = append(replaced, s[start:]...)
+	return replaced
+}
+
 func NewBuffer(buf []byte) *Buffer {
 	return &Buffer{buf: buf}
 }
@@ -198,4 +466,33 @@ func (buffer *Buffer) WriteString(value string) (int, error) {
 
 	buffer.buf = append(buffer.buf, value...)
 	return len(value), nil
+}
+
+func splitBytes(s []byte, n int) [][]byte {
+	if len(s) == 0 {
+		return [][]byte{}
+	}
+	if n > 0 && n == 1 {
+		return [][]byte{s}
+	}
+
+	parts := make([][]byte, 0, len(s))
+	for index := 0; index < len(s); index++ {
+		if n > 0 && len(parts)+1 >= n {
+			parts = append(parts, s[index:])
+			return parts
+		}
+		parts = append(parts, s[index:index+1])
+	}
+
+	return parts
+}
+
+func isASCIISpace(value byte) bool {
+	switch value {
+	case ' ', '\t', '\n', '\r', '\v', '\f':
+		return true
+	}
+
+	return false
 }

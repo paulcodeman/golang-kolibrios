@@ -515,6 +515,73 @@ func (file *File) Close() error {
 	return nil
 }
 
+func (file *File) Seek(offset int64, whence int) (int64, error) {
+	if file == nil {
+		return 0, &PathError{Op: "seek", Path: "", Err: ErrInvalid}
+	}
+	if file.closed {
+		return 0, &PathError{Op: "seek", Path: file.name, Err: ErrClosed}
+	}
+	if file.fdBacked {
+		return 0, &PathError{Op: "seek", Path: file.name, Err: ErrInvalid}
+	}
+
+	base := int64(0)
+	switch whence {
+	case io.SeekStart:
+		base = 0
+	case io.SeekCurrent:
+		base = int64(file.offset)
+	case io.SeekEnd:
+		info, status := kos.GetPathInfo(file.name)
+		if status != kos.FileSystemOK {
+			return 0, wrapPathError("seek", file.name, status)
+		}
+		base = int64(info.Size)
+	default:
+		return int64(file.offset), &PathError{Op: "seek", Path: file.name, Err: ErrInvalid}
+	}
+
+	position := base + offset
+	if position < 0 {
+		return int64(file.offset), &PathError{Op: "seek", Path: file.name, Err: ErrInvalid}
+	}
+
+	file.offset = uint64(position)
+	return position, nil
+}
+
+func (file *File) ReadAt(buffer []byte, off int64) (int, error) {
+	if err := file.ensureReadable("read"); err != nil {
+		return 0, err
+	}
+	if off < 0 {
+		return 0, &PathError{Op: "read", Path: file.name, Err: ErrInvalid}
+	}
+	if len(buffer) == 0 {
+		return 0, nil
+	}
+	if file.fdBacked {
+		return 0, &PathError{Op: "read", Path: file.name, Err: ErrInvalid}
+	}
+
+	read, status := kos.ReadFile(file.name, buffer, uint64(off))
+	switch status {
+	case kos.FileSystemOK:
+		if read == 0 {
+			return 0, io.EOF
+		}
+		return int(read), nil
+	case kos.FileSystemEOF:
+		if read > 0 {
+			return int(read), io.EOF
+		}
+		return 0, io.EOF
+	default:
+		return int(read), wrapPathError("read", file.name, status)
+	}
+}
+
 func (file *File) Read(buffer []byte) (int, error) {
 	if err := file.ensureReadable("read"); err != nil {
 		return 0, err

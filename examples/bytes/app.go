@@ -2,6 +2,7 @@ package bytesdemo
 
 import (
 	"bytes"
+	"io"
 	"os"
 
 	"../../kos"
@@ -16,7 +17,7 @@ const (
 	bytesWindowX      = 248
 	bytesWindowY      = 156
 	bytesWindowWidth  = 768
-	bytesWindowHeight = 298
+	bytesWindowHeight = 320
 
 	bytesProbePath = "/sys/default.skn"
 )
@@ -27,6 +28,7 @@ type App struct {
 	matchLine  string
 	indexLine  string
 	trimLine   string
+	readerLine string
 	cwdLine    string
 	infoLine   string
 	ok         bool
@@ -34,7 +36,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(bytesButtonRefresh, "Refresh", 28, 242)
+	refresh := ui.NewButton(bytesButtonRefresh, "Refresh", 28, 264)
 	refresh.Width = 116
 
 	app := App{
@@ -71,7 +73,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(bytesButtonExit, "Exit", 170, 242)
+	exit := ui.NewButton(bytesButtonExit, "Exit", 170, 264)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -82,8 +84,9 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 114, ui.Lime, app.matchLine)
 	kos.DrawText(28, 136, ui.Yellow, app.indexLine)
 	kos.DrawText(28, 158, ui.White, app.trimLine)
-	kos.DrawText(28, 180, ui.Silver, app.cwdLine)
-	kos.DrawText(28, 202, ui.Black, app.infoLine)
+	kos.DrawText(28, 180, ui.Navy, app.readerLine)
+	kos.DrawText(28, 202, ui.Silver, app.cwdLine)
+	kos.DrawText(28, 224, ui.Black, app.infoLine)
 	app.refreshBtn.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -113,6 +116,27 @@ func (app *App) refreshProbe() {
 	before, after, found := bytes.Cut(joined, []byte("/default"))
 	trimmed := bytes.TrimSuffix(bytes.TrimPrefix(joined, []byte("/sys/")), []byte(".skn"))
 	trimmedOK := bytes.Equal(trimmed, []byte("default"))
+	trimmedSpace := bytes.TrimSpace([]byte(" \tdefault \n"))
+	parts := bytes.Split(joined, []byte("/"))
+	splitTwo := bytes.SplitN(joined, []byte("/"), 2)
+	fields := bytes.Fields([]byte("alpha  beta\tgamma"))
+	replaced := bytes.ReplaceAll(joined, []byte(".skn"), []byte(".txt"))
+	reader := bytes.NewReader(joined)
+	head := make([]byte, 4)
+	headRead, headErr := reader.Read(head)
+	headByte, headByteErr := reader.ReadByte()
+	headUnreadErr := reader.UnreadByte()
+	headByteAgain, headByteAgainErr := reader.ReadByte()
+	seekPos, seekErr := reader.Seek(-4, io.SeekEnd)
+	tail := make([]byte, 4)
+	tailRead, tailErr := reader.Read(tail)
+	readAt := make([]byte, 7)
+	readAtCount, readAtErr := reader.ReadAt(readAt, 5)
+	readerLen := reader.Len()
+	readerSize := reader.Size()
+	copyReader := bytes.NewReader(joined)
+	copyBuffer := bytes.NewBuffer(nil)
+	copiedCount, copiedErr := io.Copy(copyBuffer, copyReader)
 	currentFolderPath, err := os.Getwd()
 	if err != nil {
 		app.fail("getwd failed")
@@ -124,7 +148,8 @@ func (app *App) refreshProbe() {
 	app.joinLine = "Join: " + string(joined) + " / buffer " + bufferString + " / reset " + bufferReset
 	app.matchLine = "Match: prefix " + formatBool(hasPrefix) + " / suffix " + formatBool(hasSuffix) + " / contains " + formatBool(contains)
 	app.indexLine = "Index: default " + formatInt(index) + " / dot " + formatInt(dot) + " / cut " + string(before) + " | " + string(after) + " / found " + formatBool(found)
-	app.trimLine = "Trim: /sys/ + .skn -> " + string(trimmed) + " / equal " + formatBool(trimmedOK)
+	app.trimLine = "Split: " + formatInt(len(parts)) + "/" + formatInt(len(splitTwo)) + " / fields " + formatInt(len(fields)) + " / trim " + string(trimmedSpace) + " / repl " + string(replaced)
+	app.readerLine = "Reader: head " + string(head[:headRead]) + " / at " + string(readAt[:readAtCount]) + " / tail " + string(tail[:tailRead]) + " / copy " + formatInt(int(copiedCount))
 	app.cwdLine = "Current folder: " + string(currentFolder) + " / trim leading slash -> " + string(trimmedCWD)
 
 	if !bytes.Equal(joined, []byte(bytesProbePath)) {
@@ -145,6 +170,14 @@ func (app *App) refreshProbe() {
 	}
 	if !trimmedOK {
 		app.fail("trim mismatch")
+		return
+	}
+	if !bytes.Equal(trimmedSpace, []byte("default")) || len(parts) != 3 || !bytes.Equal(parts[1], []byte("sys")) || !bytes.Equal(parts[2], []byte("default.skn")) || len(splitTwo) != 2 || !bytes.Equal(splitTwo[1], []byte("sys/default.skn")) || len(fields) != 3 || !bytes.Equal(fields[0], []byte("alpha")) || !bytes.Equal(fields[2], []byte("gamma")) || !bytes.Equal(replaced, []byte("/sys/default.txt")) {
+		app.fail("split fields replace mismatch")
+		return
+	}
+	if headErr != nil || headByteErr != nil || headUnreadErr != nil || headByteAgainErr != nil || seekErr != nil || tailErr != nil || readAtErr != nil || copiedErr != nil || headRead != 4 || !bytes.Equal(head[:headRead], []byte("/sys")) || headByte != '/' || headByteAgain != '/' || seekPos != 12 || tailRead != 4 || !bytes.Equal(tail[:tailRead], []byte(".skn")) || readAtCount != 7 || !bytes.Equal(readAt[:readAtCount], []byte("default")) || readerLen != 0 || readerSize != int64(len(bytesProbePath)) || copiedCount != int64(len(bytesProbePath)) || !bytes.Equal(copyBuffer.Bytes(), joined) {
+		app.fail("reader mismatch")
 		return
 	}
 	if len(currentFolder) == 0 || bytes.Equal(trimmedCWD, currentFolder) {

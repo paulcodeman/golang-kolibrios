@@ -16,7 +16,7 @@ const (
 	osWindowX      = 230
 	osWindowY      = 138
 	osWindowWidth  = 820
-	osWindowHeight = 344
+	osWindowHeight = 366
 
 	osDemoDirName      = "go-os-demo"
 	osDemoFileName     = "sample.txt"
@@ -40,6 +40,7 @@ type App struct {
 	cwdLine    string
 	writeLine  string
 	readLine   string
+	seekLine   string
 	renameLine string
 	infoLine   string
 	ok         bool
@@ -47,7 +48,7 @@ type App struct {
 }
 
 func NewApp() App {
-	refresh := ui.NewButton(osButtonRefresh, "Refresh", 28, 286)
+	refresh := ui.NewButton(osButtonRefresh, "Refresh", 28, 308)
 	refresh.Width = 116
 
 	app := App{
@@ -84,7 +85,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 }
 
 func (app *App) Redraw() {
-	exit := ui.NewButton(osButtonExit, "Exit", 170, 286)
+	exit := ui.NewButton(osButtonExit, "Exit", 170, 308)
 	exit.Width = 96
 
 	kos.BeginRedraw()
@@ -94,8 +95,9 @@ func (app *App) Redraw() {
 	kos.DrawText(28, 92, ui.Aqua, app.cwdLine)
 	kos.DrawText(28, 114, ui.Lime, app.writeLine)
 	kos.DrawText(28, 136, ui.Yellow, app.readLine)
-	kos.DrawText(28, 158, ui.Navy, app.renameLine)
-	kos.DrawText(28, 180, ui.Black, app.infoLine)
+	kos.DrawText(28, 158, ui.Navy, app.seekLine)
+	kos.DrawText(28, 180, ui.Maroon, app.renameLine)
+	kos.DrawText(28, 202, ui.Black, app.infoLine)
 	app.refreshBtn.Draw()
 	exit.Draw()
 	kos.EndRedraw()
@@ -180,6 +182,32 @@ func (app *App) refreshProbe() {
 		app.fail("file stat failed")
 		return
 	}
+	headAt := make([]byte, len(osDemoPayloadBase))
+	headAtCount, headAtErr := reader.ReadAt(headAt, 0)
+	if headAtErr != nil && headAtErr != io.EOF {
+		_ = reader.Close()
+		app.fail("readat failed")
+		return
+	}
+	seekPos, seekErr := reader.Seek(-int64(len(osDemoPayloadExtra)), io.SeekEnd)
+	if seekErr != nil {
+		_ = reader.Close()
+		app.fail("seek end failed")
+		return
+	}
+	tail := make([]byte, len(osDemoPayloadExtra))
+	tailRead, tailErr := reader.Read(tail)
+	if tailErr != nil && tailErr != io.EOF {
+		_ = reader.Close()
+		app.fail("seek read failed")
+		return
+	}
+	restartPos, restartErr := reader.Seek(0, io.SeekStart)
+	if restartErr != nil {
+		_ = reader.Close()
+		app.fail("seek start failed")
+		return
+	}
 	copyTarget := &bufferWriter{}
 	copied, copyErr := io.Copy(copyTarget, reader)
 	closeErr = reader.Close()
@@ -227,7 +255,8 @@ func (app *App) refreshProbe() {
 
 	app.cwdLine = "Getwd: " + cwd + " / probe root " + baseDir
 	app.writeLine = "Mkdir/Create/OpenFile: wrote " + formatInt(wrote) + " + " + formatInt(len(osDemoPayloadExtra)) + " bytes into " + demoFile
-	app.readLine = "ReadFile/Open+Copy: len " + formatInt(len(data)) + " / copy " + formatInt64(copied) + " / match " + formatBool(equalBytes(copyTarget.data, data))
+	app.readLine = "ReadFile/ReadAt: len " + formatInt(len(data)) + " / head " + string(headAt[:headAtCount]) + " / match " + formatBool(equalBytes(copyTarget.data, data))
+	app.seekLine = "Seek/Open+Copy: tail " + string(tail[:tailRead]) + " / pos " + formatInt64(seekPos) + " -> " + formatInt64(restartPos) + " / copy " + formatInt64(copied)
 	app.renameLine = "Rename/Remove: " + demoFile + " -> " + renamedFile + " / cleanup ok"
 
 	if string(data) != payload || !equalBytes(copyTarget.data, []byte(payload)) {
@@ -236,6 +265,14 @@ func (app *App) refreshProbe() {
 	}
 	if copied != int64(len(payload)) {
 		app.fail("copy length mismatch")
+		return
+	}
+	if headAtCount != len(osDemoPayloadBase) || string(headAt[:headAtCount]) != osDemoPayloadBase {
+		app.fail("readat mismatch")
+		return
+	}
+	if seekPos != int64(len(osDemoPayloadBase)) || tailRead != len(osDemoPayloadExtra) || string(tail[:tailRead]) != osDemoPayloadExtra || restartPos != 0 {
+		app.fail("seek mismatch")
 		return
 	}
 	if readerInfo.Size() != int64(len(payload)) {

@@ -227,28 +227,36 @@ Current bootstrap status:
   `import "path/filepath"`.
 - Local support for `strings.Contains`, `strings.Cut`, `strings.HasPrefix`,
   `strings.HasSuffix`, `strings.Index`, `strings.Join`, `strings.LastIndex`,
-  `strings.TrimPrefix`, `strings.TrimSuffix`, and narrow `strings.Builder`
-  support (`Write`, `WriteByte`, `WriteString`, `String`, `Len`, `Cap`,
-  `Grow`, `Reset`) is now in place.
+  `strings.Split`, `strings.SplitN`, `strings.Fields`, `strings.TrimSpace`,
+  `strings.ReplaceAll`, `strings.TrimPrefix`, `strings.TrimSuffix`, narrow
+  `strings.Builder` support (`Write`, `WriteByte`, `WriteString`, `String`,
+  `Len`, `Cap`, `Grow`, `Reset`), and narrow `strings.Reader` support
+  (`NewReader`, `Read`, `ReadAt`, `ReadByte`, `UnreadByte`, `Seek`, `Len`,
+  `Size`, `Reset`, `WriteTo`) is now in place.
 - `examples/strings` is the fourth compatibility sample, using ordinary
   `import "strings"`.
 - Local support for `bytes.Contains`, `bytes.Cut`, `bytes.Equal`,
   `bytes.HasPrefix`, `bytes.HasSuffix`, `bytes.Index`, `bytes.IndexByte`,
-  `bytes.Join`, `bytes.TrimPrefix`, `bytes.TrimSuffix`, and narrow
-  `bytes.Buffer` support (`NewBuffer`, `NewBufferString`, `Write`,
-  `WriteByte`, `WriteString`, `Bytes`, `String`, `Len`, `Cap`, `Grow`,
-  `Reset`) is now in place.
+  `bytes.Join`, `bytes.Split`, `bytes.SplitN`, `bytes.Fields`,
+  `bytes.TrimSpace`, `bytes.ReplaceAll`, `bytes.TrimPrefix`,
+  `bytes.TrimSuffix`, narrow `bytes.Buffer` support (`NewBuffer`,
+  `NewBufferString`, `Write`, `WriteByte`, `WriteString`, `Bytes`, `String`,
+  `Len`, `Cap`, `Grow`, `Reset`), and narrow `bytes.Reader` support
+  (`NewReader`, `Read`, `ReadAt`, `ReadByte`, `UnreadByte`, `Seek`, `Len`,
+  `Size`, `Reset`, `WriteTo`) is now in place.
 - `examples/bytes` is the fifth compatibility sample, using ordinary
   `import "bytes"`.
 - Local support for `io.Reader`, `io.Writer`, `io.Closer`, `io.ReadWriter`,
-  `io.ReadCloser`, `io.WriteCloser`, `io.EOF`, `io.ErrShortWrite`,
-  `io.ReadAll`, `io.Copy`, `io.CopyBuffer`, and `io.WriteString` is now in
-  place.
+  `io.ReadCloser`, `io.WriteCloser`, `io.ReaderAt`, `io.Seeker`,
+  `io.ReadSeeker`, `io.WriterTo`, `io.ReaderFrom`, `io.ByteReader`,
+  `io.ByteScanner`, `io.EOF`, `io.ErrShortWrite`, `io.ReadAll`, `io.Copy`,
+  `io.CopyBuffer`, and `io.WriteString` is now in place.
 - `examples/io` is the sixth compatibility sample, using ordinary
   `import "io"`.
 - Local support for `os.Getwd`, `os.Open`, `os.Create`, `os.OpenFile`,
   `os.ReadFile`, `os.WriteFile`, `os.Mkdir`, `os.Remove`, `os.Rename`,
-  `os.Stat`, `(*os.File).Stat`, `os.IsNotExist`, `os.Pipe`,
+  `os.Stat`, `(*os.File).Stat`, `(*os.File).Seek`, `(*os.File).ReadAt`,
+  `os.IsNotExist`, `os.Pipe`,
   `os.FileInfo.ModTime`, `os.Args`, `os.Getpid`, `os.Getppid`, `os.Exit`,
   process-local `os.Getenv`/`LookupEnv`/`Setenv`/`Unsetenv`/`Clearenv`/
   `Environ`, narrow `os.Err*` sentinels, `os.PathError`, `os.LinkError`, and
@@ -258,8 +266,8 @@ Current bootstrap status:
 - `examples/files`, `examples/os`, and `apps/diag` now use `os.Stat` plus
   `FileInfo.Sys()` instead of direct `kos.GetPathInfo(...)` calls for their
   main metadata path, and `examples/os` / `apps/diag` also validate
-  `FileInfo.ModTime`, `Getpid`, `Getppid`, `Args`, and the current
-  process-local environment contract.
+  `(*os.File).ReadAt`, `(*os.File).Seek`, `FileInfo.ModTime`, `Getpid`,
+  `Getppid`, `Args`, and the current process-local environment contract.
 - Local support for `fmt.Sprint`, `fmt.Sprintln`, `fmt.Sprintf`,
   `fmt.Fprint`, `fmt.Fprintln`, `fmt.Fprintf`, `fmt.Print`, `fmt.Printf`,
   `fmt.Println`, `fmt.Fscan`, `fmt.Fscanln`, `fmt.Scan`, `fmt.Scanln`,
@@ -298,8 +306,11 @@ Current bootstrap status:
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
   `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows, narrow
-  `strconv` format/parse/append coverage, `strings.Builder`, `bytes.Buffer`,
-  local pipe EOF/EPIPE semantics,
+  `strconv` format/parse/append coverage, `strings.Builder`,
+  `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`,
+  `strings.Split`/`SplitN`/`Fields`/`TrimSpace`/`ReplaceAll`,
+  `bytes.Split`/`SplitN`/`Fields`/`TrimSpace`/`ReplaceAll`,
+  `(*os.File).ReadAt`, `(*os.File).Seek`, local pipe EOF/EPIPE semantics,
   `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
   capture plus the documented clock bridge, along with the active-console
   stdout bridge in headless QEMU.
@@ -312,7 +323,8 @@ Current bootstrap status:
   wrapper, and `apps/diag` headless validation now exercises the real
   `CONSOLE.OBJ` init/write/exit path plus ordinary `fmt.Print*` through the
   active console backend instead of DLL load alone; the sample itself now also
-  demonstrates `fmt.Scanln` against the same console-backed stdio path.
+  demonstrates ordinary `bufio.NewReader(os.Stdin).ReadString('\n')` against
+  the same console-backed stdio path.
 - At this point the original Phase 5 package list is in place, and the current
   bootstrap contract now documents the KolibriOS mappings for paths,
   filepath normalization, pipe-backed stdio, active-console-backed

@@ -1214,6 +1214,48 @@ func checkBuilders() checkResult {
 	_, _ = buffer.WriteString("buffer ok")
 	bufferReset := buffer.String()
 	bufferFromString := bytes.NewBufferString("demo")
+	splitParts := strings.Split(diagFilesProbePath, "/")
+	splitTwo := strings.SplitN(diagFilesProbePath, "/", 2)
+	fields := strings.Fields("alpha  beta\tgamma")
+	trimmed := strings.TrimSpace(" \tdefault \n")
+	replaced := strings.ReplaceAll(diagFilesProbePath, ".skn", ".txt")
+	stringReader := strings.NewReader(diagFilesProbePath)
+	stringHead := make([]byte, 4)
+	stringHeadRead, stringHeadErr := stringReader.Read(stringHead)
+	stringHeadByte, stringHeadByteErr := stringReader.ReadByte()
+	stringUnreadErr := stringReader.UnreadByte()
+	stringHeadByteAgain, stringHeadByteAgainErr := stringReader.ReadByte()
+	stringSeekPos, stringSeekErr := stringReader.Seek(-4, io.SeekEnd)
+	stringTail := make([]byte, 4)
+	stringTailRead, stringTailErr := stringReader.Read(stringTail)
+	stringReadAt := make([]byte, 7)
+	stringReadAtCount, stringReadAtErr := stringReader.ReadAt(stringReadAt, 5)
+	stringReaderLen := stringReader.Len()
+	stringReaderSize := stringReader.Size()
+	stringCopyReader := strings.NewReader(diagFilesProbePath)
+	var stringCopyBuilder strings.Builder
+	stringCopied, stringCopyErr := io.Copy(&stringCopyBuilder, stringCopyReader)
+	byteParts := bytes.Split([]byte(diagFilesProbePath), []byte("/"))
+	byteSplitTwo := bytes.SplitN([]byte(diagFilesProbePath), []byte("/"), 2)
+	byteFields := bytes.Fields([]byte("alpha  beta\tgamma"))
+	byteTrimmed := bytes.TrimSpace([]byte(" \tdefault \n"))
+	byteReplaced := bytes.ReplaceAll([]byte(diagFilesProbePath), []byte(".skn"), []byte(".txt"))
+	byteReader := bytes.NewReader([]byte(diagFilesProbePath))
+	byteHead := make([]byte, 4)
+	byteHeadRead, byteHeadErr := byteReader.Read(byteHead)
+	byteHeadValue, byteHeadValueErr := byteReader.ReadByte()
+	byteUnreadErr := byteReader.UnreadByte()
+	byteHeadValueAgain, byteHeadValueAgainErr := byteReader.ReadByte()
+	byteSeekPos, byteSeekErr := byteReader.Seek(-4, io.SeekEnd)
+	byteTail := make([]byte, 4)
+	byteTailRead, byteTailErr := byteReader.Read(byteTail)
+	byteReadAt := make([]byte, 7)
+	byteReadAtCount, byteReadAtErr := byteReader.ReadAt(byteReadAt, 5)
+	byteReaderLen := byteReader.Len()
+	byteReaderSize := byteReader.Size()
+	byteCopyReader := bytes.NewReader([]byte(diagFilesProbePath))
+	byteCopyBuffer := bytes.NewBuffer(nil)
+	byteCopied, byteCopyErr := io.Copy(byteCopyBuffer, byteCopyReader)
 
 	if built != diagFilesProbePath || builderLen != len(diagFilesProbePath) || builderCap < builderLen || builderReset != "builder ok" {
 		return checkResult{
@@ -1229,11 +1271,39 @@ func checkBuilders() checkResult {
 			detail: "bytes.Buffer mismatch",
 		}
 	}
+	if len(splitParts) != 3 || splitParts[1] != "sys" || splitParts[2] != "default.skn" || len(splitTwo) != 2 || splitTwo[1] != "sys/default.skn" || len(fields) != 3 || fields[0] != "alpha" || fields[2] != "gamma" || trimmed != "default" || replaced != "/sys/default.txt" {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "strings helper mismatch",
+		}
+	}
+	if stringHeadErr != nil || stringHeadByteErr != nil || stringUnreadErr != nil || stringHeadByteAgainErr != nil || stringSeekErr != nil || stringTailErr != nil || stringReadAtErr != nil || stringCopyErr != nil || stringHeadRead != 4 || string(stringHead[:stringHeadRead]) != "/sys" || stringHeadByte != '/' || stringHeadByteAgain != '/' || stringSeekPos != 12 || stringTailRead != 4 || string(stringTail[:stringTailRead]) != ".skn" || stringReadAtCount != 7 || string(stringReadAt[:stringReadAtCount]) != "default" || stringReaderLen != 0 || stringReaderSize != int64(len(diagFilesProbePath)) || stringCopied != int64(len(diagFilesProbePath)) || stringCopyBuilder.String() != diagFilesProbePath {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "strings reader mismatch",
+		}
+	}
+	if len(byteParts) != 3 || !bytes.Equal(byteParts[1], []byte("sys")) || !bytes.Equal(byteParts[2], []byte("default.skn")) || len(byteSplitTwo) != 2 || !bytes.Equal(byteSplitTwo[1], []byte("sys/default.skn")) || len(byteFields) != 3 || !bytes.Equal(byteFields[0], []byte("alpha")) || !bytes.Equal(byteFields[2], []byte("gamma")) || !bytes.Equal(byteTrimmed, []byte("default")) || !bytes.Equal(byteReplaced, []byte("/sys/default.txt")) {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "bytes helper mismatch",
+		}
+	}
+	if byteHeadErr != nil || byteHeadValueErr != nil || byteUnreadErr != nil || byteHeadValueAgainErr != nil || byteSeekErr != nil || byteTailErr != nil || byteReadAtErr != nil || byteCopyErr != nil || byteHeadRead != 4 || !bytes.Equal(byteHead[:byteHeadRead], []byte("/sys")) || byteHeadValue != '/' || byteHeadValueAgain != '/' || byteSeekPos != 12 || byteTailRead != 4 || !bytes.Equal(byteTail[:byteTailRead], []byte(".skn")) || byteReadAtCount != 7 || !bytes.Equal(byteReadAt[:byteReadAtCount], []byte("default")) || byteReaderLen != 0 || byteReaderSize != int64(len(diagFilesProbePath)) || byteCopied != int64(len(diagFilesProbePath)) || !bytes.Equal(byteCopyBuffer.Bytes(), []byte(diagFilesProbePath)) {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "bytes reader mismatch",
+		}
+	}
 
 	return checkResult{
 		label:  "builders",
 		ok:     true,
-		detail: "strings.Builder bytes.Buffer / len " + formatInt(builderLen) + " / cap " + formatInt(bufferCap),
+		detail: "builder buffer reader split fields trim replace / len " + formatInt(builderLen) + " / cap " + formatInt(bufferCap),
 	}
 }
 
@@ -1556,6 +1626,44 @@ func checkOS() checkResult {
 			detail: "file stat " + err.Error(),
 		}
 	}
+	headAt := make([]byte, len(payloadBase))
+	headAtCount, headAtErr := reader.ReadAt(headAt, 0)
+	if headAtErr != nil && headAtErr != io.EOF {
+		_ = reader.Close()
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "readat " + headAtErr.Error(),
+		}
+	}
+	seekPos, seekErr := reader.Seek(-int64(len(payloadExtra)), io.SeekEnd)
+	if seekErr != nil {
+		_ = reader.Close()
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "seek end " + seekErr.Error(),
+		}
+	}
+	tail := make([]byte, len(payloadExtra))
+	tailRead, tailErr := reader.Read(tail)
+	if tailErr != nil && tailErr != io.EOF {
+		_ = reader.Close()
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "seek read " + tailErr.Error(),
+		}
+	}
+	restartPos, restartErr := reader.Seek(0, io.SeekStart)
+	if restartErr != nil {
+		_ = reader.Close()
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "seek start " + restartErr.Error(),
+		}
+	}
 
 	data, readErr := io.ReadAll(reader)
 	closeErr := reader.Close()
@@ -1575,6 +1683,20 @@ func checkOS() checkResult {
 			label:  "os",
 			ok:     false,
 			detail: "payload mismatch",
+		}
+	}
+	if headAtCount != len(payloadBase) || string(headAt[:headAtCount]) != payloadBase {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "readat mismatch",
+		}
+	}
+	if seekPos != int64(len(payloadBase)) || tailRead != len(payloadExtra) || string(tail[:tailRead]) != payloadExtra || restartPos != 0 {
+		return checkResult{
+			label:  "os",
+			ok:     false,
+			detail: "seek mismatch",
 		}
 	}
 	if readerInfo.Size() != int64(len(payload)) {
@@ -1696,7 +1818,7 @@ func checkOS() checkResult {
 	return checkResult{
 		label:  "os",
 		ok:     true,
-		detail: "cwd " + base + " / pid " + formatInt(os.Getpid()) + " / mod " + formatTimeStamp(modTime) + " / env append rename cleanup",
+		detail: "cwd " + base + " / pid " + formatInt(os.Getpid()) + " / mod " + formatTimeStamp(modTime) + " / readat seek env append rename cleanup",
 	}
 }
 

@@ -89,7 +89,18 @@ Implemented locally in the repository as a bootstrap shim.
 
 Supported API:
 
+- `strings.Reader`
+- `strings.NewReader`
 - `strings.Builder`
+- `(*strings.Reader).Len`
+- `(*strings.Reader).Size`
+- `(*strings.Reader).Reset`
+- `(*strings.Reader).Read`
+- `(*strings.Reader).ReadAt`
+- `(*strings.Reader).ReadByte`
+- `(*strings.Reader).UnreadByte`
+- `(*strings.Reader).Seek`
+- `(*strings.Reader).WriteTo`
 - `(*strings.Builder).String`
 - `(*strings.Builder).Len`
 - `(*strings.Builder).Cap`
@@ -105,6 +116,11 @@ Supported API:
 - `strings.Index`
 - `strings.Join`
 - `strings.LastIndex`
+- `strings.Fields`
+- `strings.ReplaceAll`
+- `strings.Split`
+- `strings.SplitN`
+- `strings.TrimSpace`
 - `strings.TrimPrefix`
 - `strings.TrimSuffix`
 
@@ -120,6 +136,12 @@ Current behavior notes:
   is not implemented yet
 - `strings.Cut` follows first-separator semantics and treats an empty separator
   as found at byte index `0`
+- `strings.Split`/`SplitN` follow the current byte-oriented bootstrap model; an
+  empty separator splits by single bytes rather than full UTF-8 runes
+- `strings.TrimSpace` and `strings.Fields` currently use ASCII whitespace only
+- `strings.Reader` is a narrow byte-oriented read/seek wrapper; `UnreadByte`
+  only tracks the last successful `ReadByte`, and rune-aware reader APIs are
+  not implemented yet
 - helpers are intentionally ASCII/byte-focused for the current bootstrap stage
 - higher-level Unicode-aware helpers and replacer APIs are not implemented yet
 
@@ -129,9 +151,20 @@ Implemented locally in the repository as a bootstrap shim.
 
 Supported API:
 
+- `bytes.Reader`
 - `bytes.Buffer`
+- `bytes.NewReader`
 - `bytes.NewBuffer`
 - `bytes.NewBufferString`
+- `(*bytes.Reader).Len`
+- `(*bytes.Reader).Size`
+- `(*bytes.Reader).Reset`
+- `(*bytes.Reader).Read`
+- `(*bytes.Reader).ReadAt`
+- `(*bytes.Reader).ReadByte`
+- `(*bytes.Reader).UnreadByte`
+- `(*bytes.Reader).Seek`
+- `(*bytes.Reader).WriteTo`
 - `(*bytes.Buffer).Bytes`
 - `(*bytes.Buffer).String`
 - `(*bytes.Buffer).Len`
@@ -149,6 +182,11 @@ Supported API:
 - `bytes.Index`
 - `bytes.IndexByte`
 - `bytes.Join`
+- `bytes.Fields`
+- `bytes.ReplaceAll`
+- `bytes.Split`
+- `bytes.SplitN`
+- `bytes.TrimSpace`
 - `bytes.TrimPrefix`
 - `bytes.TrimSuffix`
 
@@ -167,6 +205,12 @@ Current behavior notes:
   `(s, nil, false)` when the separator is absent
 - `bytes.Join` always allocates a new output slice and returns an empty
   non-nil slice for empty input
+- `bytes.Split`/`SplitN` are byte-oriented, and an empty separator splits into
+  one-byte slices
+- `bytes.TrimSpace` and `bytes.Fields` currently use ASCII whitespace only
+- `bytes.Reader` is a narrow byte-oriented read/seek wrapper with
+  `UnreadByte`, `ReadAt`, `Seek`, and `WriteTo`, but no rune-aware reader APIs
+  yet
 - higher-level read-side buffer helpers, rune-aware behavior, and the broader
   `bytes` surface are not implemented yet
 
@@ -176,6 +220,13 @@ Implemented locally in the repository as a bootstrap shim.
 
 Supported API:
 
+- `io.ReaderAt`
+- `io.WriterTo`
+- `io.ReaderFrom`
+- `io.ByteReader`
+- `io.ByteScanner`
+- `io.Seeker`
+- `io.ReadSeeker`
 - `io.Reader`
 - `io.Writer`
 - `io.Closer`
@@ -183,6 +234,9 @@ Supported API:
 - `io.ReadCloser`
 - `io.WriteCloser`
 - `io.StringWriter`
+- `io.SeekStart`
+- `io.SeekCurrent`
+- `io.SeekEnd`
 - `io.EOF`
 - `io.ErrShortWrite`
 - `io.Copy`
@@ -194,8 +248,8 @@ Current behavior notes:
 
 - `io.ReadAll` consumes until `io.EOF` and returns the collected bytes with a
   `nil` error
-- `io.Copy` and `io.CopyBuffer` use a simple reader/writer loop; `ReaderFrom`
-  and `WriterTo` fast paths are not implemented yet
+- `io.Copy` and `io.CopyBuffer` now honor narrow `WriterTo` and `ReaderFrom`
+  fast paths before falling back to the buffered reader/writer loop
 - `io.WriteString` always falls back to `Writer.Write([]byte(s))`; it does not
   use `io.StringWriter` optimization yet
 - `io.EOF` and `io.ErrShortWrite` are local bootstrap sentinels implemented as
@@ -444,6 +498,8 @@ Supported API:
 - `os.Open`
 - `os.Create`
 - `os.OpenFile`
+- `(*os.File).Seek`
+- `(*os.File).ReadAt`
 - `(*os.File).Stat`
 - `os.Pipe`
 - `os.IsNotExist`
@@ -467,6 +523,9 @@ Current behavior notes:
 - `OpenFile` currently supports the narrow bootstrap flag set documented above;
   descriptor duplication, permissions, and sync semantics are not implemented
   yet
+- `(*os.File).Seek` and `(*os.File).ReadAt` currently work only for path-backed
+  files; fd-backed files such as pipes, stdio handles, and the active-console
+  bridge still return `ErrInvalid` for random-access operations
 - the fd-backed path currently follows the documented `77.10/77.11/77.13`
   contracts, which are currently specified for pipe descriptors; the default
   `os.Stdout` and `os.Stderr` handles additionally route through the active

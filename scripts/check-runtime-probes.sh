@@ -258,7 +258,7 @@ main() {
     "go_0path.Join" \
     "go_0path.Split"
 
-  compile_package "strings"
+  compile_package "strings" "io"
   probe_symbols=$(package_unresolved_symbols "strings")
   require_list_symbols "strings package" "$probe_symbols" \
     "runtime.concatstrings" \
@@ -266,7 +266,7 @@ main() {
     "runtime.goPanicSliceAlen" \
     "runtime.goPanicSliceB"
 
-  compile_package "bytes"
+  compile_package "bytes" "io"
   probe_symbols=$(package_unresolved_symbols "bytes")
   require_list_symbols "bytes package" "$probe_symbols" \
     "memmove" \
@@ -300,7 +300,7 @@ main() {
     "runtime.typedmemmove" \
     "runtime.writeBarrier"
 
-  compile_package "bufio" "errors" "bytes" "io"
+  compile_package "bufio" "errors" "io" "bytes"
   probe_symbols=$(package_unresolved_symbols "bufio")
   require_list_symbols "bufio package" "$probe_symbols" \
     "go_0bytes.IndexByte" \

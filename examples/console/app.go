@@ -1,6 +1,7 @@
 package consoledemo
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -30,7 +31,7 @@ func Main() {
 		console.SetTitle(consoleDemoTitle + " / ready")
 	}
 	if console.SupportsLineInput() {
-		runConsoleScanDemo()
+		runConsoleLineDemo()
 	}
 
 	if console.SupportsInput() {
@@ -44,16 +45,30 @@ func Main() {
 	os.Exit(0)
 }
 
-func runConsoleScanDemo() {
-	var word string
+func runConsoleLineDemo() {
+	reader := bufio.NewReader(os.Stdin)
 
-	_, _ = fmt.Print("Type a word and press Enter: ")
-	if _, err := fmt.Scanln(&word); err != nil {
-		_, _ = fmt.Printf("Scan failed: %v\n", err)
+	_, _ = fmt.Print("Type a full line and press Enter: ")
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		_, _ = fmt.Printf("ReadString failed: %v\n", err)
 		return
 	}
 
-	_, _ = fmt.Printf("You typed: %s\n", word)
+	line = trimConsoleLine(line)
+	_, _ = fmt.Printf("You typed: %s\n", line)
+}
+
+func trimConsoleLine(line string) string {
+	for len(line) > 0 {
+		last := line[len(line)-1]
+		if last != '\r' && last != '\n' {
+			break
+		}
+		line = line[:len(line)-1]
+	}
+
+	return line
 }
 
 func waitForConsoleExitKey(console kos.Console) {

@@ -15,12 +15,42 @@ type Reader interface {
 	Read(p []byte) (n int, err error)
 }
 
+type ReaderAt interface {
+	ReadAt(p []byte, off int64) (n int, err error)
+}
+
 type Writer interface {
 	Write(p []byte) (n int, err error)
 }
 
+type WriterTo interface {
+	WriteTo(w Writer) (n int64, err error)
+}
+
+type ReaderFrom interface {
+	ReadFrom(r Reader) (n int64, err error)
+}
+
+type ByteReader interface {
+	ReadByte() (byte, error)
+}
+
+type ByteScanner interface {
+	ByteReader
+	UnreadByte() error
+}
+
+type Seeker interface {
+	Seek(offset int64, whence int) (int64, error)
+}
+
 type Closer interface {
 	Close() error
+}
+
+type ReadSeeker interface {
+	Reader
+	Seeker
 }
 
 type ReadWriter interface {
@@ -41,6 +71,12 @@ type WriteCloser interface {
 type StringWriter interface {
 	WriteString(s string) (n int, err error)
 }
+
+const (
+	SeekStart   = 0
+	SeekCurrent = 1
+	SeekEnd     = 2
+)
 
 func ReadAll(r Reader) ([]byte, error) {
 	data := make([]byte, 0, 512)
@@ -63,10 +99,24 @@ func ReadAll(r Reader) ([]byte, error) {
 }
 
 func Copy(dst Writer, src Reader) (written int64, err error) {
+	if writerTo, ok := src.(WriterTo); ok {
+		return writerTo.WriteTo(dst)
+	}
+	if readerFrom, ok := dst.(ReaderFrom); ok {
+		return readerFrom.ReadFrom(src)
+	}
+
 	return CopyBuffer(dst, src, nil)
 }
 
 func CopyBuffer(dst Writer, src Reader, buffer []byte) (written int64, err error) {
+	if writerTo, ok := src.(WriterTo); ok {
+		return writerTo.WriteTo(dst)
+	}
+	if readerFrom, ok := dst.(ReaderFrom); ok {
+		return readerFrom.ReadFrom(src)
+	}
+
 	if len(buffer) == 0 {
 		buffer = make([]byte, 512)
 	}

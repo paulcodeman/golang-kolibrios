@@ -154,17 +154,17 @@ successful build.
   - bootstrap-compatible `import "path/filepath"` sample with `Clean`, `Join`, `Split`, `Base`, `Ext`, `Abs`, `ToSlash`, `FromSlash`, and `VolumeName`
   - slash-first filepath normalization against a real KolibriOS file probe, with metadata now checked through ordinary `os.Stat`
 - `examples/strings` - implemented
-  - bootstrap-compatible `import "strings"` sample with `Join`, `strings.Builder`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `LastIndex`, `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - bootstrap-compatible `import "strings"` sample with `Join`, `Split`, `SplitN`, `Fields`, `TrimSpace`, `ReplaceAll`, `strings.Builder`, `strings.NewReader`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `LastIndex`, `Cut`, `TrimPrefix`, and `TrimSuffix`
   - string helper checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.Stat` and `os.Getwd`
 - `examples/bytes` - implemented
-  - bootstrap-compatible `import "bytes"` sample with `Join`, `bytes.Buffer`, `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `IndexByte`, `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - bootstrap-compatible `import "bytes"` sample with `Join`, `Split`, `SplitN`, `Fields`, `TrimSpace`, `ReplaceAll`, `bytes.Buffer`, `bytes.NewReader`, `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `IndexByte`, `Cut`, `TrimPrefix`, and `TrimSuffix`
   - byte-slice helper checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.Stat` and `os.Getwd`
 - `examples/io` - implemented
   - bootstrap-compatible `import "io"` sample with `Reader`, `Writer`, `ReadAll`, `Copy`, and `WriteString`
   - chunked stream checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.ReadFile`, `os.Stat`, and `os.Getwd`
 - `examples/os` - implemented
-  - bootstrap-compatible `import "os"` sample with `Getwd`, `Stat`, `(*os.File).Stat`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, `Remove`, `IsNotExist`, `Getpid`, `Getppid`, and process-local environment helpers
-  - file lifecycle checks against a real writable KolibriOS path with append, `ModTime`, rename, environment, and cleanup validation
+  - bootstrap-compatible `import "os"` sample with `Getwd`, `Stat`, `(*os.File).Stat`, `(*os.File).Seek`, `(*os.File).ReadAt`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, `Remove`, `IsNotExist`, `Getpid`, `Getppid`, and process-local environment helpers
+  - file lifecycle checks against a real writable KolibriOS path with append, `ReadAt`, `Seek`, `ModTime`, rename, environment, and cleanup validation
 - `examples/fmt` - implemented
   - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, `Print`, `Printf`, `Println`, `Fscanln`, `Scanln`, and `Errorf`
   - formatted text and narrow scanning checks tied to a real KolibriOS file path, ordinary `os.Getwd` / `os.Stat` / `os.ReadFile`, and pipe-backed stdio capture
@@ -176,11 +176,11 @@ successful build.
   - wrapped `ErrRange` and `ErrSyntax` validation through ordinary `errors.Is`, plus real file and cwd probes through `os.Stat` and `os.Getwd`
 - `examples/console` - implemented
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
-  - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `fmt.Scanln` on the same active console-backed `os.Stdin`
+  - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus ordinary `bufio.NewReader(os.Stdin).ReadString('\n')` on the same active console-backed `os.Stdin`
   - waits for `Esc` after the line-input prompt so the sample exercises both cooked console input and direct key reads
 - `apps/diag` - implemented
   - fuller GUI diagnostics utility outside the public examples tree
-  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `bytes.Buffer`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan plus local EOF/EPIPE checks, `os.Stat`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
+  - runtime, file, narrow `syscall`, `os`, `fmt`, `bufio`, `strconv`, `time`, `strings.Builder`, `strings.NewReader`, `bytes.Buffer`, `bytes.NewReader`, `Split`/`Fields`/`TrimSpace`/`ReplaceAll`, DLL-load, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scan plus local EOF/EPIPE checks, `os.Stat`, `(*os.File).ReadAt`, `(*os.File).Seek`, `FileInfo.ModTime`, process/env semantics, and system probes in one reusable tool
   - headless QEMU diagnostics capture via debug console with `/FD/1` report fallback
 - `tests/smokeapp` - implemented
   - headless autorun QEMU smoke for the documented bootstrap subset
