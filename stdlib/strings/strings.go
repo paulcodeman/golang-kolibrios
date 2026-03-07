@@ -1,5 +1,9 @@
 package strings
 
+type Builder struct {
+	buf []byte
+}
+
 func Contains(s string, substr string) bool {
 	return Index(s, substr) >= 0
 }
@@ -108,4 +112,76 @@ func TrimSuffix(s string, suffix string) string {
 	}
 
 	return s
+}
+
+func (builder *Builder) String() string {
+	if builder == nil {
+		return ""
+	}
+
+	return string(builder.buf)
+}
+
+func (builder *Builder) Len() int {
+	if builder == nil {
+		return 0
+	}
+
+	return len(builder.buf)
+}
+
+func (builder *Builder) Cap() int {
+	if builder == nil {
+		return 0
+	}
+
+	return cap(builder.buf)
+}
+
+func (builder *Builder) Reset() {
+	if builder == nil {
+		return
+	}
+
+	builder.buf = builder.buf[:0]
+}
+
+func (builder *Builder) Grow(n int) {
+	if builder == nil || n <= 0 {
+		return
+	}
+	if cap(builder.buf)-len(builder.buf) >= n {
+		return
+	}
+
+	grown := make([]byte, len(builder.buf), len(builder.buf)+n)
+	copy(grown, builder.buf)
+	builder.buf = grown
+}
+
+func (builder *Builder) Write(data []byte) (int, error) {
+	if builder == nil {
+		return 0, nil
+	}
+
+	builder.buf = append(builder.buf, data...)
+	return len(data), nil
+}
+
+func (builder *Builder) WriteByte(value byte) error {
+	if builder == nil {
+		return nil
+	}
+
+	builder.buf = append(builder.buf, value)
+	return nil
+}
+
+func (builder *Builder) WriteString(value string) (int, error) {
+	if builder == nil {
+		return 0, nil
+	}
+
+	builder.buf = append(builder.buf, value...)
+	return len(value), nil
 }

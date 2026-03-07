@@ -1,5 +1,9 @@
 package bytes
 
+type Buffer struct {
+	buf []byte
+}
+
 func Contains(s []byte, subslice []byte) bool {
 	return Index(s, subslice) >= 0
 }
@@ -104,4 +108,94 @@ func TrimSuffix(s []byte, suffix []byte) []byte {
 	}
 
 	return s
+}
+
+func NewBuffer(buf []byte) *Buffer {
+	return &Buffer{buf: buf}
+}
+
+func NewBufferString(value string) *Buffer {
+	buffer := &Buffer{}
+	buffer.buf = append(buffer.buf, value...)
+	return buffer
+}
+
+func (buffer *Buffer) Bytes() []byte {
+	if buffer == nil {
+		return nil
+	}
+
+	return buffer.buf
+}
+
+func (buffer *Buffer) String() string {
+	if buffer == nil {
+		return "<nil>"
+	}
+
+	return string(buffer.buf)
+}
+
+func (buffer *Buffer) Len() int {
+	if buffer == nil {
+		return 0
+	}
+
+	return len(buffer.buf)
+}
+
+func (buffer *Buffer) Cap() int {
+	if buffer == nil {
+		return 0
+	}
+
+	return cap(buffer.buf)
+}
+
+func (buffer *Buffer) Reset() {
+	if buffer == nil {
+		return
+	}
+
+	buffer.buf = buffer.buf[:0]
+}
+
+func (buffer *Buffer) Grow(n int) {
+	if buffer == nil || n <= 0 {
+		return
+	}
+	if cap(buffer.buf)-len(buffer.buf) >= n {
+		return
+	}
+
+	grown := make([]byte, len(buffer.buf), len(buffer.buf)+n)
+	copy(grown, buffer.buf)
+	buffer.buf = grown
+}
+
+func (buffer *Buffer) Write(data []byte) (int, error) {
+	if buffer == nil {
+		return 0, nil
+	}
+
+	buffer.buf = append(buffer.buf, data...)
+	return len(data), nil
+}
+
+func (buffer *Buffer) WriteByte(value byte) error {
+	if buffer == nil {
+		return nil
+	}
+
+	buffer.buf = append(buffer.buf, value)
+	return nil
+}
+
+func (buffer *Buffer) WriteString(value string) (int, error) {
+	if buffer == nil {
+		return 0, nil
+	}
+
+	buffer.buf = append(buffer.buf, value...)
+	return len(value), nil
 }

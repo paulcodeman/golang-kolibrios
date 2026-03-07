@@ -91,6 +91,18 @@ func (app *App) Redraw() {
 
 func (app *App) refreshProbe() {
 	joined := strings.Join([]string{"", "sys", "default.skn"}, "/")
+	var builder strings.Builder
+	builder.Grow(len(joined))
+	_, _ = builder.WriteString("/sys/")
+	_, _ = builder.WriteString("default")
+	_ = builder.WriteByte('.')
+	_, _ = builder.Write([]byte("skn"))
+	built := builder.String()
+	builderLen := builder.Len()
+	builderCap := builder.Cap()
+	builder.Reset()
+	_, _ = builder.WriteString("builder ok")
+	builderReset := builder.String()
 	hasPrefix := strings.HasPrefix(joined, "/sys/")
 	hasSuffix := strings.HasSuffix(joined, ".skn")
 	contains := strings.Contains(joined, "default")
@@ -105,7 +117,7 @@ func (app *App) refreshProbe() {
 	}
 	trimmedCWD := strings.TrimPrefix(currentFolder, "/")
 
-	app.joinLine = "Join: " + joined
+	app.joinLine = "Join: " + joined + " / builder " + built + " / reset " + builderReset
 	app.matchLine = "Match: prefix " + formatBool(hasPrefix) + " / suffix " + formatBool(hasSuffix) + " / contains " + formatBool(contains)
 	app.indexLine = "Index: default " + formatInt(index) + " / last slash " + formatInt(lastSlash) + " / cut " + before + " | " + after + " / found " + formatBool(found)
 	app.trimLine = "Trim: /sys/ + .skn -> " + trimmed
@@ -113,6 +125,10 @@ func (app *App) refreshProbe() {
 
 	if joined != stringsProbePath {
 		app.fail("join mismatch")
+		return
+	}
+	if built != stringsProbePath || builderLen != len(stringsProbePath) || builderCap < builderLen || builderReset != "builder ok" {
+		app.fail("builder mismatch")
 		return
 	}
 	if !hasPrefix || !hasSuffix || !contains {

@@ -2,12 +2,14 @@ package diagapp
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -204,6 +206,7 @@ func runDiagnostics() snapshot {
 		checkSyscall(),
 		checkFmt(),
 		checkBufio(),
+		checkBuilders(),
 		checkStrconv(),
 		checkFilepath(),
 		checkFiles(),
@@ -1126,6 +1129,111 @@ func checkBufio() checkResult {
 		label:  "bufio",
 		ok:     true,
 		detail: "reader eof epipe scanner / line one line two / one two three / A Z",
+	}
+}
+
+func checkBuilders() checkResult {
+	var builder strings.Builder
+	builder.Grow(len(diagFilesProbePath))
+	_, builderWriteErr := builder.WriteString("/sys/")
+	if builderWriteErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "builder WriteString failed: " + builderWriteErr.Error(),
+		}
+	}
+	_, builderBytesErr := builder.Write([]byte("default"))
+	if builderBytesErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "builder Write failed: " + builderBytesErr.Error(),
+		}
+	}
+	if err := builder.WriteByte('.'); err != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "builder WriteByte failed: " + err.Error(),
+		}
+	}
+	_, builderTailErr := builder.WriteString("skn")
+	if builderTailErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "builder tail failed: " + builderTailErr.Error(),
+		}
+	}
+	built := builder.String()
+	builderLen := builder.Len()
+	builderCap := builder.Cap()
+	builder.Reset()
+	_, _ = builder.WriteString("builder ok")
+	builderReset := builder.String()
+
+	buffer := bytes.NewBuffer(nil)
+	buffer.Grow(len(diagFilesProbePath))
+	_, bufferWriteErr := buffer.WriteString("/sys/")
+	if bufferWriteErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "buffer WriteString failed: " + bufferWriteErr.Error(),
+		}
+	}
+	_, bufferBytesErr := buffer.Write([]byte("default"))
+	if bufferBytesErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "buffer Write failed: " + bufferBytesErr.Error(),
+		}
+	}
+	if err := buffer.WriteByte('.'); err != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "buffer WriteByte failed: " + err.Error(),
+		}
+	}
+	_, bufferTailErr := buffer.WriteString("skn")
+	if bufferTailErr != nil {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "buffer tail failed: " + bufferTailErr.Error(),
+		}
+	}
+	bufferSnapshot := append([]byte(nil), buffer.Bytes()...)
+	bufferString := buffer.String()
+	bufferLen := buffer.Len()
+	bufferCap := buffer.Cap()
+	buffer.Reset()
+	_, _ = buffer.WriteString("buffer ok")
+	bufferReset := buffer.String()
+	bufferFromString := bytes.NewBufferString("demo")
+
+	if built != diagFilesProbePath || builderLen != len(diagFilesProbePath) || builderCap < builderLen || builderReset != "builder ok" {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "strings.Builder mismatch",
+		}
+	}
+	if !bytes.Equal(bufferSnapshot, []byte(diagFilesProbePath)) || bufferString != diagFilesProbePath || bufferLen != len(diagFilesProbePath) || bufferCap < bufferLen || bufferReset != "buffer ok" || bufferFromString.String() != "demo" {
+		return checkResult{
+			label:  "builders",
+			ok:     false,
+			detail: "bytes.Buffer mismatch",
+		}
+	}
+
+	return checkResult{
+		label:  "builders",
+		ok:     true,
+		detail: "strings.Builder bytes.Buffer / len " + formatInt(builderLen) + " / cap " + formatInt(bufferCap),
 	}
 }
 

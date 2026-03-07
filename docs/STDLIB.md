@@ -89,6 +89,15 @@ Implemented locally in the repository as a bootstrap shim.
 
 Supported API:
 
+- `strings.Builder`
+- `(*strings.Builder).String`
+- `(*strings.Builder).Len`
+- `(*strings.Builder).Cap`
+- `(*strings.Builder).Reset`
+- `(*strings.Builder).Grow`
+- `(*strings.Builder).Write`
+- `(*strings.Builder).WriteByte`
+- `(*strings.Builder).WriteString`
 - `strings.Contains`
 - `strings.Cut`
 - `strings.HasPrefix`
@@ -102,11 +111,17 @@ Supported API:
 Current behavior notes:
 
 - matching and indexing are byte-oriented
+- `strings.Builder` currently provides a narrow append-only text builder with
+  `Write`, `WriteByte`, `WriteString`, `Len`, `Cap`, `String`, `Reset`, and
+  `Grow`
+- because the current bootstrap runtime still lacks a general `panic` path,
+  `(*strings.Builder).Grow` treats non-positive values as a no-op instead of
+  panicking and the standard library's copy-detection panic for copied builders
+  is not implemented yet
 - `strings.Cut` follows first-separator semantics and treats an empty separator
   as found at byte index `0`
 - helpers are intentionally ASCII/byte-focused for the current bootstrap stage
-- higher-level Unicode-aware helpers and replacer/builder APIs are not
-  implemented yet
+- higher-level Unicode-aware helpers and replacer APIs are not implemented yet
 
 ### `bytes`
 
@@ -114,6 +129,18 @@ Implemented locally in the repository as a bootstrap shim.
 
 Supported API:
 
+- `bytes.Buffer`
+- `bytes.NewBuffer`
+- `bytes.NewBufferString`
+- `(*bytes.Buffer).Bytes`
+- `(*bytes.Buffer).String`
+- `(*bytes.Buffer).Len`
+- `(*bytes.Buffer).Cap`
+- `(*bytes.Buffer).Reset`
+- `(*bytes.Buffer).Grow`
+- `(*bytes.Buffer).Write`
+- `(*bytes.Buffer).WriteByte`
+- `(*bytes.Buffer).WriteString`
 - `bytes.Contains`
 - `bytes.Cut`
 - `bytes.Equal`
@@ -128,12 +155,20 @@ Supported API:
 Current behavior notes:
 
 - matching and indexing are byte-oriented
+- `bytes.Buffer` currently provides a narrow append-only write buffer with
+  `Write`, `WriteByte`, `WriteString`, `Bytes`, `String`, `Len`, `Cap`,
+  `Reset`, `Grow`, `NewBuffer`, and `NewBufferString`
+- `bytes.NewBuffer` keeps the caller-provided slice as the initial live backing
+  store, while `Buffer.Bytes()` returns the current live slice view
+- because the current bootstrap runtime still lacks a general `panic` path,
+  `(*bytes.Buffer).Grow` treats non-positive values as a no-op instead of
+  panicking
 - `bytes.Cut` returns slices into the original input on success and
   `(s, nil, false)` when the separator is absent
 - `bytes.Join` always allocates a new output slice and returns an empty
   non-nil slice for empty input
-- higher-level buffer, reader, and Unicode-aware helpers are not implemented
-  yet
+- higher-level read-side buffer helpers, rune-aware behavior, and the broader
+  `bytes` surface are not implemented yet
 
 ### `io`
 
@@ -554,12 +589,17 @@ Compatibility samples using ordinary import paths:
 - `examples/strings`
   - `import "strings"`
   - path assembly with `Join`
+  - text assembly through `strings.Builder`, `Write`, `WriteByte`,
+    `WriteString`, `String`, `Len`, `Cap`, `Grow`, and `Reset`
   - byte-oriented matching via `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `LastIndex`
   - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
   - current-folder and metadata probes through ordinary `os.Getwd` and `os.Stat`
 - `examples/bytes`
   - `import "bytes"`
   - byte-slice path assembly with `Join`
+  - write-buffer assembly through `bytes.Buffer`, `NewBuffer`,
+    `NewBufferString`, `Write`, `WriteByte`, `WriteString`, `Bytes`, `String`,
+    `Len`, `Cap`, `Grow`, and `Reset`
   - byte-oriented matching via `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `IndexByte`
   - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
   - current-folder and metadata probes through ordinary `os.Getwd` and `os.Stat`
@@ -606,6 +646,7 @@ Compatibility samples using ordinary import paths:
   - wrapped `ErrRange` and `ErrSyntax` classification through ordinary `errors.Is`
   - ordinary `os.Getwd` and `os.Stat` for the cwd and file probe
 - `apps/diag`
+  - headless regression coverage for `strings.Builder` and `bytes.Buffer`
   - headless `bufio` regression coverage for reader, writer, scanner,
     EOF-after-close, and broken-pipe behavior on pipe-backed stdio
   - headless `strconv` regression coverage for bool/int format, parse, append, and `NumError` sentinel matching

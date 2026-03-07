@@ -227,12 +227,17 @@ Current bootstrap status:
   `import "path/filepath"`.
 - Local support for `strings.Contains`, `strings.Cut`, `strings.HasPrefix`,
   `strings.HasSuffix`, `strings.Index`, `strings.Join`, `strings.LastIndex`,
-  `strings.TrimPrefix`, and `strings.TrimSuffix` is now in place.
+  `strings.TrimPrefix`, `strings.TrimSuffix`, and narrow `strings.Builder`
+  support (`Write`, `WriteByte`, `WriteString`, `String`, `Len`, `Cap`,
+  `Grow`, `Reset`) is now in place.
 - `examples/strings` is the fourth compatibility sample, using ordinary
   `import "strings"`.
 - Local support for `bytes.Contains`, `bytes.Cut`, `bytes.Equal`,
   `bytes.HasPrefix`, `bytes.HasSuffix`, `bytes.Index`, `bytes.IndexByte`,
-  `bytes.Join`, `bytes.TrimPrefix`, and `bytes.TrimSuffix` is now in place.
+  `bytes.Join`, `bytes.TrimPrefix`, `bytes.TrimSuffix`, and narrow
+  `bytes.Buffer` support (`NewBuffer`, `NewBufferString`, `Write`,
+  `WriteByte`, `WriteString`, `Bytes`, `String`, `Len`, `Cap`, `Grow`,
+  `Reset`) is now in place.
 - `examples/bytes` is the fifth compatibility sample, using ordinary
   `import "bytes"`.
 - Local support for `io.Reader`, `io.Writer`, `io.Closer`, `io.ReadWriter`,
@@ -293,7 +298,8 @@ Current bootstrap status:
   `77.10`, `77.11`, and `77.13` contracts.
 - `apps/diag` now validates the bootstrap `syscall` pipe layer, `fmt.Print*`,
   `fmt.Fscanln`, `fmt.Scanln`, `bufio` reader/writer/scanner flows, narrow
-  `strconv` format/parse/append coverage, local pipe EOF/EPIPE semantics,
+  `strconv` format/parse/append coverage, `strings.Builder`, `bytes.Buffer`,
+  local pipe EOF/EPIPE semantics,
   `time.Now`, `time.Sleep`, and `time.Since` through pipe-backed stdio
   capture plus the documented clock bridge, along with the active-console
   stdout bridge in headless QEMU.

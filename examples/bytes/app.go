@@ -91,6 +91,20 @@ func (app *App) Redraw() {
 
 func (app *App) refreshProbe() {
 	joined := bytes.Join([][]byte{[]byte{}, []byte("sys"), []byte("default.skn")}, []byte("/"))
+	buffer := bytes.NewBuffer(nil)
+	buffer.Grow(len(bytesProbePath))
+	_, _ = buffer.WriteString("/sys/")
+	_, _ = buffer.Write([]byte("default"))
+	_ = buffer.WriteByte('.')
+	_, _ = buffer.WriteString("skn")
+	bufferBytes := append([]byte(nil), buffer.Bytes()...)
+	bufferString := buffer.String()
+	bufferLen := buffer.Len()
+	bufferCap := buffer.Cap()
+	buffer.Reset()
+	_, _ = buffer.WriteString("buffer ok")
+	bufferReset := buffer.String()
+	bufferFromString := bytes.NewBufferString("demo")
 	hasPrefix := bytes.HasPrefix(joined, []byte("/sys/"))
 	hasSuffix := bytes.HasSuffix(joined, []byte(".skn"))
 	contains := bytes.Contains(joined, []byte("default"))
@@ -107,7 +121,7 @@ func (app *App) refreshProbe() {
 	currentFolder := []byte(currentFolderPath)
 	trimmedCWD := bytes.TrimPrefix(currentFolder, []byte("/"))
 
-	app.joinLine = "Join: " + string(joined)
+	app.joinLine = "Join: " + string(joined) + " / buffer " + bufferString + " / reset " + bufferReset
 	app.matchLine = "Match: prefix " + formatBool(hasPrefix) + " / suffix " + formatBool(hasSuffix) + " / contains " + formatBool(contains)
 	app.indexLine = "Index: default " + formatInt(index) + " / dot " + formatInt(dot) + " / cut " + string(before) + " | " + string(after) + " / found " + formatBool(found)
 	app.trimLine = "Trim: /sys/ + .skn -> " + string(trimmed) + " / equal " + formatBool(trimmedOK)
@@ -115,6 +129,10 @@ func (app *App) refreshProbe() {
 
 	if !bytes.Equal(joined, []byte(bytesProbePath)) {
 		app.fail("join mismatch")
+		return
+	}
+	if !bytes.Equal(bufferBytes, []byte(bytesProbePath)) || bufferString != bytesProbePath || bufferLen != len(bytesProbePath) || bufferCap < bufferLen || bufferReset != "buffer ok" || bufferFromString.String() != "demo" {
+		app.fail("buffer mismatch")
 		return
 	}
 	if !hasPrefix || !hasSuffix || !contains {
