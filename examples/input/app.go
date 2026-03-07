@@ -1,38 +1,40 @@
 package inputdemo
 
 import (
+	"os"
+
 	"../../kos"
 	"../../ui"
 )
 
 const (
-	messageButtonExit kos.ButtonID = 1
+	messageButtonExit         kos.ButtonID = 1
 	messageButtonInjectButton kos.ButtonID = 2
-	messageButtonInjectKey kos.ButtonID = 3
-	messageButtonReset kos.ButtonID = 4
-	messageButtonSynthetic kos.ButtonID = 9
+	messageButtonInjectKey    kos.ButtonID = 3
+	messageButtonReset        kos.ButtonID = 4
+	messageButtonSynthetic    kos.ButtonID = 9
 
-	messageWindowX = 340
-	messageWindowY = 170
-	messageWindowWidth = 560
+	messageWindowX      = 340
+	messageWindowY      = 170
+	messageWindowWidth  = 560
 	messageWindowHeight = 250
-	messageWindowTitle = "KolibriOS Input Demo"
-	messageButtonTitle = "KolibriOS Входящее сообщение"
-	messageKeyTitle = "KolibriOS Входящая клавиша"
+	messageWindowTitle  = "KolibriOS Input Demo"
+	messageButtonTitle  = "KolibriOS Входящее сообщение"
+	messageKeyTitle     = "KolibriOS Входящая клавиша"
 )
 
 type App struct {
-	sentButtons uint32
+	sentButtons     uint32
 	receivedButtons uint32
-	sentKeys uint32
-	receivedKeys uint32
-	lastStatus kos.MessageStatus
-	lastButton kos.ButtonID
-	lastKey kos.KeyEvent
-	haveKey bool
-	injectButton ui.Button
-	injectKey ui.Button
-	reset ui.Button
+	sentKeys        uint32
+	receivedKeys    uint32
+	lastStatus      kos.MessageStatus
+	lastButton      kos.ButtonID
+	lastKey         kos.KeyEvent
+	haveKey         bool
+	injectButton    ui.Button
+	injectKey       ui.Button
+	reset           ui.Button
 }
 
 func NewApp() App {
@@ -46,10 +48,10 @@ func NewApp() App {
 	reset.Width = 100
 
 	return App{
-		lastStatus: messageStatusUnknown,
+		lastStatus:   messageStatusUnknown,
 		injectButton: injectButton,
-		injectKey: injectKey,
-		reset: reset,
+		injectKey:    injectKey,
+		reset:        reset,
 	}
 }
 
@@ -88,7 +90,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		kos.SetWindowTitleWithEncodingPrefix(kos.EncodingUTF8, messageButtonTitle)
 		app.Redraw()
 	case messageButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

@@ -2,6 +2,7 @@ package smokeapp
 
 import (
 	"errors"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -91,7 +92,7 @@ func (app *App) eventLoop() {
 			app.Redraw()
 		case kos.EventButton:
 			if kos.CurrentButtonID() == smokeButtonExit {
-				kos.Exit()
+				os.Exit(0)
 				return
 			}
 		}

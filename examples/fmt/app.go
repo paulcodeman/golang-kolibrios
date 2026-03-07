@@ -110,22 +110,31 @@ func (app *App) Redraw() {
 }
 
 func (app *App) refreshProbe() {
-	info, status := kos.GetPathInfo(fmtProbePath)
-	if status != kos.FileSystemOK {
-		app.fail("file info unavailable", "Info: "+fmt.Sprintf("%s / status %d", fmtProbePath, uint32(status)))
+	info, err := os.Stat(fmtProbePath)
+	if err != nil {
+		app.fail("file info unavailable", "Info: "+fmtProbePath+" / "+err.Error())
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch", "Info: unexpected os.FileInfo.Sys() payload")
 		return
 	}
 
-	data, status := kos.ReadAllFile(fmtProbePath)
-	if status != kos.FileSystemOK {
-		app.fail("file read unavailable", "Info: "+fmt.Sprintf("%s / status %d", fmtProbePath, uint32(status)))
+	data, err := os.ReadFile(fmtProbePath)
+	if err != nil {
+		app.fail("file read unavailable", "Info: "+fmtProbePath+" / "+err.Error())
 		return
 	}
 	if len(data) > fmtPreviewBytes {
 		data = data[:fmtPreviewBytes]
 	}
 
-	currentFolder := kos.CurrentFolder()
+	currentFolder, err := os.Getwd()
+	if err != nil {
+		app.fail("getwd failed", "Info: "+err.Error())
+		return
+	}
 	label := probeLabel{text: "fmt"}
 
 	sprintfText := fmt.Sprintf("%v/%s/%d/%x/%t/%%", label, "ok", 42, uint32(0x2A), true)
@@ -206,7 +215,7 @@ func (app *App) refreshProbe() {
 	app.printLine = "Print*: wrote " + formatInt(printWritten+printfWritten+printlnWritten) + " / stdout match " + fmt.Sprintf("%t", stdoutRead == len(expectedPrint) && string(stdoutData[:stdoutRead]) == expectedPrint)
 	app.errorLine = "Errorf: " + formatErr.Error()
 	app.scanLine = "Scan*: Fscanln " + scanWord + "/" + formatInt(scanValue) + "/" + fmt.Sprintf("%t", scanOK) + " / Scanln " + stdinWord + "/" + formatInt(stdinValue) + "/" + fmt.Sprintf("%t", stdinOK)
-	app.infoLine = fmt.Sprintf("File: %s / size %d / attrs 0x%x / head %x", fmtProbePath, info.Size, uint32(info.Attributes), data)
+	app.infoLine = fmt.Sprintf("File: %s / size %d / attrs 0x%x / head %x", fmtProbePath, info.Size(), uint32(rawInfo.Attributes), data)
 
 	expectedSprintf := "fmt/ok/42/2a/true/%"
 	if sprintfText != expectedSprintf {

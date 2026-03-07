@@ -406,21 +406,25 @@ Compatibility samples using ordinary import paths:
   - `import "path"`
   - slash normalization with `Clean` and `Join`
   - component extraction with `Split`, `Base`, `Dir`, and `Ext`
+  - metadata probe through ordinary `os.Stat`
 - `examples/strings`
   - `import "strings"`
   - path assembly with `Join`
   - byte-oriented matching via `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `LastIndex`
   - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - current-folder and metadata probes through ordinary `os.Getwd` and `os.Stat`
 - `examples/bytes`
   - `import "bytes"`
   - byte-slice path assembly with `Join`
   - byte-oriented matching via `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, and `IndexByte`
   - delimiter and suffix trimming with `Cut`, `TrimPrefix`, and `TrimSuffix`
+  - current-folder and metadata probes through ordinary `os.Getwd` and `os.Stat`
 - `examples/io`
   - `import "io"`
   - chunked stream reads with `ReadAll`
   - byte transfer through `Copy`
   - string-to-writer bridge through `WriteString`
+  - file and current-folder probes through ordinary `os.ReadFile`, `os.Stat`, and `os.Getwd`
 - `examples/time`
   - `import "time"`
   - wall clock access through `Now`, `Unix`, `Year`, `Month`, `Day`, `Hour`, `Minute`, and `Second`
@@ -442,6 +446,7 @@ Compatibility samples using ordinary import paths:
     through a temporary `os.Pipe`
   - formatted error construction via `Errorf`
   - ordinary `os.Stdout` reassignment for bootstrap stdout capture
+  - ordinary `os.Getwd`, `os.Stat`, and `os.ReadFile` for the file/cwd probe
 
 The samples still use the KolibriOS SDK for actual system interaction, but the
 stdlib-shaped path, string, byte-slice, io, os, fmt, time, and error logic now

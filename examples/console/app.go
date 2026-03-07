@@ -2,6 +2,7 @@ package consoledemo
 
 import (
 	"fmt"
+	"os"
 
 	"kos"
 )
@@ -13,13 +14,13 @@ func Main() {
 	console, ok := kos.OpenConsole(consoleDemoTitle)
 	if !ok {
 		kos.DebugString("console demo: failed to open /sys/lib/console.obj")
-		kos.Exit()
+		os.Exit(1)
 		return
 	}
 
 	if _, err := fmt.Println("KolibriOS console demo"); err != nil {
 		kos.DebugString("console demo: stdout write failed")
-		kos.Exit()
+		os.Exit(1)
 		return
 	}
 	_, _ = fmt.Printf("Loaded %s and resolved required exports.\n", kos.ConsoleDLLPath)
@@ -40,7 +41,7 @@ func Main() {
 		kos.SleepSeconds(3)
 	}
 
-	kos.Exit()
+	os.Exit(0)
 }
 
 func runConsoleScanDemo() {

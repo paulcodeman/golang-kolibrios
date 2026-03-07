@@ -1,6 +1,7 @@
 package pathdemo
 
 import (
+	"os"
 	"path"
 
 	"../../kos"
@@ -62,7 +63,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case pathButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -128,17 +129,22 @@ func (app *App) refreshProbe() {
 		return
 	}
 
-	info, status := kos.GetPathInfo(cleaned)
-	if status != kos.FileSystemOK {
+	info, err := os.Stat(cleaned)
+	if err != nil {
 		app.ok = false
 		app.summary = "path probe failed / file info unavailable"
-		app.infoLine = "Info: " + cleaned + " / " + formatFileSystemStatus(status)
+		app.infoLine = "Info: " + cleaned + " / " + err.Error()
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch")
 		return
 	}
 
 	app.ok = true
 	app.summary = "path probe ok / ordinary import path package resolved"
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 }
 
 func (app *App) fail(detail string) {

@@ -195,12 +195,12 @@ Main sources:
 - `examples/input` - function `72` button/key injection and input event probe
 - `examples/ipc` - function `60` self-IPC event and buffer probe
 - `examples/files` - file info probe plus ordinary `import "errors"`, `import "io"`, and `import "os"` compatibility sample with `os.Stat`, `os.Open`, and bootstrap error matching
-- `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample
-- `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers
-- `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers
-- `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`
+- `examples/path` - path normalization and split probe plus ordinary `import "path"` compatibility sample, with metadata validation now routed through `os.Stat`
+- `examples/strings` - ordinary `import "strings"` compatibility sample for join, match, cut, index, and trim helpers, with cwd/file probes now routed through `os.Getwd` and `os.Stat`
+- `examples/bytes` - ordinary `import "bytes"` compatibility sample for byte-slice join, match, cut, equality, and trim helpers, with cwd/file probes now routed through `os.Getwd` and `os.Stat`
+- `examples/io` - ordinary `import "io"` compatibility sample for `Reader`/`Writer`, `ReadAll`, `Copy`, and `WriteString`, with file/cwd probes now routed through `os.ReadFile`, `os.Getwd`, and `os.Stat`
 - `examples/os` - ordinary `import "os"` compatibility sample for `Getwd`, `Stat`, `FileInfo.ModTime`, file create/read/write flows, rename/remove, `Getpid`/`Getppid`, and process-local environment handling
-- `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture
+- `examples/fmt` - ordinary `import "fmt"` compatibility sample for `Sprintf`, `Sprintln`, `Fprintf`, `Print*`, `Fscanln`, `Scanln`, and `Errorf` via pipe-backed stdio capture plus ordinary `os` cwd/file probes
 - `examples/console` - `kos` console wrapper sample for loading `/sys/lib/console.obj`, opening a console window, writing through ordinary `fmt.Print*`, reading a line through `fmt.Scanln`, and closing without manual screenshots
 - `apps/diag` - fuller diagnostic utility with GUI summary, report export, and headless QEMU diagnostics capture, including bootstrap `syscall`, `os`, `fmt`, `time`, real `CONSOLE.OBJ` init/write/exit, stdout-console bridge, pipe-backed scanning checks, `os.Stat`, `FileInfo.ModTime`, and process-local environment checks
 - `tests/smokeapp` - internal headless QEMU autorun smoke for the runtime and system bootstrap subset

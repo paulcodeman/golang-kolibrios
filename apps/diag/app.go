@@ -626,9 +626,17 @@ func checkFmt() checkResult {
 			detail: "Sprintln mismatch",
 		}
 	}
+	currentFolder, cwdErr := os.Getwd()
+	if cwdErr != nil {
+		return checkResult{
+			label:  "fmt",
+			ok:     false,
+			detail: "getwd " + cwdErr.Error(),
+		}
+	}
 
 	writer := &fmtBufferWriter{}
-	written, err := fmt.Fprintf(writer, "cwd=%s / head=%x", kos.CurrentFolder(), []byte{0x4B, 0x50})
+	written, err := fmt.Fprintf(writer, "cwd=%s / head=%x", currentFolder, []byte{0x4B, 0x50})
 	if err != nil {
 		return checkResult{
 			label:  "fmt",
@@ -636,7 +644,7 @@ func checkFmt() checkResult {
 			detail: "Fprintf returned error",
 		}
 	}
-	if string(writer.data) != "cwd="+kos.CurrentFolder()+" / head=4b50" || written != len(writer.data) {
+	if string(writer.data) != "cwd="+currentFolder+" / head=4b50" || written != len(writer.data) {
 		return checkResult{
 			label:  "fmt",
 			ok:     false,
@@ -656,12 +664,12 @@ func checkFmt() checkResult {
 	previousStdout := os.DefaultStdout()
 	os.Stdout = stdoutWriter
 	printCount, printErr := fmt.Print(label, " print ", 7, "\n")
-	printfCount, printfErr := fmt.Printf("cwd=%s", kos.CurrentFolder())
+	printfCount, printfErr := fmt.Printf("cwd=%s", currentFolder)
 	printlnCount, printlnErr := fmt.Println(" / tail", true)
 	os.Stdout = previousStdout
 	_ = stdoutWriter.Close()
 
-	expectedPrint := "fmt print 7\ncwd=" + kos.CurrentFolder() + " / tail true\n"
+	expectedPrint := "fmt print 7\ncwd=" + currentFolder + " / tail true\n"
 	stdoutBuffer := make([]byte, len(expectedPrint))
 	stdoutRead, stdoutReadErr := stdoutReader.Read(stdoutBuffer)
 	_ = stdoutReader.Close()

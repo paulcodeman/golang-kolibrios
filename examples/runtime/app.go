@@ -1,6 +1,8 @@
 package runtimedemo
 
 import (
+	"os"
+
 	"../../kos"
 	"../../ui"
 )
@@ -98,7 +100,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.runChecks()
 		app.Redraw()
 	case runtimeCheckButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

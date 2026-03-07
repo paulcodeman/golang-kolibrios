@@ -1,6 +1,7 @@
 package stringsdemo
 
 import (
+	"os"
 	"strings"
 
 	"../../kos"
@@ -62,7 +63,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case stringsButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -97,7 +98,11 @@ func (app *App) refreshProbe() {
 	lastSlash := strings.LastIndex(joined, "/")
 	before, after, found := strings.Cut(joined, "/default")
 	trimmed := strings.TrimSuffix(strings.TrimPrefix(joined, "/sys/"), ".skn")
-	currentFolder := kos.CurrentFolder()
+	currentFolder, err := os.Getwd()
+	if err != nil {
+		app.fail("getwd failed")
+		return
+	}
 	trimmedCWD := strings.TrimPrefix(currentFolder, "/")
 
 	app.joinLine = "Join: " + joined
@@ -127,17 +132,22 @@ func (app *App) refreshProbe() {
 		return
 	}
 
-	info, status := kos.GetPathInfo(joined)
-	if status != kos.FileSystemOK {
+	info, err := os.Stat(joined)
+	if err != nil {
 		app.ok = false
 		app.summary = "strings probe failed / file info unavailable"
-		app.infoLine = "Info: " + joined + " / " + formatFileSystemStatus(status)
+		app.infoLine = "Info: " + joined + " / " + err.Error()
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch")
 		return
 	}
 
 	app.ok = true
 	app.summary = "strings probe ok / ordinary import strings package resolved"
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 }
 
 func (app *App) fail(detail string) {

@@ -1,37 +1,39 @@
 package windowdemo
 
 import (
+	"os"
+
 	"../../kos"
 	"../../ui"
 )
 
 const (
-	buttonExit kos.ButtonID = 1
-	buttonMoveLeft kos.ButtonID = 2
+	buttonExit      kos.ButtonID = 1
+	buttonMoveLeft  kos.ButtonID = 2
 	buttonMoveRight kos.ButtonID = 3
 
-	windowX = 500
-	windowY = 250
-	windowWidth = 420
+	windowX      = 500
+	windowY      = 250
+	windowWidth  = 420
 	windowHeight = 200
-	windowTitle = "KolibriOS Window Demo"
+	windowTitle  = "KolibriOS Window Demo"
 
-	guideLineLeft = 32
+	guideLineLeft  = 32
 	guideLineRight = 150
-	guideLineY = 80
+	guideLineY     = 80
 
-	barWidth = 100
-	barHeight = 30
-	barY = 90
-	barStep = 32
+	barWidth    = 100
+	barHeight   = 30
+	barY        = 90
+	barStep     = 32
 	initialBarX = 160
-	minBarX = 32
-	maxBarX = 288
+	minBarX     = 32
+	maxBarX     = 288
 )
 
 type App struct {
-	barX int
-	moveLeft ui.Button
+	barX      int
+	moveLeft  ui.Button
 	moveRight ui.Button
 }
 
@@ -43,8 +45,8 @@ func NewApp() App {
 	rightButton.Width = 60
 
 	return App{
-		barX: initialBarX,
-		moveLeft: leftButton,
+		barX:      initialBarX,
+		moveLeft:  leftButton,
 		moveRight: rightButton,
 	}
 }
@@ -71,7 +73,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.moveBar(barStep)
 		app.Redraw()
 	case buttonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

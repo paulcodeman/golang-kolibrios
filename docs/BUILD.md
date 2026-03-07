@@ -146,22 +146,22 @@ successful build.
   - bootstrap-compatible `import "errors"`, `import "io"`, and `import "os"` sample with wrapped sentinel checks
 - `examples/path` - implemented
   - bootstrap-compatible `import "path"` sample with `Clean`, `Join`, `Dir`, `Base`, `Ext`, and `IsAbs`
-  - slash-based path normalization against a real KolibriOS file probe
+  - slash-based path normalization against a real KolibriOS file probe, with metadata now checked through ordinary `os.Stat`
 - `examples/strings` - implemented
   - bootstrap-compatible `import "strings"` sample with `Join`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `LastIndex`, `Cut`, `TrimPrefix`, and `TrimSuffix`
-  - string helper checks tied to a real KolibriOS file path and current-folder probe
+  - string helper checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.Stat` and `os.Getwd`
 - `examples/bytes` - implemented
   - bootstrap-compatible `import "bytes"` sample with `Join`, `Equal`, `Contains`, `HasPrefix`, `HasSuffix`, `Index`, `IndexByte`, `Cut`, `TrimPrefix`, and `TrimSuffix`
-  - byte-slice helper checks tied to a real KolibriOS file path and current-folder probe
+  - byte-slice helper checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.Stat` and `os.Getwd`
 - `examples/io` - implemented
   - bootstrap-compatible `import "io"` sample with `Reader`, `Writer`, `ReadAll`, `Copy`, and `WriteString`
-  - chunked stream checks tied to a real KolibriOS file path and current-folder probe
+  - chunked stream checks tied to a real KolibriOS file path and current-folder probe through ordinary `os.ReadFile`, `os.Stat`, and `os.Getwd`
 - `examples/os` - implemented
   - bootstrap-compatible `import "os"` sample with `Getwd`, `Stat`, `(*os.File).Stat`, `Create`, `Open`, `OpenFile`, `ReadFile`, `Mkdir`, `Rename`, `Remove`, `IsNotExist`, `Getpid`, `Getppid`, and process-local environment helpers
   - file lifecycle checks against a real writable KolibriOS path with append, `ModTime`, rename, environment, and cleanup validation
 - `examples/fmt` - implemented
   - bootstrap-compatible `import "fmt"` sample with `Sprintf`, `Sprintln`, `Fprintf`, `Print`, `Printf`, `Println`, `Fscanln`, `Scanln`, and `Errorf`
-  - formatted text and narrow scanning checks tied to a real KolibriOS file path, current-folder probe, and pipe-backed stdio capture
+  - formatted text and narrow scanning checks tied to a real KolibriOS file path, ordinary `os.Getwd` / `os.Stat` / `os.ReadFile`, and pipe-backed stdio capture
 - `examples/console` - implemented
   - bootstrap `CONSOLE.OBJ` wrapper sample with DLL load, export lookup, `con_init`, `con_write_string`, `con_getch`, and `con_exit`
   - ordinary `fmt.Print`, `fmt.Printf`, and `fmt.Println` output through the active console-backed `os.Stdout`, plus direct `fmt.Scanln` on the same active console-backed `os.Stdin`

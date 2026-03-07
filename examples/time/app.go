@@ -1,6 +1,7 @@
 package timedemo
 
 import (
+	"os"
 	"time"
 
 	"../../kos"
@@ -80,7 +81,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.lastEvent = "manual refresh"
 		app.Redraw()
 	case timeprobeButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

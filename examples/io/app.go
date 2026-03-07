@@ -2,6 +2,7 @@ package iodemo
 
 import (
 	"io"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -111,7 +112,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case ioButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -137,11 +138,11 @@ func (app *App) Redraw() {
 }
 
 func (app *App) refreshProbe() {
-	data, status := kos.ReadAllFile(ioProbePath)
-	if status != kos.FileSystemOK {
+	data, err := os.ReadFile(ioProbePath)
+	if err != nil {
 		app.ok = false
 		app.summary = "io probe failed / file read unavailable"
-		app.infoLine = "Info: " + ioProbePath + " / " + formatFileSystemStatus(status)
+		app.infoLine = "Info: " + ioProbePath + " / " + err.Error()
 		return
 	}
 
@@ -155,7 +156,11 @@ func (app *App) refreshProbe() {
 	copyTarget := &bufferWriter{}
 	written, copyErr := io.Copy(copyTarget, copyReader)
 	cwdWriter := &bufferWriter{}
-	currentFolder := kos.CurrentFolder()
+	currentFolder, err := os.Getwd()
+	if err != nil {
+		app.fail("getwd failed")
+		return
+	}
 	cwdWritten, writeErr := io.WriteString(cwdWriter, currentFolder)
 
 	app.readLine = "ReadAll: " + formatUint32(uint32(len(readData))) + " bytes / eof " + formatBool(readReader.sawEOF) + " / preview " + previewText(readData)
@@ -184,17 +189,22 @@ func (app *App) refreshProbe() {
 		return
 	}
 
-	info, infoStatus := kos.GetPathInfo(ioProbePath)
-	if infoStatus != kos.FileSystemOK {
+	info, err := os.Stat(ioProbePath)
+	if err != nil {
 		app.ok = false
 		app.summary = "io probe failed / file info unavailable"
-		app.infoLine = "Info: " + ioProbePath + " / " + formatFileSystemStatus(infoStatus)
+		app.infoLine = "Info: " + ioProbePath + " / " + err.Error()
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch")
 		return
 	}
 
 	app.ok = true
 	app.summary = "io probe ok / ordinary import io package resolved"
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 }
 
 func (app *App) fail(detail string) {

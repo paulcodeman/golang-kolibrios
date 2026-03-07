@@ -2,6 +2,7 @@ package bytesdemo
 
 import (
 	"bytes"
+	"os"
 
 	"../../kos"
 	"../../ui"
@@ -62,7 +63,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.refreshProbe()
 		app.Redraw()
 	case bytesButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
@@ -98,7 +99,12 @@ func (app *App) refreshProbe() {
 	before, after, found := bytes.Cut(joined, []byte("/default"))
 	trimmed := bytes.TrimSuffix(bytes.TrimPrefix(joined, []byte("/sys/")), []byte(".skn"))
 	trimmedOK := bytes.Equal(trimmed, []byte("default"))
-	currentFolder := []byte(kos.CurrentFolder())
+	currentFolderPath, err := os.Getwd()
+	if err != nil {
+		app.fail("getwd failed")
+		return
+	}
+	currentFolder := []byte(currentFolderPath)
 	trimmedCWD := bytes.TrimPrefix(currentFolder, []byte("/"))
 
 	app.joinLine = "Join: " + string(joined)
@@ -128,17 +134,22 @@ func (app *App) refreshProbe() {
 		return
 	}
 
-	info, status := kos.GetPathInfo(string(joined))
-	if status != kos.FileSystemOK {
+	info, err := os.Stat(string(joined))
+	if err != nil {
 		app.ok = false
 		app.summary = "bytes probe failed / file info unavailable"
-		app.infoLine = "Info: " + string(joined) + " / " + formatFileSystemStatus(status)
+		app.infoLine = "Info: " + string(joined) + " / " + err.Error()
+		return
+	}
+	rawInfo, ok := info.Sys().(kos.FileInfo)
+	if !ok {
+		app.fail("stat sys payload mismatch")
 		return
 	}
 
 	app.ok = true
 	app.summary = "bytes probe ok / ordinary import bytes package resolved"
-	app.infoLine = "Info: size " + formatHex64(info.Size) + " bytes / attrs " + formatHex32(uint32(info.Attributes))
+	app.infoLine = "Info: size " + formatHex64(uint64(info.Size())) + " bytes / attrs " + formatHex32(uint32(rawInfo.Attributes))
 }
 
 func (app *App) fail(detail string) {

@@ -1,61 +1,63 @@
 package systemdemo
 
 import (
+	"os"
+
 	"../../kos"
 	"../../ui"
 )
 
 const (
-	sysinfoButtonExit kos.ButtonID = 1
-	sysinfoButtonToggleTitle kos.ButtonID = 2
-	sysinfoButtonRefresh kos.ButtonID = 3
-	sysinfoButtonFocusSelf kos.ButtonID = 4
-	sysinfoButtonReapplyLayout kos.ButtonID = 5
+	sysinfoButtonExit                  kos.ButtonID = 1
+	sysinfoButtonToggleTitle           kos.ButtonID = 2
+	sysinfoButtonRefresh               kos.ButtonID = 3
+	sysinfoButtonFocusSelf             kos.ButtonID = 4
+	sysinfoButtonReapplyLayout         kos.ButtonID = 5
 	sysinfoButtonReapplySystemLanguage kos.ButtonID = 6
-	sysinfoButtonApplySkinLegacy kos.ButtonID = 7
-	sysinfoButtonApplySkinUTF8 kos.ButtonID = 8
-	sysinfoButtonCursorProbe kos.ButtonID = 9
+	sysinfoButtonApplySkinLegacy       kos.ButtonID = 7
+	sysinfoButtonApplySkinUTF8         kos.ButtonID = 8
+	sysinfoButtonCursorProbe           kos.ButtonID = 9
 
-	sysinfoWindowX = 350
-	sysinfoWindowY = 180
-	sysinfoWindowWidth = 540
-	sysinfoWindowHeight = 452
-	sysinfoWindowTitle = "KolibriOS System Demo"
-	sysinfoUTF8Title = "KolibriOS Система UTF-8"
+	sysinfoWindowX          = 350
+	sysinfoWindowY          = 180
+	sysinfoWindowWidth      = 540
+	sysinfoWindowHeight     = 452
+	sysinfoWindowTitle      = "KolibriOS System Demo"
+	sysinfoUTF8Title        = "KolibriOS Система UTF-8"
 	sysinfoCursorImageBytes = 32 * 32 * 4
 )
 
 type App struct {
-	version kos.KernelVersionInfo
-	screenWidth int
-	screenHeight int
-	workArea kos.Rect
-	skinHeight int
-	skinMargins kos.SkinMargins
-	keyboardLanguage kos.KeyboardLanguage
-	systemLanguage kos.KeyboardLanguage
-	normalLayout kos.KeyboardLayoutTable
-	shiftLayout kos.KeyboardLayoutTable
-	altLayout kos.KeyboardLayoutTable
-	hasKeyboardLayouts bool
-	currentSlot int
-	activeSlot int
-	hasCurrentSlot bool
-	usingUTF8Title bool
-	focusStatus string
-	layoutStatus string
-	systemLanguageStatus string
-	skinLegacyStatus string
-	skinUTF8Status string
-	cursorStatus string
-	toggleTitle ui.Button
-	refresh ui.Button
-	focusSelf ui.Button
-	reapplyLayout ui.Button
+	version               kos.KernelVersionInfo
+	screenWidth           int
+	screenHeight          int
+	workArea              kos.Rect
+	skinHeight            int
+	skinMargins           kos.SkinMargins
+	keyboardLanguage      kos.KeyboardLanguage
+	systemLanguage        kos.KeyboardLanguage
+	normalLayout          kos.KeyboardLayoutTable
+	shiftLayout           kos.KeyboardLayoutTable
+	altLayout             kos.KeyboardLayoutTable
+	hasKeyboardLayouts    bool
+	currentSlot           int
+	activeSlot            int
+	hasCurrentSlot        bool
+	usingUTF8Title        bool
+	focusStatus           string
+	layoutStatus          string
+	systemLanguageStatus  string
+	skinLegacyStatus      string
+	skinUTF8Status        string
+	cursorStatus          string
+	toggleTitle           ui.Button
+	refresh               ui.Button
+	focusSelf             ui.Button
+	reapplyLayout         ui.Button
 	reapplySystemLanguage ui.Button
-	applySkinLegacy ui.Button
-	applySkinUTF8 ui.Button
-	cursorProbe ui.Button
+	applySkinLegacy       ui.Button
+	applySkinUTF8         ui.Button
+	cursorProbe           ui.Button
 }
 
 func NewApp() App {
@@ -84,20 +86,20 @@ func NewApp() App {
 	cursorProbe.Width = 132
 
 	app := App{
-		toggleTitle: toggleTitle,
-		refresh: refresh,
-		focusSelf: focusSelf,
-		reapplyLayout: reapplyLayout,
+		toggleTitle:           toggleTitle,
+		refresh:               refresh,
+		focusSelf:             focusSelf,
+		reapplyLayout:         reapplyLayout,
 		reapplySystemLanguage: reapplySystemLanguage,
-		applySkinLegacy: applySkinLegacy,
-		applySkinUTF8: applySkinUTF8,
-		cursorProbe: cursorProbe,
-		focusStatus: "ready",
-		layoutStatus: "ready",
-		systemLanguageStatus: "ready",
-		skinLegacyStatus: "idle",
-		skinUTF8Status: "idle",
-		cursorStatus: "idle",
+		applySkinLegacy:       applySkinLegacy,
+		applySkinUTF8:         applySkinUTF8,
+		cursorProbe:           cursorProbe,
+		focusStatus:           "ready",
+		layoutStatus:          "ready",
+		systemLanguageStatus:  "ready",
+		skinLegacyStatus:      "idle",
+		skinUTF8Status:        "idle",
+		cursorStatus:          "idle",
 	}
 	app.refreshInfo()
 
@@ -154,7 +156,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		app.runCursorProbe()
 		app.Redraw()
 	case sysinfoButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 

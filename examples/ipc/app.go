@@ -1,20 +1,22 @@
 package ipcdemo
 
 import (
+	"os"
+
 	"../../kos"
 	"../../ui"
 )
 
 const (
-	ipcButtonExit kos.ButtonID = 1
-	ipcButtonSend kos.ButtonID = 2
+	ipcButtonExit  kos.ButtonID = 1
+	ipcButtonSend  kos.ButtonID = 2
 	ipcButtonClear kos.ButtonID = 3
 
-	ipcWindowX = 320
-	ipcWindowY = 170
-	ipcWindowWidth = 600
+	ipcWindowX      = 320
+	ipcWindowY      = 170
+	ipcWindowWidth  = 600
 	ipcWindowHeight = 260
-	ipcWindowTitle = "KolibriOS IPC Demo"
+	ipcWindowTitle  = "KolibriOS IPC Demo"
 
 	ipcBufferSize = 512
 )
@@ -22,19 +24,19 @@ const (
 var ipcPayload = [...]byte{'s', 'e', 'l', 'f', ' ', 'i', 'p', 'c'}
 
 type App struct {
-	pid          uint32
-	buffer       [ipcBufferSize]byte
-	sent         uint32
-	received     uint32
-	lastBatch    uint32
-	lastRegister kos.IPCStatus
-	lastStatus   kos.IPCStatus
-	lastSender   uint32
-	lastLength   uint32
+	pid           uint32
+	buffer        [ipcBufferSize]byte
+	sent          uint32
+	received      uint32
+	lastBatch     uint32
+	lastRegister  kos.IPCStatus
+	lastStatus    kos.IPCStatus
+	lastSender    uint32
+	lastLength    uint32
 	lastFirstByte byte
-	lastHasData  bool
-	send         ui.Button
-	clear        ui.Button
+	lastHasData   bool
+	send          ui.Button
+	clear         ui.Button
 }
 
 func (app *App) Init() {
@@ -95,7 +97,7 @@ func (app *App) handleButton(id kos.ButtonID) bool {
 		kos.ResetIPCBuffer(app.buffer[:])
 		app.Redraw()
 	case ipcButtonExit:
-		kos.Exit()
+		os.Exit(0)
 		return true
 	}
 
